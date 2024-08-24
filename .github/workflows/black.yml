@@ -44,8 +44,26 @@ jobs:
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "Black Autoformat bot"
 
+          commit_id=$(git log -1 --pretty=format:"%H")
+
           git add .
-          git commit -m "Autoformat code using black"
+          git commit -m "Autoformat code using black
+            
+          This commit reformats the codebase using Black.
+            
+          Affected commit ID: $commit_id"
           git push origin ${{github.ref_name}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        if: env.need_formatting == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Autoformat code using black"
+          body: |
+            This PR auto-formats the code using black. Please review and merge the changes.
+          branch: "autoformat-${{ github.run_id }}"
+          base: "main"  # or the default branch of your repository
+          labels: "autoformat"
