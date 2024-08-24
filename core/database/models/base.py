@@ -8,7 +8,7 @@ class BaseModel(Model):
     class Meta:
         table = "base"
         table_description = "Base model"
-        abstract = Trueя
+        abstract = True
 
 class TestModel(BaseModel):
     name = fields.CharField(max_length=255)
