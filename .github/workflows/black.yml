@@ -27,7 +27,7 @@ jobs:
       - name: Determine if formatting is needed
         id: format_needed
         run: |
-          [[ '${{ steps.black_check.outcome }}' == 'failure' ]] && echo "need_formatting=true" || echo "need_formatting=false" >> $GITHUB_ENV
+          [[ '${{ steps.black_check.outcome }}' == 'failure' ]] && echo 'need_formatting="true"' || echo 'need_formatting="false"' >> $GITHUB_ENV
 
       - name: Configure Git
         run: |
