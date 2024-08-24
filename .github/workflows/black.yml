@@ -1,12 +1,10 @@
 name: Black Autoformat
 
-on:
-  [push, pull_request, workflow_dispatch]
-
+on: [push, pull_request, workflow_dispatch]
 permissions: 'write-all'
 
 jobs:
-  black_check_and_format:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,7 +26,13 @@ jobs:
 
       - name: Determine if formatting is needed
         id: format_needed
-        run: echo "need_formatting=$([[ '${{ steps.black_check.outcome }}' == 'failure' ]] && echo true || echo false)" >> $GITHUB_ENV
+        run: |
+          [[ '${{ steps.black_check.outcome }}' == 'failure' ]] && echo "need_formatting=true" || echo "need_formatting=false" >> $GITHUB_ENV
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions"
 
       - name: Autoformat code with black if necessary
         if: env.need_formatting == 'true'
