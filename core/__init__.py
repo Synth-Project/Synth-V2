@@ -1,0 +1,27 @@
+import datetime
+import logging
+import os
+
+startup = datetime.datetime.now()
+logger = logging.getLogger()
+logger.setLevel(level=logging.INFO)
+
+if not os.path.exists("logs"):
+    os.mkdir("logs")
+
+handler = logging.FileHandler(
+    filename=f"logs/synth-{startup.timestamp()}.log", encoding="utf-8", mode="w"
+)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+
+handler.setFormatter(
+    logging.Formatter("[%(asctime)s] %(levelname)s:%(name)s: %(message)s")
+)
+stream_handler.setFormatter(
+    logging.Formatter("[%(asctime)s] %(levelname)s:%(name)s: %(message)s")
+)
+
+logger.addHandler(hdlr=handler)
+logger.addHandler(hdlr=stream_handler)
