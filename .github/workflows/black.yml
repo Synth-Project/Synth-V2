@@ -1,10 +1,12 @@
 name: Black Autoformat
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  [push, pull_request, workflow_dispatch]
+
 permissions: 'write-all'
 
 jobs:
-  check:
+  black_check_and_format:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,32 +26,34 @@ jobs:
           black --check .
         continue-on-error: true
 
-      - name: Determine if formatting is needed
-        id: format_needed
+      - name: Check if formatting is needed
+        id: check_formatting
         run: |
-          [[ '${{ steps.black_check.outcome }}' == 'failure' ]] && echo 'need_formatting="true"' || echo 'need_formatting="false"' >> $GITHUB_ENV
+          if [ $? -ne 0 ]; then
+            echo "Formatting needed."
+            echo "need_formatting=true" >> $GITHUB_ENV
+          else
+            echo "No formatting needed."
+            echo "need_formatting=false" >> $GITHUB_ENV
+          fi
 
-      - name: Configure Git
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "GitHub Actions"
-
-      - name: Autoformat code with black if necessary
-        if: env.need_formatting == "true"
+      - name: Autoformat code with black
+        if: env.need_formatting == 'true'
         run: |
           black .
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions"
           git add .
           git commit -m "Autoformat code using black"
           git push origin HEAD:${{ github.head_ref }}
 
       - name: Create or Update Pull Request
-        if: env.need_formatting == "true"
+        if: env.need_formatting == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Замените на PAT_TOKEN, если требуется
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Autoformat code using black"
           branch: "autoformat/${{ github.head_ref }}"
           title: "Autoformat code using black"
           body: "This PR auto-formats the code using black."
           labels: "autoformat"
-          branch-suffix: timestamp
