@@ -7,10 +7,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
 
     DEBUG: bool
-    DATABASE_URL: str
     BOT_TOKEN: str
     OWNERS: List[int]
     TEST_GUILDS: List[int]
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return "postgres://synth:SyNTh@@1337@!@146.148.127.63:5432/synth"
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), ".env"),

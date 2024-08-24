@@ -5,13 +5,10 @@ class BaseModel(Model):
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
-    async def get_created_at(self):
-        return self.get_or_none(created_at=self.created_at)
-
     class Meta:
         table = "base"
         table_description = "Base model"
-        abstract = True
+        abstract = Trueя
 
 class TestModel(BaseModel):
     name = fields.CharField(max_length=255)
