@@ -1,31 +1,42 @@
-name: Lint (black)
+name: Black Autoformat
 
-on:
-  push:
-  pull_request:
-    types: [ opened ]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  check:
+  check_formatting:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        id: install-deps
-        run: |
-          python -m pip install --upgrade pip setuptools wheel black==22.6 requests
-          pip install -U -r requirements.txt
+      - name: Install black
+        run: pip install black
 
-      - name: Run black
-        if: ${{ always() && steps.install-deps.outcome == 'success' }}
+      - name: Run black --check
+        id: black_check
+        run: black --check .
+
+      - name: Autoformat code with black if necessary
+        if: failure()
         run: |
-          black . --check --diff
+          black .
+          git add .
+          git commit -m "Autoformat code using black"
+          git push origin HEAD:${{ github.head_ref }}
+
+      - name: Create or Update existing PR
+        if: failure()
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Autoformat code using black"
+          branch: "autoformat/${{ github.head_ref }}"
+          title: "Autoformat code using black"
+          body: "This PR auto-formats the code using black."
+          labels: ["autoformat"]
+          branch-suffix: timestamp
