@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
 
     DEBUG: bool
+    DATABASE_URL: str
     BOT_TOKEN: str
     OWNERS: List[int]
     TEST_GUILDS: List[int]

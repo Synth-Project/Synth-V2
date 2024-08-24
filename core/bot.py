@@ -5,11 +5,13 @@ from disnake.ext import commands
 
 from core.main.config.config import settings
 
+from core.database import init_database, close_database
+
 
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
-    def __init__(self) -> None:
+    def __init__(self: "Bot") -> None:
         super(Bot, self).__init__(
             # help_command=CustomHelpCommand(),
             intents=disnake.Intents.all(),
@@ -18,6 +20,12 @@ class Bot(commands.AutoShardedInteractionBot):
             test_guilds=settings.TEST_GUILDS,
         )
         self.debug = False
+
+    async def on_connect(self) -> None:
+        await init_database()
+    
+    async def on_disconnect(self) -> None:
+        await close_database()
 
     async def on_ready(self) -> None:
         print("Started")
