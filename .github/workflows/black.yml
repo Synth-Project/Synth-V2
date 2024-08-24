@@ -65,5 +65,5 @@ jobs:
           body: |
             This PR auto-formats the code using black. Please review and merge the changes.
           branch: "autoformat-${{ github.run_id }}"
-          base: "main"  # or the default branch of your repository
+          base: ${{ github.ref_name }}
           labels: "autoformat"
