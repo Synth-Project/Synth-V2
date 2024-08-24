@@ -38,5 +38,5 @@ jobs:
           branch: "autoformat/${{ github.head_ref }}"
           title: "Autoformat code using black"
           body: "This PR auto-formats the code using black."
-          labels: ["autoformat"]
+          labels: "autoformat"
           branch-suffix: timestamp
