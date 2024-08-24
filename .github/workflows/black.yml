@@ -1,8 +1,7 @@
 name: Black Autoformat
 
 on: [push, pull_request, workflow_dispatch]
-permissions:
-  pull-requests: write
+permissions: 'write-all'
 
 jobs:
   check_formatting:
