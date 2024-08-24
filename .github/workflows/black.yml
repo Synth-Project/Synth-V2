@@ -35,7 +35,7 @@ jobs:
           git config --local user.name "GitHub Actions"
 
       - name: Autoformat code with black if necessary
-        if: env.need_formatting == 'true'
+        if: env.need_formatting == "true"
         run: |
           black .
           git add .
@@ -43,7 +43,7 @@ jobs:
           git push origin HEAD:${{ github.head_ref }}
 
       - name: Create or Update Pull Request
-        if: env.need_formatting == 'true'
+        if: env.need_formatting == "true"
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }} # Замените на PAT_TOKEN, если требуется
