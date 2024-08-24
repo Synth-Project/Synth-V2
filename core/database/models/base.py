@@ -9,8 +9,10 @@ class BaseModel(Model):
         table_description = "Base model"
         abstract = True
 
+
 class TestModel(BaseModel):
     name = fields.CharField(max_length=255)
+
     class Meta:
         table = "test"
         table_description = "Test model"
