@@ -43,20 +43,21 @@ jobs:
           black .
           git config --local user.email "github-actions@github.com"
           git config --local user.name "GitHub Actions"
-          git checkout -b autoformat/$(date +%s)  # Create a new branch with a unique name
+          branch_name="autoformat-${{ github.run_id }}"
+          git checkout -b "$branch_name"
           git add .
           git commit -m "Autoformat code using black"
-          git push origin HEAD
+          git push origin "$branch_name"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create or Update Pull Request
+      - name: Create Pull Request
         if: env.need_formatting == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Autoformat code using black"
-          branch: "autoformat/$(date +%s)"
+          branch: "autoformat-${{ github.run_id }}"
           title: "Autoformat code using black"
           body: "This PR auto-formats the code using black."
           labels: "autoformat"
