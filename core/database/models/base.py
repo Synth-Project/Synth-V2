@@ -3,14 +3,11 @@ from tortoise import Model, fields
 
 class BaseModel(Model):
     id = fields.IntField(pk=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "base"
         table_description = "Base model"
         abstract = True
-
 
 class TestModel(BaseModel):
     name = fields.CharField(max_length=255)
