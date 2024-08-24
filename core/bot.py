@@ -23,7 +23,7 @@ class Bot(commands.AutoShardedInteractionBot):
 
     async def on_connect(self) -> None:
         await init_database()
-    
+
     async def on_disconnect(self) -> None:
         await close_database()
 
