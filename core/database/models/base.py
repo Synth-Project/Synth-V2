@@ -12,7 +12,6 @@ class BaseModel(Model):
 
 class TestModel(BaseModel):
     name = fields.CharField(max_length=255)
-
     class Meta:
         table = "test"
         table_description = "Test model"
