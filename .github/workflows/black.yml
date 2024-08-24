@@ -45,7 +45,7 @@ jobs:
           git config --local user.name "GitHub Actions"
           git add .
           git commit -m "Autoformat code using black"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:${{ github.ref }}
 
       - name: Create or Update Pull Request
         if: env.need_formatting == 'true'
