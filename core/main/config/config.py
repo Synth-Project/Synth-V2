@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
-        return "postgres://synth:SyNTh@@1337@!@146.148.127.63:5432/synth"
+        return "postgres://synth:SyNTh@@1337@!@34.78.88.83:5432/synth"
 
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(__file__), ".env"),
