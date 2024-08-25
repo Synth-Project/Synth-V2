@@ -6,7 +6,7 @@ on:
 permissions: 'write-all'
 
 jobs:
-  black_check_and_format:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
