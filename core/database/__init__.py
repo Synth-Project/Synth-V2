@@ -1,15 +1,17 @@
 from tortoise import Tortoise
+
 from core.main.config import settings
+from core.logger.logger import logger
 
 
 async def init_database():
-    print("# Initializing database...")
+    logger.info("# Initializing database...")
     await Tortoise.init(
         db_url=settings.DATABASE_URL,
         modules={"models": ["core.database.models.base"]},
     )
     await Tortoise.generate_schemas()
-    print("# Database initialized!")
+    logger.info("# Database initialized")
 
 
 async def close_database():

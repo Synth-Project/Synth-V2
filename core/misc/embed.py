@@ -1,28 +1,8 @@
 from typing import Any, Dict, List, Optional, Union
+import math
 
 import disnake
 import mafic
-import math
-
-
-def custom_embed(
-    title: str = None,
-    description: str = None,
-    color: Union[disnake.Colour, int, None] = 0x2F3236,
-    image: str = None,
-    thumbnail: str = None,
-) -> disnake.Embed:
-
-    embed = disnake.Embed()
-    embed.set_footer(text="Synth © 2024 | All Rights Reserved")
-
-    embed.title = title
-    embed.description = description
-    embed.colour = color
-    embed.set_image(url=image)
-    embed.set_thumbnail(url=thumbnail)
-
-    return embed
 
 
 class EmbedPaginator(disnake.ui.View):
@@ -159,3 +139,23 @@ class EmbedPaginator(disnake.ui.View):
             )
             return False
         return True
+
+
+def custom_embed(
+    title: str = None,
+    description: str = None,
+    color: Union[disnake.Colour, int, None] = 0x2F3236,
+    image: str = None,
+    thumbnail: str = None,
+) -> disnake.Embed:
+
+    embed = disnake.Embed()
+    embed.set_footer(text="Synth © 2024 | All Rights Reserved")
+
+    embed.title = title
+    embed.description = description
+    embed.colour = color
+    embed.set_image(url=image)
+    embed.set_thumbnail(url=thumbnail)
+
+    return embed
