@@ -10,6 +10,7 @@ from core.database import init_database, close_database
 
 import traceback
 
+
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
@@ -28,7 +29,7 @@ class Bot(commands.AutoShardedInteractionBot):
 
         if not cogs_paths:
             cogs_paths = ["core/cogs/commands", "core/cogs/events"]
-    
+
         for path in cogs_paths:
             for file in os.listdir(path):
                 if not file.endswith(".py"):
@@ -47,8 +48,7 @@ class Bot(commands.AutoShardedInteractionBot):
                     commands.ExtensionError,
                 ) as e:
                     logging.info(f"- Error loading cog: {file[:-3]}\n\n")
-                    #traceback.print_exception(e)
-                    
+                    # traceback.print_exception(e)
 
         logging.info(f"# {loaded}/{total} cogs loaded")
 
@@ -67,7 +67,7 @@ class Bot(commands.AutoShardedInteractionBot):
         logging.debug(f"Connected to {self.user}")
 
         await self.load_extensions()
-    
+
         await self.wait_until_ready()
         await self.change_presence(
             activity=disnake.Activity(

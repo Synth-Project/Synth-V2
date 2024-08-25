@@ -286,7 +286,7 @@ class Music(commands.Cog):
         embed = custom_embed(
             title=f"Now playing - {track.title}",
             description=f"[{track.title}]({str(track.uri)})",
-            image=track.artwork_url
+            image=track.artwork_url,
         )
         embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
         embed.add_field(
