@@ -29,7 +29,6 @@ class Bot(commands.AutoShardedInteractionBot):
         if not cogs_paths:
             cogs_paths = ["core/cogs/commands", "core/cogs/events"]
 
-
         for path in cogs_paths:
             for file_path in glob.glob(os.path.join(path, "*.py")):
                 file_name = os.path.basename(file_path)
