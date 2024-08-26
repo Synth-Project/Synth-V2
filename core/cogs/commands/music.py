@@ -30,6 +30,7 @@ class Music(commands.Cog):
         print(
             "Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed
         )
+
     async def on_wavelink_node_ready(
         self, payload: wavelink.NodeReadyEventPayload
     ) -> None:
@@ -116,7 +117,6 @@ class Music(commands.Cog):
 
         if not player.playing:
             await player.play(player.queue.get(), volume=30)
-
 
 
 def setup(bot: commands.Bot) -> None:
