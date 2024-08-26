@@ -117,7 +117,9 @@ class Music(commands.Cog):
             embed.title = f"Now playing - {new_track.title}"
 
             embed.description = f"[{new_track.title}]({str(new_track.uri)})"
-            embed.add_field(name="Artist:", value=f"**`{new_track.author}`**", inline=True)
+            embed.add_field(
+                name="Artist:", value=f"**`{new_track.author}`**", inline=True
+            )
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(new_track.length / 1000)))}`",
@@ -177,7 +179,6 @@ class Music(commands.Cog):
                 "Could not find any tracks with that query. Please try again."
             )
             return await interaction.send(embed=error_embed, ephemeral=True)
-
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
