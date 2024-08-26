@@ -179,8 +179,12 @@ class Music(commands.Cog):
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
 
     @commands.Cog.listener()
-    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
-        print("Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed)
+    async def on_wavelink_node_ready(
+        self, payload: wavelink.NodeReadyEventPayload
+    ) -> None:
+        print(
+            "Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed
+        )
 
     @commands.slash_command(description="Search and play music from Spotify")
     async def play(self, interaction: disnake.MessageCommandInteraction, *, query: str):
@@ -193,10 +197,14 @@ class Music(commands.Cog):
         try:
             player = await interaction.user.voice.channel.connect(cls=wavelink.Player)  # type: ignore
         except AttributeError:
-            await interaction.send("Please join a voice channel first before using this command.")
+            await interaction.send(
+                "Please join a voice channel first before using this command."
+            )
             return
         except disnake.ClientException:
-            await interaction.send("I was unable to join this voice channel. Please try again.")
+            await interaction.send(
+                "I was unable to join this voice channel. Please try again."
+            )
             return
 
         # Turn on AutoPlay to enabled mode.
@@ -209,22 +217,30 @@ class Music(commands.Cog):
         if not hasattr(player, "home"):
             player.home = interaction.channel
         elif player.home != interaction.channel:
-            await interaction.send(f"You can only play songs in {player.home.mention}, as the player has already started there.")
+            await interaction.send(
+                f"You can only play songs in {player.home.mention}, as the player has already started there."
+            )
             return
 
         # This will handle fetching Tracks and Playlists...
         # Seed the doc strings for more information on this method...
         # If spotify is enabled via LavaSrc, this will automatically fetch Spotify tracks if you pass a URL...
         # Defaults to YouTube for non URL based queries...
-        tracks: wavelink.Search = await wavelink.Playable.search(query, source=wavelink.TrackSource.YouTube)
+        tracks: wavelink.Search = await wavelink.Playable.search(
+            query, source=wavelink.TrackSource.YouTube
+        )
         if not tracks:
-            await interaction.send(f"{interaction.user.mention} - Could not find any tracks with that query. Please try again.")
+            await interaction.send(
+                f"{interaction.user.mention} - Could not find any tracks with that query. Please try again."
+            )
             return
 
         if isinstance(tracks, wavelink.Playlist):
             # tracks is a playlist...
             added: int = await player.queue.put_wait(tracks)
-            await interaction.send(f"Added the playlist **`{tracks.name}`** ({added} songs) to the queue.")
+            await interaction.send(
+                f"Added the playlist **`{tracks.name}`** ({added} songs) to the queue."
+            )
         else:
             track: wavelink.Playable = tracks[0]
             await player.queue.put_wait(track)
@@ -239,10 +255,11 @@ class Music(commands.Cog):
             await interaction.original_response.delete()
         except disnake.HTTPException:
             pass
-     
+
     # редачити:
     # wavelink.player (весь діскорд на діснейк)  + убираєш анотацію якорї в діснйеку немає
-    # wavelink.node (весь діскорд на діснейк) 
+    # wavelink.node (весь діскорд на діснейк)
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Music(bot))

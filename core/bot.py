@@ -10,7 +10,7 @@ from core.database import init_database, close_database
 from core.logger.logger import logger
 
 
-class Bot(commands.AutoShardedInteractionBot): 
+class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
     def __init__(self: "Bot") -> None:
@@ -28,7 +28,6 @@ class Bot(commands.AutoShardedInteractionBot):
 
         if not cogs_paths:
             cogs_paths = ["core/cogs/commands", "core/cogs/events"]
-
 
         for path in cogs_paths:
             for file_path in glob.glob(os.path.join(path, "*.py")):
@@ -51,6 +50,7 @@ class Bot(commands.AutoShardedInteractionBot):
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")
                     import traceback
+
                     traceback.print_exception(type(e), e, e.__traceback__)
 
         logger.info(f"[#] {loaded}/{total} cogs loaded")
