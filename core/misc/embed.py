@@ -143,7 +143,7 @@ class EmbedPaginator(disnake.ui.View):
 
 def custom_embed(
     title: str = None,
-    description: str = None,
+    description: str = "",
     color: Union[disnake.Colour, int, None] = 0x2F3236,
     image: str = None,
     thumbnail: str = None,
