@@ -78,3 +78,4 @@ class Bot(commands.AutoShardedInteractionBot):
                 status=disnake.Status.idle,
             )
         )
+

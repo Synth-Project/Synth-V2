@@ -8,7 +8,13 @@ def logging_setup():
 
     logger.remove()
 
-    logger.add(sys.stdout, colorize=True, format=format_info, level="INFO")
+    logger.add(
+        sys.stdout,
+        colorize=True,
+        format=format_info,
+        level="INFO",
+        filter=lambda record: record["level"].name != "ERROR",
+    )
     logger.add(sys.stdout, colorize=True, format=format_error, level="ERROR")
 
 
