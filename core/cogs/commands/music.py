@@ -1,8 +1,9 @@
 import datetime
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, cast
 
 import mafic
+import wavelink
 
 import disnake
 from disnake.ext import commands
@@ -163,149 +164,85 @@ class Music(commands.Cog):
         self.pool = mafic.NodePool(self.bot)
         self.channels: Dict[int, disnake.TextChannel] = defaultdict()  # noqa
 
-        self.bot.loop.create_task(self.add_nodes())
+        bot.loop.create_task(self.add_nodes())
 
     async def add_nodes(self) -> None:
-        await self.pool.create_node(
-            label="MAIN",
-            host="localhost",
-            port=2333,
-            password="youshallnotpass",
-        )
+        # await wavelink.Pool.create_node(
+        #     bot=self.bot,
+        #     host="localhost",
+        #     port=2333,
+        #     password="youshallnotpass",
+        # )
+        nodes = [wavelink.Node(uri="http://localhost:2333", password="youshallnotpass")]
+
+        # cache_capacity is EXPERIMENTAL. Turn it off by passing None
+        await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
+
+    @commands.Cog.listener()
+    async def on_wavelink_node_ready(self, payload: wavelink.NodeReadyEventPayload) -> None:
+        print("Wavelink Node connected: %r | Resumed: %s", payload.node, payload.resumed)
 
     @commands.slash_command(description="Search and play music from Spotify")
-    async def play(
-        self, interaction: disnake.MessageCommandInteraction, *, query: str = None
-    ):
-        error_embed = custom_embed(color=disnake.Color.red())
+    async def play(self, interaction: disnake.MessageCommandInteraction, *, query: str):
+        if not interaction.guild:
+            return
 
-        if not query:
-            error_embed.title = "Please provide a query or URL"
-            return await interaction.send(embed=error_embed, ephemeral=True)
+        player: wavelink.Player
+        player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
-        if not getattr(interaction.author.voice, "channel", None):
-            error_embed.title = "Join a voice channel first"
-            return await interaction.send(embed=error_embed, ephemeral=True)
+        try:
+            player = await interaction.user.voice.channel.connect(cls=wavelink.Player)  # type: ignore
+        except AttributeError:
+            await interaction.send("Please join a voice channel first before using this command.")
+            return
+        except disnake.ClientException:
+            await interaction.send("I was unable to join this voice channel. Please try again.")
+            return
 
-        voice = interaction.author.voice.channel
-        player: MusicPlayer = interaction.guild.voice_client or await voice.connect(
-            cls=MusicPlayer  # type: ignore
-        )
+        # Turn on AutoPlay to enabled mode.
+        # enabled = AutoPlay will play songs for us and fetch recommendations...
+        # partial = AutoPlay will play songs for us, but WILL NOT fetch recommendations...
+        # disabled = AutoPlay will do nothing...
+        player.autoplay = wavelink.AutoPlayMode.enabled
 
-        tracks = await player.fetch_tracks(query, search_type="spsearch")
+        # Lock the player to this channel...
+        if not hasattr(player, "home"):
+            player.home = interaction.channel
+        elif player.home != interaction.channel:
+            await interaction.send(f"You can only play songs in {player.home.mention}, as the player has already started there.")
+            return
 
+        # This will handle fetching Tracks and Playlists...
+        # Seed the doc strings for more information on this method...
+        # If spotify is enabled via LavaSrc, this will automatically fetch Spotify tracks if you pass a URL...
+        # Defaults to YouTube for non URL based queries...
+        tracks: wavelink.Search = await wavelink.Playable.search(query, source=wavelink.TrackSource.YouTube)
         if not tracks:
-            error_embed.title = f"`{query}` not found..."
-            return await interaction.send(embed=error_embed, ephemeral=True)
+            await interaction.send(f"{interaction.user.mention} - Could not find any tracks with that query. Please try again.")
+            return
 
-        embed = custom_embed()
-
-        self.channels[interaction.guild.id] = interaction.channel
-
-        if player.current:
-            embed.title = "Queue"
-
-            if isinstance(tracks, mafic.Playlist):
-                player.queue.extend(tracks.tracks)
-                embed.description = f"Added playlist **{tracks.name}** ({len(tracks.tracks)} tracks) to the queue."
-
-            else:
-                player.queue.append(tracks[0])
-                embed.description = f"Added track **[{tracks[0].title}]({str(tracks[0].uri)})** to the queue."
-                embed.add_field(
-                    name="Artist:", value=f"**`{tracks[0].author}`**", inline=True
-                )
-                embed.add_field(
-                    name="Duration:",
-                    value=f"`{str(datetime.timedelta(seconds=round(tracks[0].length / 1000)))}`",
-                    inline=True,
-                )
-                embed.add_field(
-                    name="Message deletion in:", value=f"**`15 seconds`**", inline=True
-                )
-                embed.set_image(url=tracks[0].artwork_url)
-
-            message = await interaction.followup.send(embed=embed, delete_after=15)
-            await message.edit(
-                embed=embed, view=NavigationPanelView(self.bot, message.id)
-            )
-
+        if isinstance(tracks, wavelink.Playlist):
+            # tracks is a playlist...
+            added: int = await player.queue.put_wait(tracks)
+            await interaction.send(f"Added the playlist **`{tracks.name}`** ({added} songs) to the queue.")
         else:
-            if isinstance(tracks, mafic.Playlist):
-                player.queue.extend(tracks.tracks[1:])
-                await player.play(tracks.tracks[0])
+            track: wavelink.Playable = tracks[0]
+            await player.queue.put_wait(track)
+            await interaction.send(f"Added **`{track}`** to the queue.")
 
-                embed.title = f"Now playing - {tracks.tracks[0].title}"
-                embed.description = (
-                    f"[{tracks.tracks[0].title}]({str(tracks.tracks[0].uri)})"
-                    f"\nAdded playlist {tracks.name} ({len(tracks.tracks) - 1} tracks) to the queue."
-                )
-                embed.add_field(
-                    name="Artist:",
-                    value=f"**`{tracks.tracks[0].author}`**",
-                    inline=True,
-                )
-                embed.add_field(
-                    name="Duration:",
-                    value=f"`{str(datetime.timedelta(seconds=round(tracks.tracks[0].length / 1000)))}`",
-                    inline=True,
-                )
-                embed.set_image(url=tracks.tracks[0].artwork_url)
+        if not player.playing:
+            # Play now since we aren't playing anything...
+            await player.play(player.queue.get(), volume=30)
 
-            else:
-                await player.play(tracks[0])
-
-                embed.title = f"Now playing - {tracks[0].title}"
-                embed.description = f"[{tracks[0].title}]({str(tracks[0].uri)})"
-                embed.add_field(
-                    name="Artist:", value=f"**`{tracks[0].author}`**", inline=True
-                )
-                embed.add_field(
-                    name="Duration:",
-                    value=f"`{str(datetime.timedelta(seconds=round(tracks[0].length / 1000)))}`",
-                    inline=True,
-                )
-                embed.set_image(url=tracks[0].artwork_url)
-
-            message = await interaction.followup.send(embed=embed)
-            await message.edit(
-                embed=embed, view=NavigationPanelView(self.bot, message.id)
-            )
-
-    @commands.Cog.listener()
-    async def on_track_end(self, event: mafic.TrackEndEvent[MusicPlayer]):
-        if not event.player.queue or event.player.voice_channel.members == 0:
-            if event.player.guild.id in self.channels:
-                del self.channels[event.player.guild.id]
-
-            return await event.player.disconnect()
-
-        track = event.player.queue.pop(0)
-        await event.player.play(track)
-
-        embed = custom_embed(
-            title=f"Now playing - {track.title}",
-            description=f"[{track.title}]({str(track.uri)})",
-            image=track.artwork_url,
-        )
-        embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
-        embed.add_field(
-            name="Duration:",
-            value=f"`{str(datetime.timedelta(seconds=round(track.length / 1000)))}`",
-            inline=True,
-        )
-
-        if channel := self.channels.get(event.player.guild.id):
-            message = await channel.send(embed=embed)
-
-            return await message.edit(
-                embed=embed, view=NavigationPanelView(self.bot, message_id=message.id)
-            )
-
-    @commands.Cog.listener()
-    async def on_track_start(self, event: mafic.TrackStartEvent) -> None:
-        assert isinstance(event.player, MusicPlayer)
-
+        # Optionally delete the invokers message...
+        try:
+            await interaction.original_response.delete()
+        except disnake.HTTPException:
+            pass
+     
+    # редачити:
+    # wavelink.player (весь діскорд на діснейк)  + убираєш анотацію якорї в діснйеку немає
+    # wavelink.node (весь діскорд на діснейк) 
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Music(bot))

@@ -10,7 +10,7 @@ from core.database import init_database, close_database
 from core.logger.logger import logger
 
 
-class Bot(commands.AutoShardedInteractionBot):
+class Bot(commands.AutoShardedInteractionBot): 
     """The base class of Synth bot."""
 
     def __init__(self: "Bot") -> None:
@@ -50,8 +50,8 @@ class Bot(commands.AutoShardedInteractionBot):
                     commands.ExtensionError,
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")
-                    # import traceback
-                    # traceback.print_exception(type(e), e, e.__traceback__)
+                    import traceback
+                    traceback.print_exception(type(e), e, e.__traceback__)
 
         logger.info(f"[#] {loaded}/{total} cogs loaded")
 
