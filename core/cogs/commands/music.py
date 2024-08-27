@@ -34,7 +34,9 @@ class NavigationPanel(View):
 
         try:
             if len(player.queue.history) > 0:
-                prev_track = player.queue.history[-2]  # Get the last song in the history
+                prev_track = player.queue.history[
+                    -2
+                ]  # Get the last song in the history
                 await player.play(prev_track)
                 message = await interaction.channel.fetch_message(self.message_id)
                 await message.delete()
