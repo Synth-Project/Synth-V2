@@ -56,7 +56,7 @@ class Music(commands.Cog):
                 payload.player.queue.put_at(0, new_track)
                 payload.player.queue.history.remove(payload.track)
                 await payload.player.play(new_track, add_history=False)
-                
+
             else:
                 await payload.player.play(new_track)
 
@@ -130,9 +130,21 @@ class Music(commands.Cog):
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
+            embed.title = f"Added playlist **{tracks.name}** ({added} songs) to the queue."
+
+            track: wavelink.Playable = tracks[0] if not player.current else player.current
+
             embed.description = (
-                f"Added playlist **{tracks.name}** ({added} songs) to the queue."
+                f"Now playing - [{track.title}]({str(track.uri)})"
+            ) 
+            embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
+            embed.add_field(
+                name="Duration:",
+                value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
+                inline=True,
             )
+            embed.set_image(url=track.artwork)
+
             await interaction.response.defer()
             message = await interaction.followup.send(embed=embed, ephemeral=True)
             await message.edit(

@@ -174,7 +174,7 @@ class NavigationPanel(disnake.ui.View):
         ):
             pass
 
-    @disnake.ui.button(label="Resume/Pause", style=disnake.ButtonStyle.gray, row=0)
+    @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
