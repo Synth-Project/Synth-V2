@@ -5,165 +5,10 @@ import wavelink
 
 import disnake
 from disnake.ext import commands
-from disnake.ui import View
 
+from core.misc.views.music import NavigationPanel
 from core.misc.embed import custom_embed
 from core.logger.logger import logger
-
-
-class NavigationPanel(View):
-    def __init__(
-        self, bot: commands.bot, message_id: int, *, timeout: float | None = None
-    ) -> None:
-        self.message_id = message_id
-        self.bot = bot
-        super().__init__(timeout=timeout)
-
-    @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0)
-    async def previous(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ) -> None:
-
-        player: wavelink.Player = interaction.guild.voice_client
-
-        if not player.queue:
-            return await interaction.response.send_message(
-                "Sorry, the music queue is empty!",
-                ephemeral=True,
-            )
-
-        try:
-            if len(player.queue.history) > 0:
-                prev_track = player.queue.history[
-                    -2
-                ]  # Get the last song in the history
-                await player.play(prev_track)
-                message = await interaction.channel.fetch_message(self.message_id)
-                await message.delete()
-                return await interaction.response.defer()
-
-        except (
-            wavelink.InvalidClientException,
-            wavelink.InvalidNodeException,
-            disnake.Forbidden,
-        ):
-            return await interaction.send(
-                "Sorry, there was an error while processing your request.",
-                ephemeral=True,
-            )
-
-    @disnake.ui.button(label=">", style=disnake.ButtonStyle.green, row=0)
-    async def skip(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ) -> None:
-
-        player: wavelink.Player = interaction.guild.voice_client
-
-        if not player.queue:
-            return await interaction.response.send_message(
-                "Sorry, the music queue is empty!",
-                ephemeral=True,
-            )
-
-        try:
-            await player.stop()
-            message = await interaction.channel.fetch_message(self.message_id)
-            await message.delete()
-            await interaction.response.defer()
-
-        except (
-            wavelink.InvalidClientException,
-            wavelink.InvalidNodeException,
-            disnake.Forbidden,
-        ):
-            return await interaction.send(
-                "Sorry, there was an error while processing your request.",
-                ephemeral=True,
-            )
-
-    @disnake.ui.button(label="Resume/Pause", style=disnake.ButtonStyle.gray, row=0)
-    async def resume_and_pause(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        player: wavelink.Player = interaction.guild.voice_client
-
-        if player.paused:
-            await player.pause(False)
-            await interaction.response.edit_message(content=f"")
-        else:
-            await player.pause(True)
-            await interaction.response.edit_message(content=f"")
-
-    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=0)
-    async def queue(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        player: wavelink.Player = interaction.guild.voice_client
-
-        embed = custom_embed(title="Music Queue")
-
-        if player.queue.count > 0:
-            for index, music in enumerate(player.queue, start=1):
-                if index > 50:
-                    break
-
-                embed.description += f"`{index}.` **{music.author} - {music.title}**\n"
-        else:
-            embed.description = "No music in the queue\n"
-
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-
-    @disnake.ui.button(label="Volume", style=disnake.ButtonStyle.green, row=1)
-    async def volume(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        player: wavelink.Player = interaction.guild.voice_client
-
-        modal = disnake.ui.Modal(
-            title="Enter the volume",
-            custom_id="volume",
-            components=[
-                disnake.ui.TextInput(
-                    label="New volume:",
-                    custom_id="new_volume",
-                    style=disnake.TextInputStyle.short,
-                )
-            ],
-        )
-        await interaction.response.send_modal(modal=modal)
-        response_modal: disnake.ModalInteraction = await self.bot.wait_for(
-            "modal_submit",
-            check=lambda i: i.custom_id == "volume" and i.user == interaction.user,
-        )
-        new_volume = int(response_modal.text_values.get("new_volume", 0))
-
-        if new_volume > 100 or new_volume < 1:
-            error_embed = custom_embed(color=disnake.Color.red())
-            error_embed.title = f"Please enter a number, between `1` and `100`"
-            return await response_modal.response.send_message(
-                embed=error_embed, ephemeral=True
-            )
-
-        await player.set_volume(new_volume)
-        await response_modal.response.send_message(
-            embed=custom_embed(title=f"Set volume to {new_volume}"), ephemeral=True
-        )
-
-    @disnake.ui.button(label="Shuffle", style=disnake.ButtonStyle.gray, row=1)
-    async def shuffle(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        player: wavelink.Player = interaction.guild.voice_client
-        player.queue.shuffle()
-        await interaction.response.edit_message(content=f"")
-
-    @disnake.ui.button(label="Leave", style=disnake.ButtonStyle.red, row=1)
-    async def leave(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
-        player: wavelink.Player = interaction.guild.voice_client
-        await player.disconnect()
-        await interaction.response.edit_message(content="")
 
 
 class Music(commands.Cog):
@@ -182,22 +27,41 @@ class Music(commands.Cog):
         logger.info("[+] Wavelink Node ready")
 
     @commands.Cog.listener()
-    async def on_wavelink_track_start(
+    async def on_wavelink_track_end(
         self, payload: wavelink.TrackEndEventPayload
     ) -> None:
         try:
             old_message = await payload.player.interaction.original_response()
+
             try:
                 await old_message.delete()
-            except disnake.NotFound:
+            except (disnake.NotFound, AttributeError):
                 pass
 
             new_track = payload.player.queue.get()
 
-            # await payload.player.play(new_track)
+            """
+            when track ends: player - old_track
+            new_track: payload.player.queue.get()
+
+            if last_track defined:
+                queue.put_at(0, last_track)
+                queue.history.remove(old_track)
+                
+            """
+
+            if getattr(payload.player, "last_track", None):
+                new_track = payload.player.last_track
+                
+                payload.player.queue.put_at(0, new_track)
+                payload.player.queue.history.remove(payload.track)
+                await payload.player.play(new_track, add_history=False)
+                
+            else:
+                await payload.player.play(new_track)
 
             logger.info(
-                f"[+] New Track Statted: {new_track.title} by {new_track.author}"
+                f"[+] New Track Started: {new_track.title} by {new_track.author}"
             )
 
             embed = custom_embed()
@@ -215,7 +79,10 @@ class Music(commands.Cog):
             embed.set_image(url=new_track.artwork)
 
             message = await payload.player.interaction.followup.send(embed=embed)
-            await message.edit(embed=embed, view=NavigationPanel(self.bot, message.id))
+            await message.edit(
+                embed=embed,
+                view=NavigationPanel(self.bot, message.id),
+            )
 
         except wavelink.QueueEmpty:
             await payload.player.interaction.send(f"Queue is empty")
@@ -239,7 +106,8 @@ class Music(commands.Cog):
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        #! assert isinstance(player, wavelink.Player) - НЕ РОБИТЬ
+        #! assert isinstance(player, wavelink.Player)
+
         try:
             player: wavelink.Player = await interaction.user.voice.channel.connect(
                 cls=wavelink.Player
@@ -249,12 +117,6 @@ class Music(commands.Cog):
                 "I was unable to join this voice channel. Please try again."
             )
             return await interaction.send(embed=error_embed, ephemeral=True)
-
-        # Turn on AutoPlay to enabled mode.
-        # enabled = AutoPlay will play songs for us and fetch recommendations...
-        # partial = AutoPlay will play songs for us, but WILL NOT fetch recommendations...
-        # disabled = AutoPlay will do nothing...
-        # player.autoplay = wavelink.AutoPlayMode.enabled
 
         tracks: wavelink.Search = await wavelink.Playable.search(
             query, source=wavelink.TrackSource.YouTube
@@ -273,7 +135,10 @@ class Music(commands.Cog):
             )
             await interaction.response.defer()
             message = await interaction.followup.send(embed=embed, ephemeral=True)
-            await message.edit(embed=embed, view=NavigationPanel(self.bot, message.id))
+            await message.edit(
+                embed=embed,
+                view=NavigationPanel(self.bot, message.id),
+            )
 
         else:
             track: wavelink.Playable = tracks[0]
@@ -292,7 +157,10 @@ class Music(commands.Cog):
 
             await interaction.response.defer()
             message = await interaction.followup.send(embed=embed, ephemeral=True)
-            await message.edit(embed=embed, view=NavigationPanel(self.bot, message.id))
+            await message.edit(
+                embed=embed,
+                view=NavigationPanel(self.bot, message.id),
+            )
 
         if not player.playing:
             setattr(player, "interaction", interaction)
