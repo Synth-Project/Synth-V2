@@ -52,11 +52,11 @@ class Music(commands.Cog):
 
             if getattr(payload.player, "last_track", None):
                 new_track = payload.player.last_track
-                
+
                 payload.player.queue.put_at(0, new_track)
                 payload.player.queue.history.remove(payload.track)
                 await payload.player.play(new_track, add_history=False)
-                
+
             else:
                 await payload.player.play(new_track)
 

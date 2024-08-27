@@ -194,17 +194,19 @@ class NavigationPanel(disnake.ui.View):
         player: wavelink.Player = interaction.guild.voice_client
 
         if not player.queue:
-            embed = disnake.Embed(title="Music Queue", description="No music in the queue")
+            embed = disnake.Embed(
+                title="Music Queue", description="No music in the queue"
+            )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         embeds = [
             disnake.Embed(
-                title="Music Queue", 
+                title="Music Queue",
                 description="\n".join(
                     f"`{index}.` **{music.author} - {music.title}**"
-                    for index, music in enumerate(player.queue, start=1)[i:i+10]
-                )
+                    for index, music in enumerate(player.queue, start=1)[i : i + 10]
+                ),
             )
             for i in range(0, len(player.queue), 10)
         ]
@@ -213,4 +215,3 @@ class NavigationPanel(disnake.ui.View):
         await interaction.response.send_message(
             embed=embeds[0], view=paginator, ephemeral=True
         )
-
