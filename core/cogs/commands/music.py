@@ -1,4 +1,4 @@
-from typing import Dict, List, cast
+from typing import cast
 from datetime import timedelta
 
 import wavelink
@@ -7,7 +7,7 @@ import disnake
 from disnake.ext import commands
 from disnake.ui import View
 
-from core.misc.embed import custom_embed  # noqa
+from core.misc.embed import custom_embed
 from core.logger.logger import logger
 
 
@@ -24,63 +24,60 @@ class NavigationPanel(View):
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
-        player: wavelink.Player
+        player: wavelink.Player = interaction.guild.voice_client
 
-        if player := interaction.guild.voice_client:  # type: ignore
-            if not player.queue:
-                return await interaction.response.send_message(
-                    "Sorry, the music queue is empty!",
-                    ephemeral=True,
-                )
+        if not player.queue:
+            return await interaction.response.send_message(
+                "Sorry, the music queue is empty!",
+                ephemeral=True,
+            )
 
-            try:
-                await player.stop()
-                message = await interaction.channel.fetch_message(self.message_id)
-                await message.delete()
-                await interaction.response.defer()
+        try:
+            await player.stop()
+            message = await interaction.channel.fetch_message(self.message_id)
+            await message.delete()
+            await interaction.response.defer()
 
-            except (
-                wavelink.InvalidClientException,
-                wavelink.InvalidNodeException,
-                disnake.Forbidden,
-            ):
-                return await interaction.send(
-                    "Sorry, there was an error while processing your request.",
-                    ephemeral=True,
-                )
+        except (
+            wavelink.InvalidClientException,
+            wavelink.InvalidNodeException,
+            disnake.Forbidden,
+        ):
+            return await interaction.send(
+                "Sorry, there was an error while processing your request.",
+                ephemeral=True,
+            )
 
     @disnake.ui.button(label="Resume/Pause", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        player: wavelink.Player
+        player: wavelink.Player = interaction.guild.voice_client
 
-        if player := interaction.guild.voice_client:
-            if player.paused:
-                await player.pause(False)
-                await interaction.response.edit_message(content=f"")
-            else:
-                await player.pause(True)
-                await interaction.response.edit_message(content=f"")
+        if player.paused:
+            await player.pause(False)
+            await interaction.response.edit_message(content=f"")
+        else:
+            await player.pause(True)
+            await interaction.response.edit_message(content=f"")
 
     @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=0)
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        player: wavelink.Player
+        player: wavelink.Player = interaction.guild.voice_client
 
-        if player := interaction.guild.voice_client:
-            embed = custom_embed(title="Music Queue")
+        embed = custom_embed(title="Music Queue")
 
-            if player.queue.count > 0:
-                for index, music in enumerate(player.queue, start=1):
-                    embed.description += (
-                        f"`{index}.` **{music.author} - {music.title}**\n"
-                    )
-            else:
-                embed.description = "No music in the queue\n"
+        if player.queue.count > 0:
+            for index, music in enumerate(player.queue, start=1):
+                embed.description += (
+                    f"`{index}.` **{music.author} - {music.title}**\n"
+                )
+        else:
+            embed.description = "No music in the queue\n"
 
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class Music(commands.Cog):
@@ -103,7 +100,8 @@ class Music(commands.Cog):
         self, payload: wavelink.TrackEndEventPayload
     ) -> None:
         try:
-
+            old_message = await payload.player.interaction.original_response()
+            
             await (await payload.player.interaction.original_response()).delete()
             new_track = payload.player.queue.get()
 
