@@ -7,7 +7,10 @@ from disnake import ui, ButtonStyle, MessageInteraction
 class PreviousButton(ui.Button):
     def __init__(self, disabled):
         super().__init__(
-            label="⬅<", style=ButtonStyle.blurple, disabled=disabled, custom_id="previous"
+            label="⬅<",
+            style=ButtonStyle.blurple,
+            disabled=disabled,
+            custom_id="previous",
         )
 
     async def callback(self, inter: MessageInteraction) -> None:
