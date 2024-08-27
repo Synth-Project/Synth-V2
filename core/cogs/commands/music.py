@@ -71,9 +71,7 @@ class NavigationPanel(View):
 
         if player.queue.count > 0:
             for index, music in enumerate(player.queue, start=1):
-                embed.description += (
-                    f"`{index}.` **{music.author} - {music.title}**\n"
-                )
+                embed.description += f"`{index}.` **{music.author} - {music.title}**\n"
         else:
             embed.description = "No music in the queue\n"
 
@@ -101,7 +99,7 @@ class Music(commands.Cog):
     ) -> None:
         try:
             old_message = await payload.player.interaction.original_response()
-            
+
             await (await payload.player.interaction.original_response()).delete()
             new_track = payload.player.queue.get()
 
