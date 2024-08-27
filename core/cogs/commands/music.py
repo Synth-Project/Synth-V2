@@ -130,13 +130,15 @@ class Music(commands.Cog):
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
-            embed.title = f"Added playlist **{tracks.name}** ({added} songs) to the queue."
+            embed.title = (
+                f"Added playlist **{tracks.name}** ({added} songs) to the queue."
+            )
 
-            track: wavelink.Playable = tracks[0] if not player.current else player.current
+            track: wavelink.Playable = (
+                tracks[0] if not player.current else player.current
+            )
 
-            embed.description = (
-                f"Now playing - [{track.title}]({str(track.uri)})"
-            ) 
+            embed.description = f"Now playing - [{track.title}]({str(track.uri)})"
             embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
             embed.add_field(
                 name="Duration:",
