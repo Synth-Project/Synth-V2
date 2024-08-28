@@ -26,6 +26,24 @@ class Music(commands.Cog):
         logger.info("[+] Wavelink Node ready")
 
     @commands.Cog.listener()
+    async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
+        if (
+            payload.player
+            and hasattr(payload.player, "auto_play_tracks")
+            and payload.original
+            and payload.original.recommended
+        ):
+            track: wavelink.Playable = payload.track
+
+            print(f"\n\n`This track was recommended via {track.source}`")
+
+            payload.player.queue.put_at(0, track)
+            payload.player.queue.put_at(1, payload.player.current)
+            payload.player.queue.history.put_at(0, payload.player.current)
+            
+            await payload.player.play(track, add_history=False)
+
+    @commands.Cog.listener()
     async def on_wavelink_track_end(
         self, payload: wavelink.TrackEndEventPayload
     ) -> None:
@@ -54,7 +72,13 @@ class Music(commands.Cog):
         3. new_player plays new_track
         """
 
-        new_track = payload.player.queue.get()
+        if not payload.player.queue and payload.player.queue.count >= 1:
+            new_track = payload.original
+            setattr(payload.player, "auto_play_tracks", True)
+
+            await payload.player.play(new_track, add_history=False)
+        else:
+            new_track = payload.player.queue.get()
 
         logger.info(f"[+] New Track Started: {new_track.title} by {new_track.author}")
 
