@@ -8,10 +8,78 @@ import wavelink
 from core.misc.embed import custom_embed, CreatePaginator
 
 
+class QueueDropdown(disnake.ui.Select):
+    def __init__(self, bot: commands.Bot, player: wavelink.Player) -> None:
+        self.bot = bot
+        self.player = player
+        self.queue = player.queue
+
+        self.items_per_page = 23
+        self.page = 1
+
+        super().__init__(
+            placeholder="Skip to a track",
+            min_values=1,
+            max_values=1,
+            options=self._get_options(),
+        )
+
+    def _get_options(self):
+        start_idx = (self.page - 1) * self.items_per_page
+        end_idx = start_idx + self.items_per_page
+
+        options = []
+
+        if self.page > 1:
+            options.append(
+                disnake.SelectOption(emoji="◀️", label="Previous", value="previous")
+            )
+
+        options.extend(
+            disnake.SelectOption(
+                label=track.title,
+                value=str(index),
+            )
+            for index, track in enumerate(
+                self.queue[start_idx:end_idx], start=start_idx
+            )
+        )
+
+        if end_idx < len(self.queue):
+            options.append(disnake.SelectOption(emoji="▶️", label="Next", value="next"))
+
+        return options
+
+    async def callback(self, interaction: disnake.MessageInteraction):
+        match self.values[0]:
+            case "next":
+                self.page += 1
+                self.options = self._get_options()
+                await interaction.response.edit_message(view=self.view)
+
+            case "previous":
+                self.page -= 1
+                self.options = self._get_options()
+                await interaction.response.edit_message(view=self.view)
+
+            case _:
+                track_index = int(self.values[0])
+                track = self.queue[track_index]
+                await interaction.response.send_message(
+                    f"Ви вибрали: {track.title}", ephemeral=True
+                )
+
+                self.player.queue.put_at(0, track)
+                self.player.queue.put_at(1, self.player.current)
+                self.player.queue.history.put_at(0, self.player.current)
+
+                await self.player.skip()
+
+
 class NavigationDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot) -> None:
         super().__init__(
-            placeholder="Choose an option",
+            placeholder="Music controls",
             min_values=1,
             max_values=1,
             options=[
@@ -99,17 +167,24 @@ class NavigationPanel(disnake.ui.View):
         self,
         bot: commands.bot,
         message_id: int,
+        player: wavelink.Player,
+        history_exists: bool = False,
         *,
         timeout: float | None = None,
-        old_history_exists: bool = False,
     ) -> None:
+
         super().__init__(timeout=timeout)
+
         self.message_id = message_id
         self.bot = bot
 
         self.add_item(NavigationDropdown(bot=self.bot))
 
-        self.previous.disabled = not old_history_exists
+        if player.queue.count >= 1:
+            self.add_item(QueueDropdown(bot=self.bot, player=player))
+
+        self.previous.disabled = not history_exists
+        self.skip.disabled = not player.queue.count >= 1
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
@@ -118,95 +193,30 @@ class NavigationPanel(disnake.ui.View):
 
         player: wavelink.Player = interaction.guild.voice_client
 
-        if not player.queue.history:
-            return await interaction.response.send_message(
-                "Sorry, the music queue is empty!",
-                ephemeral=True,
-            )
+        previous_track = player.queue.history.get()
+        player.queue.put_at(0, previous_track)
 
-        # if not player.playing:
-        #     return await interaction.response.send_message(
-        #         "Sorry, no music is currently playing!",
-        #         ephemeral=True,
-        #     )
+        skipped_track = await player.skip()
+        player.queue.put_at(1, skipped_track)
 
-        # if player.queue.history and len(player.queue.history) > 0:
-        # setattr(player, "last_track", player.queue.history[-2])
-        # return await player.stop()
-        if self:
-            print(f"Previous: {player.previous}")
-            print(f"Current: {player.current}")
-            print(player.queue)
-            # print(
-            # f"Before queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
-            # )
-            # player.queue.get()
-            # player.queue.remove(player.previous)
-            # if player.queue[0] == player.previous:
-            #     player.queue.get()
-            #     if player.queue[0] == player.current:
-            #         player.queue.get()
+        await interaction.response.defer(ephemeral=True)
 
-            previous_track = player.queue.history.get()
-            player.previous = previous_track
-            player.queue.put_at(0, previous_track)
-            # player.queue.put_at(0, player.previous)
-            # player.queue.put_at(1, player.current)
-            print(f"After queue: {player.queue}")
-            # print(
-            # f"After queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
-            # )
-
-            skipped_track = await player.skip(force=True)
-            player.queue.put_at(1, skipped_track)
-        else:
-            return await interaction.send(
-                "No previous track was not found", ephemeral=True
-            )
-        # try:
-        #     if len(player.queue.history) > 0:
-        #         prev_track = player.queue.history[
-        #             -2
-        #         ]  # Get the last song in the history
-        #         await player.play(prev_track)
-        #         message = await interaction.channel.fetch_message(self.message_id)
-        #         await message.delete()
-        #         return await interaction.response.defer()
-
-        # except (
-        #     wavelink.InvalidClientException,
-        #     wavelink.InvalidNodeException,
-        #     disnake.Forbidden,
-        # ):
-        #     return await interaction.send(
-        #         "Sorry, there was an error while processing your request.",
-        #         ephemeral=True,
-        #     )
-
-    @disnake.ui.button(label=">", style=disnake.ButtonStyle.green, row=0)
+    @disnake.ui.button(label=">", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def skip(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
         player: wavelink.Player = interaction.guild.voice_client
 
-        if not player.queue:
-            return await interaction.response.send_message(
-                "Sorry, the music queue is empty!",
-                ephemeral=True,
-            )
-
         try:
-            # track = player.current
-            # if player.current not in player.queue.history:
             player.queue.history.put_at(0, player.current)
-            # next_track = player.queue.get()
+
             await player.skip()
-            # await player.stop()
+
             message = await interaction.channel.fetch_message(self.message_id)
             await message.delete()
 
-            await interaction.response.defer()
+            await interaction.response.defer(ephemeral=True)
 
         except (
             wavelink.InvalidClientException,
@@ -229,7 +239,7 @@ class NavigationPanel(disnake.ui.View):
             await player.pause(True)
             await interaction.response.edit_message(content=f"")
 
-    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=0)
+    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=1)
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
@@ -242,18 +252,38 @@ class NavigationPanel(disnake.ui.View):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
+        queue_list = list(enumerate(player.queue, start=1))
+
         embeds = [
             disnake.Embed(
                 title="Music Queue",
                 description="\n".join(
                     f"`{index}.` **{music.author} - {music.title}**"
-                    for index, music in enumerate(player.queue, start=1)[i : i + 10]
+                    for index, music in queue_list[i : i + 10]
                 ),
+                color=0x2F3236,
             )
-            for i in range(0, len(player.queue), 10)
+            for i in range(0, len(queue_list), 10)
         ]
 
         paginator = CreatePaginator(embeds=embeds, author_id=interaction.author.id)
         await interaction.response.send_message(
             embed=embeds[0], view=paginator, ephemeral=True
         )
+
+    @disnake.ui.button(label="Autoplay", style=disnake.ButtonStyle.green, row=1)
+    async def autoplay(
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        player: wavelink.Player = interaction.guild.voice_client
+
+        if player.autoplay == wavelink.AutoPlayMode.enabled:
+            player.autoplay = wavelink.AutoPlayMode.disabled
+            await interaction.response.edit_message(content="Autoplay disabled")
+        else:
+            player.autoplay = wavelink.AutoPlayMode.enabled
+            await interaction.response.edit_message(content="Autoplay enabled")
+
+    @disnake.ui.button(label="Loop", style=disnake.ButtonStyle.green, row=1)
+    async def loop(self, _: disnake.ui.Button, interaction: disnake.MessageInteraction):
+        await interaction.response.defer(ephemeral=True)

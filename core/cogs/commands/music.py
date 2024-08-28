@@ -1,4 +1,3 @@
-from typing import cast
 from datetime import timedelta
 
 import wavelink
@@ -18,7 +17,7 @@ class Music(commands.Cog):
         bot.loop.create_task(self.connect_nodes())
 
     async def connect_nodes(self) -> None:
-        nodes = [wavelink.Node(uri="http://localhost:2333", password="123synth123")]
+        nodes = [wavelink.Node(uri="http://localhost:2333", password="weever_gay")]
 
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
 
@@ -30,13 +29,15 @@ class Music(commands.Cog):
     async def on_wavelink_track_end(
         self, payload: wavelink.TrackEndEventPayload
     ) -> None:
-        if payload.player.queue and payload.player.queue.is_empty:
+        if payload.player and (payload.player.queue and payload.player.queue.is_empty):
             return await payload.player.interaction.send("Queue is empty")
 
-        old_message = await payload.player.interaction.original_response()
-
         try:
-            await old_message.delete()
+            (
+                await (await payload.player.interaction.original_response()).delete()
+                if payload.player
+                else None
+            )
         except (disnake.NotFound, AttributeError):
             pass
 
@@ -52,17 +53,16 @@ class Music(commands.Cog):
         2. new_player gets from queue
         3. new_player plays new_track
         """
+
         new_track = payload.player.queue.get()
-        # new_track = payload.original
-        print(f"New track: {new_track}")
-        print(f"Old track: {payload.track}")
+
         logger.info(f"[+] New Track Started: {new_track.title} by {new_track.author}")
 
         embed = custom_embed()
         embed.title = f"Now playing - {new_track.title}"
 
         embed.description = f"[{new_track.title}]({str(new_track.uri)})"
-        embed.add_field(name="Artist:", value=f"**`{new_track.author}`**", inline=True)
+        embed.add_field(name="Artist:", value=f"`{new_track.author}`", inline=True)
         embed.add_field(
             name="Duration:",
             value=f"`{str(timedelta(seconds=round(new_track.length / 1000)))}`",
@@ -72,21 +72,22 @@ class Music(commands.Cog):
 
         message = await payload.player.interaction.followup.send(embed=embed)
 
-        old_history_exists = payload.player.queue.history.count > 0
-        print(f"Old history exists: {old_history_exists}")
-        print(f"Old history: {payload.player.queue.history}")
-        print(f"Queue: {payload.player.queue}")
+        history_exists = payload.player.queue.history.count > 0
+
         await message.edit(
             embed=embed,
             view=NavigationPanel(
-                self.bot, message.id, old_history_exists=old_history_exists
+                self.bot,
+                message.id,
+                player=payload.player,
+                history_exists=history_exists,
             ),
         )
 
         await payload.player.play(new_track, add_history=False)
 
     @commands.slash_command(
-        description="Search and play music from Spotify && SoundCloud"
+        description="Search and play music from Youtube/Spotify/SoundCloud/Deezer/Apple Music"
     )
     async def play(self, interaction: disnake.MessageCommandInteraction, *, query: str):
         embed = custom_embed()
@@ -109,18 +110,6 @@ class Music(commands.Cog):
         else:
             player: wavelink.Player = interaction.guild.voice_client
 
-        #! assert isinstance(player, wavelink.Player)
-
-        # try:
-        #     player: wavelink.Player = await interaction.user.voice.channel.connect(
-        #         cls=wavelink.Player
-        #     )
-        # except disnake.ClientException as e:
-        #     error_embed.title = (
-        #         "I was unable to join this voice channel. Please try again."
-        #     )
-        #     return await interaction.send(embed=error_embed, ephemeral=True)
-
         tracks: wavelink.Search = await wavelink.Playable.search(
             query, source=wavelink.TrackSource.YouTubeMusic
         )
@@ -132,7 +121,8 @@ class Music(commands.Cog):
             return await interaction.send(embed=error_embed, ephemeral=True)
 
         if isinstance(tracks, wavelink.Playlist):
-            added: int = player.queue.put(tracks)
+            added: int = await player.queue.put_wait(tracks)
+
             embed.title = (
                 f"Added playlist **{tracks.name}** ({added} songs) to the queue."
             )
@@ -142,7 +132,7 @@ class Music(commands.Cog):
             )
 
             embed.description = f"Now playing - [{track.title}]({str(track.uri)})"
-            embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
+            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
@@ -150,16 +140,9 @@ class Music(commands.Cog):
             )
             embed.set_image(url=track.artwork)
 
-            await interaction.response.defer()
-            message = await interaction.followup.send(embed=embed, ephemeral=True)
-            await message.edit(
-                embed=embed,
-                view=NavigationPanel(self.bot, message.id),
-            )
-
         else:
             track: wavelink.Playable = tracks[0]
-            player.queue.put(track)
+            await player.queue.put_wait(track)
 
             embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
 
@@ -172,21 +155,25 @@ class Music(commands.Cog):
             )
             embed.set_image(url=track.artwork)
 
-            await interaction.response.defer()
-            message = await interaction.followup.send(embed=embed, ephemeral=True)
-            await message.edit(
-                embed=embed,
-                view=NavigationPanel(self.bot, message.id),
-            )
+        await interaction.response.defer()
+        message = await interaction.followup.send(embed=embed)
 
         if not player.playing:
-            setattr(player, "interaction", interaction)
-
             track = player.queue.get()
-            # if track in player.queue:
-            #     player.queue.remove(track)
-
+            setattr(player, "interaction", interaction)
             await player.play(track, add_history=False)
+
+        history_exists = player.queue.history.count > 0
+
+        await message.edit(
+            embed=embed,
+            view=NavigationPanel(
+                self.bot,
+                message.id,
+                history_exists=history_exists,
+                player=player,
+            ),
+        )
 
 
 def setup(bot: commands.Bot) -> None:
