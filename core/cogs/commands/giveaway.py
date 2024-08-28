@@ -6,6 +6,7 @@ from core.misc.views.giveaway import CreateModal
 import random
 import datetime
 
+
 class Giveaway(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super(Giveaway, self).__init__()
@@ -22,7 +23,7 @@ class Giveaway(commands.Cog):
             ) or await self.bot.fetch_channel(giveaway_data["channel_id"])
             msg = await channel.fetch_message(giveaway_data.get("message_id"))
         except Exception:
-            if (await GiveawayModel.get(giveaway_data.get("message_id")) is None):
+            if await GiveawayModel.get(giveaway_data.get("message_id")) is None:
                 return
             await GiveawayModel.delete(giveaway_data.get("message_id"))
             return
@@ -79,10 +80,7 @@ class Giveaway(commands.Cog):
     async def create(self, interaction):
         await interaction.response.send_modal(CreateModal(self.bot))
 
-    @giveaway.sub_command(
-        description="Reroll a giveaway", 
-        name="reroll"
-    )
+    @giveaway.sub_command(description="Reroll a giveaway", name="reroll")
     async def reroll(self, interaction, message_id, winners: int):
         await interaction.response.defer(ephemeral=True)
         if not message_id.isdigit():
@@ -98,8 +96,7 @@ class Giveaway(commands.Cog):
             if (
                 not giveaway_msg.embeds
                 or not giveaway_msg.embeds[0].title == f"🎉 | Розыгрыш"
-                or not giveaway_msg.embeds[0].title
-                == f"🎉 | Розыгрыш окончен"
+                or not giveaway_msg.embeds[0].title == f"🎉 | Розыгрыш окончен"
             ):
                 await interaction.send(
                     "Сообщение не является розыгрышом.", ephemeral=True

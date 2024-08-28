@@ -1,5 +1,7 @@
 from tortoise import fields, Model
+
 # from tortoise.contrib.postgres.fields import ArrayField
+
 
 class GiveawayModel(Model):
     prize = fields.CharField(max_length=32)

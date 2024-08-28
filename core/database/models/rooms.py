@@ -19,7 +19,9 @@ class VoiceRoom(Model):
 class MainRoom(BaseModel):
     id = fields.BigIntField(primary_key=True)
     channel_id = fields.BigIntField()
-    rooms = fields.ManyToManyField("models.VoiceRoom", related_name="main_rooms", through="voice_rooms")
+    rooms = fields.ManyToManyField(
+        "models.VoiceRoom", related_name="main_rooms", through="voice_rooms"
+    )
 
     class Meta:
         table = "main_rooms"

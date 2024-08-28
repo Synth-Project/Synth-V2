@@ -3,6 +3,7 @@ import disnake
 from disnake.ext import commands
 from core.misc.giveaway import Giveaway
 
+
 class CreateModal(disnake.ui.Modal):
     def __init__(self, bot: commands.Bot):
         super().__init__(
