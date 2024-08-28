@@ -8,6 +8,7 @@ from disnake.ext import commands
 from core.misc.views.music import NavigationPanel
 from core.misc.embed import custom_embed
 from core.logger.logger import logger
+from core.database.models.music import MusicModel
 
 
 class Music(commands.Cog):
@@ -15,6 +16,7 @@ class Music(commands.Cog):
         super(Music, self).__init__()
         self.bot = bot
         bot.loop.create_task(self.connect_nodes())
+
 
     async def connect_nodes(self) -> None:
         nodes = [wavelink.Node(uri="http://localhost:2333", password="weever_gay")]
@@ -117,14 +119,10 @@ class Music(commands.Cog):
         embed = custom_embed()
         error_embed = custom_embed(color=disnake.Color.red())
 
-        if not query:
+        if query.startswith("❌"):
             error_embed.title = (
                 "Query is not provided. Please enter a query and try again."
             )
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-        elif not getattr(interaction.author.voice, "channel", None):
-            error_embed.title = "You are not in a voice channel. Please join a voice channel and try again."
             return await interaction.send(embed=error_embed, ephemeral=True)
 
         elif not interaction.guild.voice_client:
@@ -146,6 +144,7 @@ class Music(commands.Cog):
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
+            track_info = tracks.name + " — " + str(added) + " songs (Playlist)"
 
             embed.title = (
                 f"Added playlist **{tracks.name}** ({added} songs) to the queue."
@@ -167,6 +166,7 @@ class Music(commands.Cog):
         else:
             track: wavelink.Playable = tracks[0]
             await player.queue.put_wait(track)
+            track_info = track.title + " — " + track.author
 
             embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
 
@@ -189,6 +189,22 @@ class Music(commands.Cog):
 
         history_exists = player.queue.history.count > 0
 
+        result = await MusicModel.get_or_none(user_id=interaction.author.id)
+        if result is None:
+            await MusicModel.create(
+                user_id=interaction.author.id,
+                songs=[track_info]
+            )
+        else:
+            update = await MusicModel.filter(user_id=interaction.author.id).first()
+            if update.songs is not None:
+                if track_info not in update.songs: # TODO: check if track_info in update.songs via split ("—"), because it's trash.
+                    if len(update.songs) >= 3:
+                        update.songs.insert(0, track_info) # TODO: Fix it, because it's not working
+                    else:
+                        update.songs.append(track_info)
+                    await update.save()
+
         await message.edit(
             embed=embed,
             view=NavigationPanel(
@@ -196,7 +212,49 @@ class Music(commands.Cog):
                 message.id,
                 history_exists=history_exists,
                 player=player,
+                voice_channel=interaction.author.voice.channel
             ),
+        )
+
+    @play.autocomplete("query")
+    async def play_autocomplete(
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        search_query: str
+    ):
+        if not interaction.author.voice:
+            await interaction.response.autocomplete(
+                choices=["❌ | You are not in a voice channel"]
+            )
+            return
+
+        if not search_query:
+            result = await MusicModel.get_or_none(
+                user_id=interaction.author.id
+            )
+            autocomplete_list = [
+                song_info for song_info in result.songs
+                if len(song_info) <= 100
+            ] if result else [
+                "❌ | Try to add a song for the first time"
+            ]
+            await interaction.response.autocomplete(
+                choices=autocomplete_list
+            )
+            return
+
+        search_results = await wavelink.Playable.search(
+            search_query, source=wavelink.TrackSource.YouTubeMusic
+        )
+
+        autocomplete_options = [
+            f"{track.title} — {track.author}"
+            for track in search_results
+            if len(f"{track.title} — {track.author}") <= 100
+        ]
+
+        await interaction.response.autocomplete(
+            choices=autocomplete_options
         )
 
 

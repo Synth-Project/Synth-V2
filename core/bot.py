@@ -73,7 +73,7 @@ class Bot(commands.AutoShardedInteractionBot):
 
         await self.change_presence(
             activity=disnake.Activity(
-                type=disnake.ActivityType.competing,
+                type=disnake.ActivityType.custom,
                 name=f"/help | v1.0",
                 status=disnake.Status.idle,
             )

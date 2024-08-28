@@ -171,6 +171,7 @@ class NavigationPanel(disnake.ui.View):
         history_exists: bool = False,
         *,
         timeout: float | None = None,
+        voice_channel: disnake.VoiceChannel | None = None, # TODO: fix it or do something with it (e.g. implement it)
     ) -> None:
 
         super().__init__(timeout=timeout)
