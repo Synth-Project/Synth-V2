@@ -96,8 +96,12 @@ class NavigationDropdown(disnake.ui.Select):
 
 class NavigationPanel(disnake.ui.View):
     def __init__(
-        self, bot: commands.bot, message_id: int, *, timeout: float | None = None,
-        old_history_exists: bool = False
+        self,
+        bot: commands.bot,
+        message_id: int,
+        *,
+        timeout: float | None = None,
+        old_history_exists: bool = False,
     ) -> None:
         super().__init__(timeout=timeout)
         self.message_id = message_id
@@ -134,7 +138,7 @@ class NavigationPanel(disnake.ui.View):
             print(f"Current: {player.current}")
             print(player.queue)
             # print(
-                # f"Before queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
+            # f"Before queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
             # )
             # player.queue.get()
             # player.queue.remove(player.previous)
@@ -150,7 +154,7 @@ class NavigationPanel(disnake.ui.View):
             # player.queue.put_at(1, player.current)
             print(f"After queue: {player.queue}")
             # print(
-                # f"After queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
+            # f"After queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
             # )
 
             skipped_track = await player.skip(force=True)

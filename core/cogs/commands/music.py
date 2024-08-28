@@ -85,10 +85,10 @@ class Music(commands.Cog):
 
         await payload.player.play(new_track, add_history=False)
 
-    @commands.slash_command(description="Search and play music from Spotify && SoundCloud")
-    async def play(
-        self, interaction: disnake.MessageCommandInteraction, *, query: str
-    ):
+    @commands.slash_command(
+        description="Search and play music from Spotify && SoundCloud"
+    )
+    async def play(self, interaction: disnake.MessageCommandInteraction, *, query: str):
         embed = custom_embed()
         error_embed = custom_embed(color=disnake.Color.red())
 
