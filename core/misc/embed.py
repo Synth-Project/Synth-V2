@@ -7,7 +7,7 @@ from disnake import ui, ButtonStyle, MessageInteraction
 class PreviousButton(ui.Button):
     def __init__(self, disabled):
         super().__init__(
-            label="⬅<",
+            label="<=",
             style=ButtonStyle.blurple,
             disabled=disabled,
             custom_id="previous",
@@ -46,7 +46,7 @@ class PreviousButton(ui.Button):
 class NextButton(ui.Button):
     def __init__(self, disabled):
         super().__init__(
-            label=">", style=ButtonStyle.blurple, disabled=disabled, custom_id="next"
+            label="=>", style=ButtonStyle.blurple, disabled=disabled, custom_id="next"
         )
 
     async def callback(self, inter: MessageInteraction) -> None:
@@ -93,6 +93,41 @@ class CreatePaginator(ui.View):
         disabled = len(embeds) == 1
         self.add_item(PreviousButton(True))
         self.add_item(NextButton(disabled))
+
+    @staticmethod
+    def generate_embeds(
+        items: list,
+        items_per_embed: int,
+        empty_list_message: str,
+        title: str = None,
+        description: str = None,
+    ) -> list[disnake.Embed]:
+        splitted_items = [
+            items[i : i + items_per_embed]
+            for i in range(0, len(items), items_per_embed)
+        ]
+        embeds = []
+
+        if len(items) == 0:
+            embed = disnake.Embed(
+                title=title,
+                description=empty_list_message,
+            )
+            return [embed]
+
+        for chunk in splitted_items:
+            embed = custom_embed(title=title, description=description or "")
+            embed.description += "\n" * 1
+
+            for item in chunk:
+                if isinstance(item, tuple):
+                    embed.add_field(name=item[0], value=item[1], inline=item[2])
+                else:
+                    embed.description += f"{item}\n"
+
+            embeds.append(embed)
+
+        return embeds
 
 
 def custom_embed(
