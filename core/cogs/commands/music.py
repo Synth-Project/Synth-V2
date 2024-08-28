@@ -40,7 +40,7 @@ class Music(commands.Cog):
             payload.player.queue.put_at(0, track)
             payload.player.queue.put_at(1, payload.player.current)
             payload.player.queue.history.put_at(0, payload.player.current)
-            
+
             await payload.player.play(track, add_history=False)
 
     @commands.Cog.listener()
