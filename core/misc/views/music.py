@@ -96,7 +96,8 @@ class NavigationDropdown(disnake.ui.Select):
 
 class NavigationPanel(disnake.ui.View):
     def __init__(
-        self, bot: commands.bot, message_id: int, *, timeout: float | None = None
+        self, bot: commands.bot, message_id: int, *, timeout: float | None = None,
+        old_history_exists: bool = False
     ) -> None:
         super().__init__(timeout=timeout)
         self.message_id = message_id
@@ -104,29 +105,60 @@ class NavigationPanel(disnake.ui.View):
 
         self.add_item(NavigationDropdown(bot=self.bot))
 
-    @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0)
+        self.previous.disabled = not old_history_exists
+
+    @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
         player: wavelink.Player = interaction.guild.voice_client
 
-        if not player.queue:
+        if not player.queue.history:
             return await interaction.response.send_message(
                 "Sorry, the music queue is empty!",
                 ephemeral=True,
             )
 
-        if not player.playing:
-            return await interaction.response.send_message(
-                "Sorry, no music is currently playing!",
-                ephemeral=True,
+        # if not player.playing:
+        #     return await interaction.response.send_message(
+        #         "Sorry, no music is currently playing!",
+        #         ephemeral=True,
+        #     )
+
+        # if player.queue.history and len(player.queue.history) > 0:
+        # setattr(player, "last_track", player.queue.history[-2])
+        # return await player.stop()
+        if self:
+            print(f"Previous: {player.previous}")
+            print(f"Current: {player.current}")
+            print(player.queue)
+            # print(
+                # f"Before queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
+            # )
+            # player.queue.get()
+            # player.queue.remove(player.previous)
+            # if player.queue[0] == player.previous:
+            #     player.queue.get()
+            #     if player.queue[0] == player.current:
+            #         player.queue.get()
+
+            previous_track = player.queue.history.get()
+            player.previous = previous_track
+            player.queue.put_at(0, previous_track)
+            # player.queue.put_at(0, player.previous)
+            # player.queue.put_at(1, player.current)
+            print(f"After queue: {player.queue}")
+            # print(
+                # f"After queue (0 and 1 indexes): {player.queue[0]}, {player.queue[1]}"
+            # )
+
+            skipped_track = await player.skip(force=True)
+            player.queue.put_at(1, skipped_track)
+        else:
+            return await interaction.send(
+                "No previous track was not found", ephemeral=True
             )
-
-        if player.queue.history and len(player.queue.history) > 0:
-            setattr(player, "last_track", player.queue.history[-2])
-            return await player.stop()
-
         # try:
         #     if len(player.queue.history) > 0:
         #         prev_track = player.queue.history[
@@ -161,9 +193,15 @@ class NavigationPanel(disnake.ui.View):
             )
 
         try:
-            await player.stop()
+            # track = player.current
+            # if player.current not in player.queue.history:
+            player.queue.history.put_at(0, player.current)
+            # next_track = player.queue.get()
+            await player.skip()
+            # await player.stop()
             message = await interaction.channel.fetch_message(self.message_id)
             await message.delete()
+
             await interaction.response.defer()
 
         except (
