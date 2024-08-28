@@ -5,7 +5,7 @@ lavalink:
     - dependency: "dev.lavalink.youtube:youtube-plugin:1.7.2"
       # snapshot: false # Set to true if you want to use a snapshot version.
   server:
-    password: "youshallnotpass"
+    password: "123synth123"
     sources:
       youtube: false
       spotify: true
