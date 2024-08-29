@@ -16,13 +16,21 @@ class Giveaway(commands.Cog):
         self.check_gw.start()
         self.bot.add_view(GiveawayView(self.bot))
 
-    async def end_gw(self, giveaway_data: GiveawayModel):
+        
+    async def _get_message(self, channel_id: int, message_id: int) -> bool:
+        """Fetch a message from a channel and return whether it was successful."""
         try:
-            channel: disnake.TextChannel = self.bot.get_channel(
-                giveaway_data.channel_id
-            ) or await self.bot.fetch_channel(giveaway_data.channel_id)
-            msg = await channel.fetch_message(giveaway_data.message_id)
-        except Exception:
+            channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(channel_id)
+            await channel.fetch_message(message_id)
+            return True
+        except disnake.HTTPException:
+            return False
+
+    async def end_gw(self, giveaway_data: GiveawayModel):
+        msg = await self._get_message(
+            giveaway_data.channel_id, giveaway_data.message_id
+        )
+        if not msg:
             if await GiveawayModel.get(giveaway_data.message_id) is None:
                 return
             await GiveawayModel.delete(giveaway_data)
@@ -55,29 +63,24 @@ class Giveaway(commands.Cog):
         await giveaway_data.save()
 
     @tasks.loop(seconds=1)
-    async def check_gw(self):
-        giveaways = list(await GiveawayModel.all())
-        for giveaway in giveaways:
-            giveaway_data = await GiveawayModel.get_or_none(message_id=giveaway.message_id)
-            if giveaway_data is not None:
-                if giveaway_data.ended:
-                    if (
-                        datetime.datetime.now().timestamp()
-                        > giveaway_data.end_time + 260000
-                    ):
-                        await GiveawayModel.delete(giveaway_data)
-                    else:
-                        try:
-                            channel: disnake.TextChannel = self.bot.get_channel(
-                                giveaway_data.channel_id
-                            ) or await self.bot.fetch_channel(giveaway_data.channel_id)
-                            msg = await channel.fetch_message(giveaway_data.message_id)
-                        except Exception:
-                            await GiveawayModel.delete(giveaway_data)
-                            return
-                if giveaway_data.ended == False:
-                    if datetime.datetime.now().timestamp() > giveaway_data.end_time:
-                        await self.end_gw(giveaway_data)
+    async def check_giveaways(self):
+        """
+        Check all giveaways every second and end them if they have ended.
+        """
+        for giveaway in await GiveawayModel.all():
+            if giveaway.ended:
+                if datetime.datetime.now().timestamp() > giveaway.end_time + 260000:
+                    msg = await self._get_message(giveaway.channel_id, giveaway.message_id)
+                    if msg:
+                        view = disnake.ui.View.from_message(msg)
+                        view.children[1].disabled = True
+                    await GiveawayModel.delete(giveaway)
+                else:
+                    if not await self._get_message(giveaway.channel_id, giveaway.message_id):
+                        await GiveawayModel.delete(giveaway)
+            else:
+                if datetime.datetime.now().timestamp() > giveaway.end_time:
+                    await self.end_gw(giveaway)
 
     @commands.slash_command()
     async def giveaway(self, _) -> None:
@@ -96,9 +99,9 @@ class Giveaway(commands.Cog):
         if not message_id.isdigit():
             await interaction.send("❌ Message **ID** should be a number.", ephemeral=True)
             return
-        try:
-            giveaway_msg = await interaction.channel.fetch_message(message_id)
-        except disnake.NotFound:
+        
+        giveaway_msg = await self._get_message(interaction.channel.id, message_id)
+        if not giveaway_msg:
             await interaction.send("❌ Message not found.", ephemeral=True)
             return
 
@@ -144,9 +147,8 @@ class Giveaway(commands.Cog):
         if not message_id.isdigit():
             await interaction.send("❌ Message ID should be a number.", ephemeral=True)
             return
-        try:
-            giveaway_msg = await interaction.channel.fetch_message(message_id)
-        except disnake.NotFound:
+        giveaway_msg = await self._get_message(interaction.channel.id, message_id)
+        if not giveaway_msg:
             await interaction.send("❌ Message not found.", ephemeral=True)
             return
 
