@@ -16,11 +16,12 @@ class Giveaway(commands.Cog):
         self.check_gw.start()
         self.bot.add_view(GiveawayView(self.bot))
 
-        
     async def _get_message(self, channel_id: int, message_id: int) -> bool:
         """Fetch a message from a channel and return whether it was successful."""
         try:
-            channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(channel_id)
+            channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
+                channel_id
+            )
             await channel.fetch_message(message_id)
             return True
         except disnake.HTTPException:
@@ -70,13 +71,17 @@ class Giveaway(commands.Cog):
         for giveaway in await GiveawayModel.all():
             if giveaway.ended:
                 if datetime.datetime.now().timestamp() > giveaway.end_time + 260000:
-                    msg = await self._get_message(giveaway.channel_id, giveaway.message_id)
+                    msg = await self._get_message(
+                        giveaway.channel_id, giveaway.message_id
+                    )
                     if msg:
                         view = disnake.ui.View.from_message(msg)
                         view.children[1].disabled = True
                     await GiveawayModel.delete(giveaway)
                 else:
-                    if not await self._get_message(giveaway.channel_id, giveaway.message_id):
+                    if not await self._get_message(
+                        giveaway.channel_id, giveaway.message_id
+                    ):
                         await GiveawayModel.delete(giveaway)
             else:
                 if datetime.datetime.now().timestamp() > giveaway.end_time:
@@ -101,7 +106,7 @@ class Giveaway(commands.Cog):
                 "❌ Message **ID** should be a number.", ephemeral=True
             )
             return
-        
+
         giveaway_msg = await self._get_message(interaction.channel.id, message_id)
         if not giveaway_msg:
             await interaction.send("❌ Message not found.", ephemeral=True)
