@@ -16,24 +16,25 @@ class Giveaway(commands.Cog):
         self.check_gw.start()
         self.bot.add_view(GiveawayView(self.bot))
 
-    async def end_gw(self, giveaway_data):
+    async def end_gw(self, giveaway_data: GiveawayModel):
         try:
             channel: disnake.TextChannel = self.bot.get_channel(
-                giveaway_data["channel_id"]
-            ) or await self.bot.fetch_channel(giveaway_data["channel_id"])
-            msg = await channel.fetch_message(giveaway_data.get("message_id"))
+                giveaway_data.channel_id
+            ) or await self.bot.fetch_channel(giveaway_data.channel_id)
+            msg = await channel.fetch_message(giveaway_data.message_id)
         except Exception:
-            if await GiveawayModel.get(giveaway_data.get("message_id")) is None:
+            if await GiveawayModel.get(giveaway_data.message_id) is None:
                 return
-            await GiveawayModel.delete(giveaway_data.get("message_id"))
+            await GiveawayModel.delete(giveaway_data)
             return
         view = disnake.ui.View.from_message(msg)
 
-        winner_amount = giveaway_data["winners"]
+        winner_amount = giveaway_data.winners
         embed = msg.embeds[0]
-        embed.title = f"🎉 | Розыгрыш окончен"
+        embed.title = f"🎉 | The giveaway is over"
+        embed.description = embed.description.replace("Ends", "Ended")
 
-        users = [await self.bot.fetch_user(W) for W in giveaway_data["members"]]
+        users = [await self.bot.fetch_user(W) for W in giveaway_data.members]
         if len(users) < winner_amount:
             winners = random.sample(users, len(users))
         else:
@@ -41,32 +42,41 @@ class Giveaway(commands.Cog):
 
         winners = ", ".join(w.mention for w in winners)
         view.children[0].disabled = True
-        view.children[1].disabled = True
+        # view.children[1].disabled = True
         await msg.edit(embed=embed, content=winners, view=view)
         if len(users) > 0:
             await msg.reply(
-                f"⭐ Розыгрыш окончен, {'победители' if winner_amount > 1 else 'победитель'}: "
+                f"⭐ The giveaway is over, {'winners' if winner_amount > 1 else 'winner'}: "
                 + winners
             )
         else:
-            await msg.reply(f"❗Недостаточно участников чтобы окончить розыгрыш.")
-        giveaway_data["ended"] = True
-        await GiveawayModel.update_or_create(giveaway_data)
+            await msg.reply(f"❗ Not enough participants to end the giveaway.")
+        giveaway_data.ended = True
+        await giveaway_data.save()
 
     @tasks.loop(seconds=1)
     async def check_gw(self):
         giveaways = list(await GiveawayModel.all())
         for giveaway in giveaways:
-            giveaway_data = await GiveawayModel.get_or_none(giveaway)
+            giveaway_data = await GiveawayModel.get_or_none(message_id=giveaway.message_id)
             if giveaway_data is not None:
-                if giveaway_data["ended"]:
+                if giveaway_data.ended:
                     if (
                         datetime.datetime.now().timestamp()
-                        > giveaway_data["end_time"] + 260000
+                        > giveaway_data.end_time + 260000
                     ):
                         await GiveawayModel.delete(giveaway_data)
-                if giveaway_data["ended"] == False:
-                    if datetime.datetime.now().timestamp() > giveaway_data["end_time"]:
+                    else:
+                        try:
+                            channel: disnake.TextChannel = self.bot.get_channel(
+                                giveaway_data.channel_id
+                            ) or await self.bot.fetch_channel(giveaway_data.channel_id)
+                            msg = await channel.fetch_message(giveaway_data.message_id)
+                        except Exception:
+                            await GiveawayModel.delete(giveaway_data)
+                            return
+                if giveaway_data.ended == False:
+                    if datetime.datetime.now().timestamp() > giveaway_data.end_time:
                         await self.end_gw(giveaway_data)
 
     @commands.slash_command()
@@ -84,50 +94,45 @@ class Giveaway(commands.Cog):
     async def reroll(self, interaction, message_id, winners: int):
         await interaction.response.defer(ephemeral=True)
         if not message_id.isdigit():
-            await interaction.send("Айди должно быть числом.", ephemeral=True)
+            await interaction.send("❌ Message **ID** should be a number.", ephemeral=True)
             return
         try:
             giveaway_msg = await interaction.channel.fetch_message(message_id)
         except disnake.NotFound:
-            await interaction.send("Сообщение не найдено.", ephemeral=True)
+            await interaction.send("❌ Message not found.", ephemeral=True)
             return
-
-        if giveaway_msg.author == self.bot:
-            if (
-                not giveaway_msg.embeds
-                or not giveaway_msg.embeds[0].title == f"🎉 | Розыгрыш"
-                or not giveaway_msg.embeds[0].title == f"🎉 | Розыгрыш окончен"
-            ):
-                await interaction.send(
-                    "Сообщение не является розыгрышом.", ephemeral=True
-                )
-                return
 
         if winners <= 0:
             await interaction.send(
-                "Количество победителей должно быть больше нуля.", ephemeral=True
+                "❌ The number of winners must be greater than zero.", ephemeral=True
             )
             return
 
-        datb = await GiveawayModel.get_or_none(message_id)
+        datb = await GiveawayModel.get_or_none(message_id=message_id)
         if datb is None:
-            await interaction.send("Розыгрыш не найден.", ephemeral=True)
+            await interaction.send("❌ Giveaway was not found.", ephemeral=True)
+            return
+        
+        if datb.winners <= 1:
+            await interaction.send(
+                "❌ You can't reroll a giveaway with only one entry.", ephemeral=True
+            )
             return
 
-        users = [await self.bot.fetch_user(W) for W in datb.get("members", [])]
+        users = [await self.bot.fetch_user(W) for W in datb.members]
         winners_mention = random.sample(users, min(winners, len(users)))
 
         winners_mention = ", ".join(w.mention for w in winners_mention)
 
         await interaction.send(
-            content="Всё!",
+            content="✅ The giveaway has been rerolled!",
             ephemeral=True,
         )
         await interaction.channel.send(
-            f"⭐ {'Новые победители: ' if winners > 1 else 'Новый победитель: '}{winners_mention}"
+            f"⭐ {'New winners: ' if winners > 1 else 'New winner: '}{winners_mention}"
         )
         await giveaway_msg.edit(
-            content=f"⭐ {'Новые победители: ' if winners > 1 else 'Новый победитель: '}{winners_mention}"
+            content=f"⭐ {'New winners: ' if winners > 1 else 'New winner: '}{winners_mention}"
         )
 
     @giveaway.sub_command(
@@ -137,36 +142,25 @@ class Giveaway(commands.Cog):
     async def end(self, interaction, message_id):
         await interaction.response.defer(ephemeral=True)
         if not message_id.isdigit():
-            await interaction.send("Айди должно быть числом.", ephemeral=True)
+            await interaction.send("❌ Message ID should be a number.", ephemeral=True)
             return
         try:
             giveaway_msg = await interaction.channel.fetch_message(message_id)
         except disnake.NotFound:
-            await interaction.send("Сообщение не найдено.", ephemeral=True)
+            await interaction.send("❌ Message not found.", ephemeral=True)
             return
 
-        if giveaway_msg.author == self.bot:
-            if (
-                not giveaway_msg.embeds
-                or not giveaway_msg.embeds[0].title == "Розыгрыш"
-                or not giveaway_msg.embeds[0].title == "Розыгрыш окончен"
-            ):
-                await interaction.send(
-                    "Сообщение не является розыгрышом.", ephemeral=True
-                )
-                return
-
-        if giveaway_msg.embeds[0].title == f"🎉 | Розыгрыш окончен":
-            await interaction.send("Розыгрыш уже окончен.", ephemeral=True)
-            return
-
-        datb = await GiveawayModel.get_or_none(message_id)
+        datb = await GiveawayModel.get_or_none(message_id=message_id)
         if datb is None:
-            await interaction.send("Розыгрыш не найден.", ephemeral=True)
+            await interaction.send("❌ Giveaway was not found.", ephemeral=True)
+            return
+        
+        if datb.ended:
+            await interaction.send("❌ Giveaway was already ended.", ephemeral=True)
             return
 
         await self.end_gw(datb)
-        await interaction.send("Розыгрыш окончен", ephemeral=True)
+        await interaction.send("✅ Giveaway has been ended.", ephemeral=True)
 
 
 def setup(bot: commands.Bot) -> None:

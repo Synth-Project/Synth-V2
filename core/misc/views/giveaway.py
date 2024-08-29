@@ -7,41 +7,41 @@ from core.misc.giveaway import Giveaway
 class CreateModal(disnake.ui.Modal):
     def __init__(self, bot: commands.Bot):
         super().__init__(
-            title="Создание розыгрыша",
+            title="Create new giveaway",
             custom_id="create_giveaway",
             components=[
                 disnake.ui.TextInput(
-                    label="Приз",
+                    label="Prize",
                     style=disnake.TextInputStyle.short,
                     required=True,
                     min_length=1,
-                    placeholder="Введите приз",
+                    placeholder="Enter a prize",
                     max_length=100,
                     custom_id="prize",
                 ),
                 disnake.ui.TextInput(
-                    label="Описание",
+                    label="Description",
                     style=disnake.TextInputStyle.paragraph,
                     required=False,
                     min_length=1,
                     max_length=200,
-                    placeholder="Введите описание",
+                    placeholder="Enter a description",
                     custom_id="description",
                 ),
                 disnake.ui.TextInput(
-                    label="Кол-во победителей",
+                    label="Winners",
                     style=disnake.TextInputStyle.short,
                     required=True,
                     min_length=1,
-                    placeholder="Введите кол-во победителей",
+                    placeholder="1",
                     custom_id="winners",
                 ),
                 disnake.ui.TextInput(
-                    label="Длительность",
+                    label="Duration",
                     style=disnake.TextInputStyle.short,
                     required=True,
                     min_length=1,
-                    placeholder="1d 1h 1m 1s (1 день, 1 час, 1 минута, 1 секунда)",
+                    placeholder="1d 1h 1m 1s (1 day, 1 hour, 1 minute, 1 second)",
                     custom_id="duration",
                 ),
             ],
@@ -59,12 +59,12 @@ class CreateModal(disnake.ui.Modal):
         duration = interaction.text_values["duration"].lower()
         if not winners.isdigit():
             await interaction.send(
-                "Кол-во победителей должно быть числом", ephemeral=True
+                "❌ The number of winners must be a number", ephemeral=True
             )
             return
         if int(winners) < 1:
             await interaction.send(
-                "Кол-во победителей должно быть больше 0", ephemeral=True
+                "❌ The number of winners must be greater than 0", ephemeral=True
             )
             return
         await Giveaway(self.bot).create(

@@ -27,7 +27,7 @@ class GiveawayView(disnake.ui.View):
         self.bot = bot
 
     @disnake.ui.button(
-        label="Принять участие",
+        label="Join",
         style=disnake.ButtonStyle.blurple,
         custom_id="giveaway_accept",
     )
@@ -38,21 +38,21 @@ class GiveawayView(disnake.ui.View):
         message_id = interaction.message.id
         data = await get_member_ids(message_id)
         if data is None:
-            await interaction.send("Розыгрыш не найден", ephemeral=True)
+            await interaction.send("❌ Giveaway not found", ephemeral=True)
             return
 
         if interaction.author.id in data:
-            await interaction.send("Вы больше не участвуете", ephemeral=True)
+            await interaction.send("✅ You have successfully left the giveaway", ephemeral=True)
             data.members.remove(interaction.author.id)
         else:
-            await interaction.send("Участие принято", ephemeral=True)
+            await interaction.send("✅ You have successfully entered the giveaway", ephemeral=True)
             data.members.append(interaction.author.id)
         update = await GiveawayModel.filter(message_id=message_id).first()
         update.members = data.members
         await update.save()
 
     @disnake.ui.button(
-        label="Участники", style=disnake.ButtonStyle.gray, custom_id="giveaway_members"
+        label="Entries", style=disnake.ButtonStyle.gray, custom_id="giveaway_members"
     )
     async def members(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
@@ -63,7 +63,7 @@ class GiveawayView(disnake.ui.View):
         yaeblan = 0
         data = await get_member_ids(message_id)
         if data is None:
-            await interaction.send("Розыгрыш не найден", ephemeral=True)
+            await interaction.send("❌ Giveaway not found", ephemeral=True)
             return
 
         for member in data.members:
@@ -74,9 +74,9 @@ class GiveawayView(disnake.ui.View):
         embeds = CreatePaginator.generate_embeds(
             items=nigg,
             items_per_embed=25,
-            empty_list_message="Список пуст.",
-            title="Список участников в розыгрыше",
-            description=f"Участников: **{yaeblan}**",
+            empty_list_message="This giveaway has no entries.",
+            title="Entries of the giveaway",
+            description=f"All entries: **{yaeblan}**",
         )
 
         await interaction.send(
@@ -110,23 +110,23 @@ class Giveaway:
                     duration_delta += timedelta(**{time_unit: int(value)})
                 except OverflowError:
                     await interaction.send(
-                        "Превышено максимальное значение длительности розыгрыша"
+                        "❌ The maximum giveaway duration has been exceeded"
                     )
                     return
 
         end_time = datetime.datetime.now() + duration_delta
         embed = custom_embed(
-            f"🎉 | Розыгрыш",
-            f"{description or ''}\n- Приз: **{prize}**\n- Победителей: **{winners}**\n- Итоги: {disnake.utils.format_dt(end_time, style = 'R')}",
+            f"🎉 | Giveaway",
+            f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Ends: {disnake.utils.format_dt(end_time, style = 'R')}",
         )
         await interaction.send(".", ephemeral=True)
-        await interaction.delete_original_response()
         L = await check_chat(interaction.channel)
         if not L:
             await interaction.edit_original_message(
-                "Канал недоступен для меня. Выдайте мне больше прав"
+                "❌ The channel is unavailable to me. Give me more permissions"
             )
             return
+        await interaction.delete_original_response()
         msg = await interaction.channel.send(embed=embed)
         await GiveawayModel.create(
             prize=prize,
