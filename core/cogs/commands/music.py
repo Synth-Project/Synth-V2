@@ -17,7 +17,6 @@ class Music(commands.Cog):
         self.bot = bot
         bot.loop.create_task(self.connect_nodes())
 
-
     async def connect_nodes(self) -> None:
         nodes = [wavelink.Node(uri="http://localhost:2333", password="weever_gay")]
 
@@ -191,16 +190,17 @@ class Music(commands.Cog):
 
         result = await MusicModel.get_or_none(user_id=interaction.author.id)
         if result is None:
-            await MusicModel.create(
-                user_id=interaction.author.id,
-                songs=[track_info]
-            )
+            await MusicModel.create(user_id=interaction.author.id, songs=[track_info])
         else:
             update = await MusicModel.filter(user_id=interaction.author.id).first()
             if update.songs is not None:
-                if track_info not in update.songs: # TODO: check if track_info in update.songs via split ("—"), because it's trash.
+                if (
+                    track_info not in update.songs
+                ):  # TODO: check if track_info in update.songs via split ("—"), because it's trash.
                     if len(update.songs) >= 3:
-                        update.songs.insert(0, track_info) # TODO: Fix it, because it's not working
+                        update.songs.insert(
+                            0, track_info
+                        )  # TODO: Fix it, because it's not working
                     else:
                         update.songs.append(track_info)
                     await update.save()
@@ -212,15 +212,13 @@ class Music(commands.Cog):
                 message.id,
                 history_exists=history_exists,
                 player=player,
-                voice_channel=interaction.author.voice.channel
+                voice_channel=interaction.author.voice.channel,
             ),
         )
 
     @play.autocomplete("query")
     async def play_autocomplete(
-        self,
-        interaction: disnake.ApplicationCommandInteraction,
-        search_query: str
+        self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         if not interaction.author.voice:
             await interaction.response.autocomplete(
@@ -229,18 +227,13 @@ class Music(commands.Cog):
             return
 
         if not search_query:
-            result = await MusicModel.get_or_none(
-                user_id=interaction.author.id
+            result = await MusicModel.get_or_none(user_id=interaction.author.id)
+            autocomplete_list = (
+                [song_info for song_info in result.songs if len(song_info) <= 100]
+                if result
+                else ["❌ | Try to add a song for the first time"]
             )
-            autocomplete_list = [
-                song_info for song_info in result.songs
-                if len(song_info) <= 100
-            ] if result else [
-                "❌ | Try to add a song for the first time"
-            ]
-            await interaction.response.autocomplete(
-                choices=autocomplete_list
-            )
+            await interaction.response.autocomplete(choices=autocomplete_list)
             return
 
         search_results = await wavelink.Playable.search(
@@ -253,9 +246,7 @@ class Music(commands.Cog):
             if len(f"{track.title} — {track.author}") <= 100
         ]
 
-        await interaction.response.autocomplete(
-            choices=autocomplete_options
-        )
+        await interaction.response.autocomplete(choices=autocomplete_options)
 
 
 def setup(bot: commands.Bot) -> None:
