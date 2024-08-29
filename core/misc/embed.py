@@ -109,9 +109,8 @@ class CreatePaginator(ui.View):
         embeds = []
 
         if len(items) == 0:
-            embed = disnake.Embed(
-                title=title,
-                description=empty_list_message,
+            embed = custom_embed(
+                title, description
             )
             return [embed]
 

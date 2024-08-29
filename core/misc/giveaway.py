@@ -7,7 +7,7 @@ import disnake
 from disnake.ext import commands, tasks
 from core.misc.embed import custom_embed, CreatePaginator
 from core.database.models.giveaways import GiveawayModel
-from typing import Optional
+from typing import Optional, Union
 
 time_units = {"d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
 
@@ -19,6 +19,16 @@ async def get_member_ids(message_id) -> Optional[GiveawayModel]:
         return None
 
     return result
+
+async def _get_channel(bot, channel_id: int) -> Union[disnake.abc.GuildChannel, bool]:
+    """Fetch a channel and return whether it was successful."""
+    try:
+        channel = bot.get_channel(channel_id) or await bot.fetch_channel(
+            channel_id
+        )
+        return channel
+    except disnake.HTTPException:
+        return False
 
 
 class GiveawayView(disnake.ui.View):
@@ -40,6 +50,15 @@ class GiveawayView(disnake.ui.View):
         if data is None:
             await interaction.send("❌ Giveaway not found", ephemeral=True)
             return
+        
+        if data.required_channel:
+            if interaction.author.voice is None or data.required_channel != interaction.author.voice.channel.id:
+                required_channel = await _get_channel(self.bot, data.required_channel)
+                if required_channel:
+                    await interaction.send(
+                        f"❌ You need to join to the required voice channel: {required_channel.mention}", ephemeral=True
+                    )
+                    return
 
         if interaction.author.id in data:
             await interaction.send(
@@ -101,7 +120,16 @@ class Giveaway:
         description: str | None,
         winners: int,
         duration: str,
+        channel: disnake.abc.GuildChannel | None = None,
     ) -> None:
+        await interaction.send(".", ephemeral=True)
+        L = await check_chat(interaction.channel)
+        if not L:
+            await interaction.edit_original_message(
+                "❌ The channel is unavailable to me. Give me more permissions"
+            )
+            return
+        
         duration_regex = r"(\d+)([dhms])"
 
         matches = re.findall(duration_regex, duration)
@@ -123,14 +151,6 @@ class Giveaway:
             f"🎉 | Giveaway",
             f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Ends: {disnake.utils.format_dt(end_time, style = 'R')}",
         )
-        await interaction.send(".", ephemeral=True)
-        L = await check_chat(interaction.channel)
-        if not L:
-            await interaction.edit_original_message(
-                "❌ The channel is unavailable to me. Give me more permissions"
-            )
-            return
-        await interaction.delete_original_response()
         msg = await interaction.channel.send(embed=embed)
         await GiveawayModel.create(
             prize=prize,
@@ -140,12 +160,14 @@ class Giveaway:
             message_id=msg.id,
             ended=False,
             members=[],
+            required_channel=channel.id if channel else None,
         )
         await msg.edit(
             view=GiveawayView(
                 self.bot,
             ),
         )
+        await interaction.delete_original_response()
 
 
 async def check_chat(channel: disnake.abc.GuildChannel) -> bool:

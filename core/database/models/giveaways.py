@@ -11,10 +11,11 @@ class GiveawayModel(Model):
     message_id = fields.BigIntField(primary_key=True)
     ended = fields.BooleanField()
     members = fields.JSONField(default=[])
+    required_channel = fields.BigIntField()
 
     class Meta:
         table = "giveaways"
         table_description = "Just giveaway model"
 
     def __str__(self) -> str:
-        return f"GiveawayModel: prize={self.prize}, winners={self.winners}, end_time={self.end_time}, channel_id={self.channel_id}, message_id={self.message_id}, ended={self.ended}, members={self.members}"
+        return f"GiveawayModel: prize={self.prize}, winners={self.winners}, end_time={self.end_time}, channel_id={self.channel_id}, message_id={self.message_id}, ended={self.ended}, members={self.members}, required_channel={self.required_channel}"

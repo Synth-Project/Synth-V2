@@ -1,3 +1,4 @@
+from typing import Union
 from disnake.ext import commands, tasks
 import disnake
 from core.misc.giveaway import GiveawayView
@@ -13,17 +14,17 @@ class Giveaway(commands.Cog):
         self.bot = bot
 
     async def cog_load(self):
-        self.check_gw.start()
+        self.check_giveaways.start()
         self.bot.add_view(GiveawayView(self.bot))
 
-    async def _get_message(self, channel_id: int, message_id: int) -> bool:
+    async def _get_message(self, channel_id: int, message_id: int) -> Union[disnake.abc.Messageable, bool]:
         """Fetch a message from a channel and return whether it was successful."""
         try:
             channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
                 channel_id
             )
-            await channel.fetch_message(message_id)
-            return True
+            msg = await channel.fetch_message(message_id)
+            return msg
         except disnake.HTTPException:
             return False
 
@@ -77,6 +78,7 @@ class Giveaway(commands.Cog):
                     if msg:
                         view = disnake.ui.View.from_message(msg)
                         view.children[1].disabled = True
+                        await msg.edit(view=view)
                     await GiveawayModel.delete(giveaway)
                 else:
                     if not await self._get_message(
