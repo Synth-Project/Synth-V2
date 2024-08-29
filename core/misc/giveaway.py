@@ -42,10 +42,14 @@ class GiveawayView(disnake.ui.View):
             return
 
         if interaction.author.id in data:
-            await interaction.send("✅ You have successfully left the giveaway", ephemeral=True)
+            await interaction.send(
+                "✅ You have successfully left the giveaway", ephemeral=True
+            )
             data.members.remove(interaction.author.id)
         else:
-            await interaction.send("✅ You have successfully entered the giveaway", ephemeral=True)
+            await interaction.send(
+                "✅ You have successfully entered the giveaway", ephemeral=True
+            )
             data.members.append(interaction.author.id)
         update = await GiveawayModel.filter(message_id=message_id).first()
         update.members = data.members

@@ -97,7 +97,9 @@ class Giveaway(commands.Cog):
     async def reroll(self, interaction, message_id, winners: int):
         await interaction.response.defer(ephemeral=True)
         if not message_id.isdigit():
-            await interaction.send("❌ Message **ID** should be a number.", ephemeral=True)
+            await interaction.send(
+                "❌ Message **ID** should be a number.", ephemeral=True
+            )
             return
         
         giveaway_msg = await self._get_message(interaction.channel.id, message_id)
@@ -115,7 +117,7 @@ class Giveaway(commands.Cog):
         if datb is None:
             await interaction.send("❌ Giveaway was not found.", ephemeral=True)
             return
-        
+
         if datb.winners <= 1:
             await interaction.send(
                 "❌ You can't reroll a giveaway with only one entry.", ephemeral=True
@@ -156,7 +158,7 @@ class Giveaway(commands.Cog):
         if datb is None:
             await interaction.send("❌ Giveaway was not found.", ephemeral=True)
             return
-        
+
         if datb.ended:
             await interaction.send("❌ Giveaway was already ended.", ephemeral=True)
             return
