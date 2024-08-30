@@ -63,18 +63,6 @@ class Music(commands.Cog):
                 player=payload.player,
             ),
         )
-        # if (
-        #     payload.player
-        #     and hasattr(payload.player, "auto_play_tracks")
-        #     and payload.original
-        #     and payload.original.recommended
-        # ):
-        #     track: wavelink.Playable = payload.track
-
-        #     print(f"\n\n`This track was recommended via {track.source}`")
-
-        #     # Убираем track из начала очереди, он уже воспроизводится
-        #     await payload.player.play(track, add_history=False)
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(
@@ -82,42 +70,8 @@ class Music(commands.Cog):
     ) -> None:
         player = payload.player
 
-        # if player.queue.is_empty and player.queue.history.count <= 0:
-        #     # Если очередь пуста и нет истории, добавляем трек из рекомендаций
-        #     if hasattr(player, "auto_play_tracks"):
-        #         new_track = payload.track
-        #         await player.queue.put(new_track)
-        #         await player.play(new_track, add_history=False)
-        #         return
-
-        # Если очередь не пуста, берем следующий трек из очереди
         if player and not player.queue.is_empty:
             new_track = player.queue.get()
-
-            # Отправка embed сообщения
-            # embed = custom_embed()
-            # embed.title = f"Now playing - {new_track.title}"
-            # embed.description = f"[{new_track.title}]({str(new_track.uri)})"
-            # embed.add_field(name="Artist:", value=f"`{new_track.author}`", inline=True)
-            # embed.add_field(
-            #     name="Duration:",
-            #     value=f"`{str(timedelta(seconds=round(new_track.length / 1000)))}`",
-            #     inline=True,
-            # )
-            # embed.set_image(url=new_track.artwork)
-
-            # message = await player.interaction.followup.send(embed=embed)
-
-            # history_exists = player.queue.history.count > 0
-            # await message.edit(
-            #     embed=embed,
-            #     view=NavigationPanel(
-            #         self.bot,
-            #         message.id,
-            #         player=player,
-            #         history_exists=history_exists,
-            #     ),
-            # )
 
             await player.play(new_track, add_history=False)
 
@@ -200,7 +154,7 @@ class Music(commands.Cog):
         history_exists = player.queue.history.count > 0
 
         result = await MusicModel.get_or_none(user_id=interaction.author.id)
-        if result is None:
+        if not result:
             await MusicModel.create(user_id=interaction.author.id, songs=[track_info])
         else:
             update = await MusicModel.filter(user_id=interaction.author.id).first()
@@ -209,7 +163,6 @@ class Music(commands.Cog):
                     track_info.startswith(info.split(" — ")[0]) for info in update.songs
                 ):
                     if len(update.songs) >= 3:
-                        # Remove the oldest track if more than 3
                         update.songs.pop()
                     update.songs.insert(0, track_info)
                     await update.save()
@@ -229,7 +182,6 @@ class Music(commands.Cog):
                 message.id,
                 history_exists=history_exists,
                 player=player,
-                voice_channel=interaction.author.voice.channel,
             ),
         )
 
@@ -259,8 +211,8 @@ class Music(commands.Cog):
 
         autocomplete_options = [
             f"{track.title} — {track.author}"
-            for track in search_results
-            if len(f"{track.title} — {track.author}") <= 100
+            for index, track in enumerate(search_results, start=1)
+            if len(f"{track.title} — {track.author}") <= 100 and index < 25
         ]
 
         await interaction.response.autocomplete(choices=autocomplete_options)

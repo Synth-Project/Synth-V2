@@ -147,12 +147,29 @@ class NavigationDropdown(disnake.ui.Select):
             case "volume":
                 await self.volume_change(interaction)
             case "shuffle":
-                player.queue.shuffle()
+                if player.queue.is_empty and player.auto_queue.is_empty:
+                    embed = custom_embed(
+                        title="There are no songs in the queue yet",
+                        color=disnake.Color.red(),
+                    )
+                    return await interaction.response.send_message(
+                        embed=embed, ephemeral=True
+                    )
+                elif player.queue.is_empty and not player.auto_queue.is_empty:
+                    player.auto_queue.shuffle()
+                else:
+                    player.queue.shuffle()
+
                 track: wavelink.Track = player.current
+                next_song = (
+                    player.queue[0]
+                    if not player.queue.is_empty
+                    else player.auto_queue[0]
+                )
 
                 embed = custom_embed(
                     title="Shuffled the queue",
-                    description=f"Current song: **{track.title}**\nNext song: **{player.queue[0].title}**",
+                    description=f"Current song: **{track.title}**\nNext song: **{next_song.title}**",
                     color=disnake.Colour.green(),
                 )
 
