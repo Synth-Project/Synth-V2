@@ -155,13 +155,14 @@ class Giveaway:
         winners: int,
         duration: str,
         voice: Union[VoiceEnum.ANY_SG, VoiceEnum.ANY_VC, VoiceEnum.SPECIFIED_SG, VoiceEnum.SPECIFIED_VC, VoiceEnum.SPECIFIED_CG],
-        channel: Optional[disnake.abc.GuildChannel] = None,
+        required_channel: Optional[disnake.abc.GuildChannel] = None,
+        channel_to_send: disnake.abc.GuildChannel = None
     ) -> None:
-        await interaction.send(".", ephemeral=True)
-        L = await check_chat(interaction.channel)
+        L = await check_chat(channel_to_send)
         if not L:
-            await interaction.edit_original_message(
-                "❌ The channel is unavailable to me. Give me more permissions"
+            await interaction.send(
+                "❌ The channel is unavailable to me. Give me more permissions",
+                ephemeral=True
             )
             return
         
@@ -177,7 +178,8 @@ class Giveaway:
                     duration_delta += timedelta(**{time_unit: int(value)})
                 except OverflowError:
                     await interaction.send(
-                        "❌ The maximum giveaway duration has been exceeded"
+                        "❌ The maximum giveaway duration has been exceeded",
+                        ephemeral=True
                     )
                     return
 
@@ -186,24 +188,24 @@ class Giveaway:
             f"🎉 | Giveaway",
             f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Ends: {disnake.utils.format_dt(end_time, style = 'R')}",
         )
-        msg = await interaction.channel.send(embed=embed)
+        msg = await channel_to_send.send(embed=embed)
         await GiveawayModel.create(
             prize=prize,
             winners=winners,
             end_time=end_time.timestamp(),
-            channel_id=interaction.channel.id,
+            channel_id=channel_to_send.id,
             message_id=msg.id,
             ended=False,
             members=[],
             voice=voice,
-            voice_id = channel.id if channel else None
+            voice_id = required_channel.id if required_channel else 0
         )
         await msg.edit(
             view=GiveawayView(
                 self.bot,
             ),
         )
-        await interaction.delete_original_response()
+        # await interaction.delete_original_response()
 
 
 async def check_chat(channel: disnake.abc.GuildChannel) -> bool:

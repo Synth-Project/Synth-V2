@@ -3,7 +3,7 @@ from disnake.ext import commands, tasks
 import disnake
 from core.misc.giveaway import GiveawayView
 from core.database.models.giveaways import GiveawayModel
-from core.misc.views.giveaway import CreateModal
+from core.misc.views.giveaways.main import CreateModal
 import random
 import datetime
 

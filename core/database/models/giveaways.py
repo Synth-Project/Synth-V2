@@ -5,6 +5,7 @@ from enum import Enum
 # from tortoise.contrib.postgres.fields import ArrayField
 
 class VoiceEnum(Enum):
+    NONE = "no"
     ANY_VC = "any_vc"
     ANY_SG = "any_sg"
     SPECIFIED_SG = "specified_sg"
