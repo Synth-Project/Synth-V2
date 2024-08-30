@@ -6,7 +6,7 @@ import re
 import disnake
 from disnake.ext import commands, tasks
 from core.misc.embed import custom_embed, CreatePaginator
-from core.database.models.giveaways import GiveawayModel
+from core.database.models.giveaways import GiveawayModel, VoiceEnum
 from typing import Optional, Union
 
 time_units = {"d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
@@ -51,16 +51,50 @@ class GiveawayView(disnake.ui.View):
             await interaction.send("❌ Giveaway not found", ephemeral=True)
             return
         
-        if data.required_channel:
-            if interaction.author.voice is None or data.required_channel != interaction.author.voice.channel.id:
-                required_channel = await _get_channel(self.bot, data.required_channel)
-                if required_channel:
-                    await interaction.send(
-                        f"❌ You need to join to the required voice channel: {required_channel.mention}", ephemeral=True
-                    )
-                    return
+        if data.voice:
+            match data.voice:
+                case VoiceEnum.SPECIFIED_VC:
+                    if interaction.author.voice is None or data.voice_id != interaction.author.voice.channel.id:
+                        voice = await _get_channel(self.bot, data.voice_id)
+                        if voice:
+                            await interaction.send(
+                                f"❌ You need to join to the required voice channel: {voice.mention}", ephemeral=True
+                            )
+                            return
+                        
+                case VoiceEnum.SPECIFIED_SG:
+                    if interaction.author.voice is None or data.voice_id != interaction.author.voice.channel.id:
+                        stage = await _get_channel(self.bot, data.voice_id)
+                        if stage:
+                            await interaction.send(
+                                f"❌ You need to join to the required stage channel: {voice.mention}", ephemeral=True
+                            )
+                            return
 
-        if interaction.author.id in data:
+                case VoiceEnum.SPECIFIED_CG:
+                    if interaction.author.voice is None or data.voice_id != interaction.author.voice.channel.category_id:
+                        category = await _get_channel(self.bot, data.voice_id)
+                        if category:
+                            await interaction.send(
+                                f"❌ You need to join to the required category: {category.mention}", ephemeral=True
+                            )
+                            return
+                        
+                case VoiceEnum.ANY_VC:
+                    if interaction.author.voice is None or interaction.author.voice.channel.type != disnake.ChannelType.voice:
+                        await interaction.send(
+                            "❌ You need to join to the any voice channel", ephemeral=True
+                        )
+                        return
+                    
+                case VoiceEnum.ANY_SG:
+                    if interaction.author.voice is None or interaction.author.voice.channel.type != disnake.ChannelType.stage_voice:
+                        await interaction.send(
+                            "❌ You need to join to the any stage channel", ephemeral=True
+                        )
+                        return
+
+        if interaction.author.id in data.members:
             await interaction.send(
                 "✅ You have successfully left the giveaway", ephemeral=True
             )
@@ -120,7 +154,8 @@ class Giveaway:
         description: str | None,
         winners: int,
         duration: str,
-        channel: disnake.abc.GuildChannel | None = None,
+        voice: Union[VoiceEnum.ANY_SG, VoiceEnum.ANY_VC, VoiceEnum.SPECIFIED_SG, VoiceEnum.SPECIFIED_VC, VoiceEnum.SPECIFIED_CG],
+        channel: Optional[disnake.abc.GuildChannel] = None,
     ) -> None:
         await interaction.send(".", ephemeral=True)
         L = await check_chat(interaction.channel)
@@ -160,7 +195,8 @@ class Giveaway:
             message_id=msg.id,
             ended=False,
             members=[],
-            required_channel=channel.id if channel else None,
+            voice=voice,
+            voice_id = channel.id if channel else None
         )
         await msg.edit(
             view=GiveawayView(

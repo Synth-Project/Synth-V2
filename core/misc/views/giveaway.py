@@ -1,6 +1,7 @@
 import secrets
 import disnake
 from disnake.ext import commands
+from core.database.models.giveaways import VoiceEnum
 from core.misc.embed import custom_embed
 from core.misc.giveaway import Giveaway
 
@@ -73,7 +74,7 @@ class CreateModal(disnake.ui.Modal):
             "Create giveaway",
             "Do users have to be in voice/stage channels to enter the giveaway?"
         )
-        await interaction.send(embed=embed, view = GiveawaySettingsVoice(interaction, self.bot, prize, description, int(winners), duration, "no"))
+        await interaction.send(embed=embed, view = GiveawaySettingsVoice(interaction, self.bot, prize, description, int(winners), duration, "no"), ephemeral=True)
 
 class GiveawaySettingsVoice(disnake.ui.View):
     def __init__(
@@ -103,6 +104,8 @@ class GiveawaySettingsVoice(disnake.ui.View):
                 self.add_item(VoiceSpecifiedSelect(bot, interaction, prize, description, winners, duration))
             case "specified_sc":
                 self.add_item(StageSpecifiedSelect(bot, interaction, prize, description, winners, duration))
+            case "specified_cg":
+                self.add_item(CategorySpecifiedSelect(bot, interaction, prize, description, winners, duration))
             case _:
                 self.add_item(DropDownForSettingsVoice(bot, interaction, prize, description, winners, duration))
 
@@ -181,7 +184,7 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
                 await self.interaction.edit_original_response(
                     embed=embed,
                     view=GiveawaySettingsVoice(
-                        self.interaction, self.bot, self.prize, self.description, self.winners, self.duration, "specified_vc"
+                        self.interaction, self.bot, self.prize, self.description, self.winners, self.duration, selected_option
                     ),
                 )
             case "specified_sc":
@@ -192,7 +195,18 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
                 await self.interaction.edit_original_response(
                     embed=embed,
                     view=GiveawaySettingsVoice(
-                        self.interaction, self.bot, self.prize, self.description, self.winners, self.duration, "specified_sc"
+                        self.interaction, self.bot, self.prize, self.description, self.winners, self.duration, selected_option
+                    ),
+                )
+            case "specified_cg":
+                embed = custom_embed(
+                    "Specify the category",
+                    "Please choose the category you want to require in giveaway",
+                )
+                await self.interaction.edit_original_response(
+                    embed=embed,
+                    view=GiveawaySettingsVoice(
+                        self.interaction, self.bot, self.prize, self.description, self.winners, self.duration, selected_option
                     ),
                 )
             case _:
@@ -225,7 +239,7 @@ class VoiceSpecifiedSelect(disnake.ui.ChannelSelect):
         print(type(selected_option))
         await interaction.response.defer(ephemeral=True)
         await Giveaway(self.bot).create(
-            interaction, self.prize, self.description, self.winners, self.duration, selected_option
+            interaction, self.prize, self.description, self.winners, self.duration, VoiceEnum.SPECIFIED_VC, selected_option
         )
 
 
@@ -256,5 +270,35 @@ class StageSpecifiedSelect(disnake.ui.ChannelSelect):
         print(type(selected_option))
         await interaction.response.defer(ephemeral=True)
         await Giveaway(self.bot).create(
-            interaction, self.prize, self.description, self.winners, self.duration, selected_option
+            interaction, self.prize, self.description, self.winners, self.duration, VoiceEnum.SPECIFIED_SG, selected_option
+        )
+
+class CategorySpecifiedSelect(disnake.ui.ChannelSelect):
+    def __init__(
+            self, bot: commands.Bot, 
+            interaction: disnake.Interaction,
+            prize: str,
+            description: str | None,
+            winners: int,
+            duration: str
+        ) -> None:
+        super().__init__(
+            placeholder="Choose an category",
+            min_values=1,
+            channel_types=[disnake.ChannelType.category],
+            max_values=1,
+        )
+        self.bot = bot
+        self.interaction = interaction
+        self.prize = prize
+        self.description = description
+        self.winners = winners
+        self.duration = duration
+
+    async def callback(self, interaction: disnake.MessageInteraction) -> None:
+        selected_option = self.values[0]
+        print(type(selected_option))
+        await interaction.response.defer(ephemeral=True)
+        await Giveaway(self.bot).create(
+            interaction, self.prize, self.description, self.winners, self.duration, VoiceEnum.SPECIFIED_CG, selected_option
         )
