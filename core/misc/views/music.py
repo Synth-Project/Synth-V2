@@ -1,5 +1,3 @@
-from typing import List
-
 import disnake
 from disnake.ext import commands
 
@@ -12,7 +10,15 @@ class QueueDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot, player: wavelink.Player) -> None:
         self.bot = bot
         self.player = player
-        self.queue = player.queue
+        self.queue = (
+            player.queue
+            if not player.queue.is_empty and player.queue.count >= 1
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else []
+            )
+        )
 
         self.items_per_page = 23
         self.page = 1
@@ -66,7 +72,7 @@ class QueueDropdown(disnake.ui.Select):
                 track_index = int(self.values[0])
                 track = self.queue[track_index]
                 await interaction.response.send_message(
-                    f"Ви вибрали: {track.title}", ephemeral=True
+                    f"You have skipped: {track.title}", ephemeral=True
                 )
 
                 self.player.queue.put_at(0, track)
@@ -171,23 +177,38 @@ class NavigationPanel(disnake.ui.View):
         history_exists: bool = False,
         *,
         timeout: float | None = None,
-        voice_channel: (
-            disnake.VoiceChannel | None
-        ) = None,  # TODO: fix it or do something with it (e.g. implement it)
     ) -> None:
 
         super().__init__(timeout=timeout)
 
         self.message_id = message_id
         self.bot = bot
+        self.queue_ = (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else player.queue
+            )
+        )
 
         self.add_item(NavigationDropdown(bot=self.bot))
 
-        if player.queue.count >= 1:
+        if player.queue.count >= 1 or (
+            player.auto_queue
+            and player.auto_queue.count >= 1
+            and player.autoplay == wavelink.AutoPlayMode.enabled
+        ):
             self.add_item(QueueDropdown(bot=self.bot, player=player))
 
         self.previous.disabled = not history_exists
-        self.skip.disabled = not player.queue.count >= 1
+        self.skip.disabled = not len(self.queue_) >= 1
+        self.autoplay.style = (
+            disnake.ButtonStyle.green
+            if player.autoplay == wavelink.AutoPlayMode.enabled
+            else disnake.ButtonStyle.red
+        )
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
@@ -197,10 +218,10 @@ class NavigationPanel(disnake.ui.View):
         player: wavelink.Player = interaction.guild.voice_client
 
         previous_track = player.queue.history.get()
-        player.queue.put_at(0, previous_track)
+        self.queue_.put_at(0, previous_track)
 
         skipped_track = await player.skip()
-        player.queue.put_at(1, skipped_track)
+        self.queue_.put_at(1, skipped_track)
 
         await interaction.response.defer(ephemeral=True)
 
@@ -212,7 +233,7 @@ class NavigationPanel(disnake.ui.View):
         player: wavelink.Player = interaction.guild.voice_client
 
         try:
-            player.queue.history.put_at(0, player.current)
+            self.queue_.history.put_at(0, player.current)
 
             await player.skip()
 
@@ -280,13 +301,37 @@ class NavigationPanel(disnake.ui.View):
     ):
         player: wavelink.Player = interaction.guild.voice_client
 
-        if player.autoplay == wavelink.AutoPlayMode.enabled:
-            player.autoplay = wavelink.AutoPlayMode.disabled
-            await interaction.response.edit_message(content="Autoplay disabled")
-        else:
-            player.autoplay = wavelink.AutoPlayMode.enabled
-            await interaction.response.edit_message(content="Autoplay enabled")
+        if player:
+            if player.autoplay == wavelink.AutoPlayMode.enabled:
+                player.autoplay = wavelink.AutoPlayMode.disabled
+                self.autoplay.style = disnake.ButtonStyle.red
+                await interaction.response.edit_message(
+                    content="Autoplay disabled", view=self
+                )
+            else:
+                player.autoplay = wavelink.AutoPlayMode.enabled
+                self.autoplay.style = disnake.ButtonStyle.green
+                await interaction.response.edit_message(
+                    content="Autoplay enabled", view=self
+                )
 
     @disnake.ui.button(label="Loop", style=disnake.ButtonStyle.green, row=1)
     async def loop(self, _: disnake.ui.Button, interaction: disnake.MessageInteraction):
         await interaction.response.defer(ephemeral=True)
+
+    async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
+        # return await super().interaction_check(interaction)
+        voice_channel = interaction.guild.get_channel_or_thread(
+            interaction.guild.voice_client.channel.id
+        ) or await interaction.guild.fetch_channel(
+            interaction.guild.voice_client.channel.id
+        )
+
+        if interaction.author.voice.channel.id == voice_channel.id:
+            return True
+        else:
+            await interaction.response.send_message(
+                f":x: You must be in a {voice_channel.mention} to use this command",
+                ephemeral=True,
+            )
+            return False

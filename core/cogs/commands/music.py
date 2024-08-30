@@ -28,72 +28,27 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
-        if (
-            payload.player
-            and hasattr(payload.player, "auto_play_tracks")
-            and payload.original
-            and payload.original.recommended
-        ):
-            track: wavelink.Playable = payload.track
+        original = payload.original
+        track = payload.track
 
-            print(f"\n\n`This track was recommended via {track.source}`")
-
-            payload.player.queue.put_at(0, track)
-            payload.player.queue.put_at(1, payload.player.current)
-            payload.player.queue.history.put_at(0, payload.player.current)
-
-            await payload.player.play(track, add_history=False)
-
-    @commands.Cog.listener()
-    async def on_wavelink_track_end(
-        self, payload: wavelink.TrackEndEventPayload
-    ) -> None:
-        if payload.player and (payload.player.queue and payload.player.queue.is_empty):
-            return await payload.player.interaction.send("Queue is empty")
-
-        try:
-            (
-                await (await payload.player.interaction.original_response()).delete()
-                if payload.player
-                else None
-            )
-        except (disnake.NotFound, AttributeError):
-            pass
-
-        """
-        Explanation:
-
-        When the track ends, the player will play the next track in the queue, 
-        but before that it adds previous track to the new attribute
-
-        So there is scheme:
-
-        1. previous equals old_track
-        2. new_player gets from queue
-        3. new_player plays new_track
-        """
-
-        if not payload.player.queue and payload.player.queue.count >= 1:
-            new_track = payload.original
-            setattr(payload.player, "auto_play_tracks", True)
-
-            await payload.player.play(new_track, add_history=False)
-        else:
-            new_track = payload.player.queue.get()
-
-        logger.info(f"[+] New Track Started: {new_track.title} by {new_track.author}")
+        if hasattr(payload.player, "first_play") and payload.player.first_play:
+            payload.player.first_play = False
+            return
 
         embed = custom_embed()
-        embed.title = f"Now playing - {new_track.title}"
-
-        embed.description = f"[{new_track.title}]({str(new_track.uri)})"
-        embed.add_field(name="Artist:", value=f"`{new_track.author}`", inline=True)
+        embed.title = f"Now playing - {track.title}"
+        embed.description = f"[{track.title}]({str(track.uri)})"
+        embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
         embed.add_field(
             name="Duration:",
-            value=f"`{str(timedelta(seconds=round(new_track.length / 1000)))}`",
+            value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
             inline=True,
         )
-        embed.set_image(url=new_track.artwork)
+
+        if original and original.recommended:
+            embed.set_footer(text=f"This track was recommended via {track.source}")
+
+        embed.set_image(url=track.artwork if track.artwork else None)
 
         message = await payload.player.interaction.followup.send(embed=embed)
 
@@ -104,12 +59,67 @@ class Music(commands.Cog):
             view=NavigationPanel(
                 self.bot,
                 message.id,
-                player=payload.player,
                 history_exists=history_exists,
+                player=payload.player,
             ),
         )
+        # if (
+        #     payload.player
+        #     and hasattr(payload.player, "auto_play_tracks")
+        #     and payload.original
+        #     and payload.original.recommended
+        # ):
+        #     track: wavelink.Playable = payload.track
 
-        await payload.player.play(new_track, add_history=False)
+        #     print(f"\n\n`This track was recommended via {track.source}`")
+
+        #     # Убираем track из начала очереди, он уже воспроизводится
+        #     await payload.player.play(track, add_history=False)
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_end(
+        self, payload: wavelink.TrackEndEventPayload
+    ) -> None:
+        player = payload.player
+
+        # if player.queue.is_empty and player.queue.history.count <= 0:
+        #     # Если очередь пуста и нет истории, добавляем трек из рекомендаций
+        #     if hasattr(player, "auto_play_tracks"):
+        #         new_track = payload.track
+        #         await player.queue.put(new_track)
+        #         await player.play(new_track, add_history=False)
+        #         return
+
+        # Если очередь не пуста, берем следующий трек из очереди
+        if player and not player.queue.is_empty:
+            new_track = player.queue.get()
+
+            # Отправка embed сообщения
+            # embed = custom_embed()
+            # embed.title = f"Now playing - {new_track.title}"
+            # embed.description = f"[{new_track.title}]({str(new_track.uri)})"
+            # embed.add_field(name="Artist:", value=f"`{new_track.author}`", inline=True)
+            # embed.add_field(
+            #     name="Duration:",
+            #     value=f"`{str(timedelta(seconds=round(new_track.length / 1000)))}`",
+            #     inline=True,
+            # )
+            # embed.set_image(url=new_track.artwork)
+
+            # message = await player.interaction.followup.send(embed=embed)
+
+            # history_exists = player.queue.history.count > 0
+            # await message.edit(
+            #     embed=embed,
+            #     view=NavigationPanel(
+            #         self.bot,
+            #         message.id,
+            #         player=player,
+            #         history_exists=history_exists,
+            #     ),
+            # )
+
+            await player.play(new_track, add_history=False)
 
     @commands.slash_command(
         description="Search and play music from Youtube/Spotify/SoundCloud/Deezer/Apple Music"
@@ -184,6 +194,7 @@ class Music(commands.Cog):
         if not player.playing:
             track = player.queue.get()
             setattr(player, "interaction", interaction)
+            setattr(player, "first_play", True)
             await player.play(track, add_history=False)
 
         history_exists = player.queue.history.count > 0
@@ -193,17 +204,23 @@ class Music(commands.Cog):
             await MusicModel.create(user_id=interaction.author.id, songs=[track_info])
         else:
             update = await MusicModel.filter(user_id=interaction.author.id).first()
-            if update.songs is not None:
-                if (
-                    track_info not in update.songs
-                ):  # TODO: check if track_info in update.songs via split ("—"), because it's trash.
+            if update.songs:
+                if not any(
+                    track_info.startswith(info.split(" — ")[0]) for info in update.songs
+                ):
                     if len(update.songs) >= 3:
-                        update.songs.insert(
-                            0, track_info
-                        )  # TODO: Fix it, because it's not working
-                    else:
-                        update.songs.append(track_info)
+                        # Remove the oldest track if more than 3
+                        update.songs.pop()
+                    update.songs.insert(0, track_info)
                     await update.save()
+                # TODO: check if track_info in update.songs via split ("—"), because it's trash.
+                # if track_info not in update.songs:
+                # if update.songs.count >= 3:
+                # TODO: Fix it, because it's not working
+                # update.songs.insert(0, track_info)
+                # else:
+                # update.songs.append(track_info)
+                # await update.save()
 
         await message.edit(
             embed=embed,
