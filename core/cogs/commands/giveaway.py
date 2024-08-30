@@ -166,7 +166,7 @@ class Giveaway(commands.Cog):
         if not message_id.isdigit():
             await interaction.send("❌ Message ID should be a number.", ephemeral=True)
             return
-        
+
         giveaway_msg = await self._get_message(interaction.channel.id, message_id)
         if not giveaway_msg:
             await interaction.send("❌ Message not found.", ephemeral=True)

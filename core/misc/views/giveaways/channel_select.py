@@ -16,7 +16,7 @@ class GiveawaySettingsChannel(disnake.ui.View):
         status: bool,
     ) -> None:
         super().__init__()
-        
+
         self.bot = bot
         self.interaction = interaction
         self.prize = prize

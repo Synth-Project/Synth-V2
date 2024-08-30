@@ -136,9 +136,7 @@ class GiveawayView(disnake.ui.View):
         # update = await GiveawayModel.filter(message_id=message_id).first()
         # update.members = data.members
         # await update.save()
-        await GiveawayModel.filter(message_id=message_id).update(
-            members=data.members
-        )
+        await GiveawayModel.filter(message_id=message_id).update(members=data.members)
 
     @disnake.ui.button(
         label="Entries", style=disnake.ButtonStyle.gray, custom_id="giveaway_members"
