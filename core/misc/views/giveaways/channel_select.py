@@ -1,8 +1,6 @@
 import disnake
 from disnake.ext import commands
-from core.database.models.giveaways import VoiceEnum
 from core.misc.embed import custom_embed
-from core.misc.giveaway import Giveaway
 from core.misc.views.giveaways import *
 
 
@@ -18,6 +16,7 @@ class GiveawaySettingsChannel(disnake.ui.View):
         status: bool,
     ) -> None:
         super().__init__()
+        
         self.bot = bot
         self.interaction = interaction
         self.prize = prize
@@ -69,6 +68,7 @@ class GiveawayChannelYes(disnake.ui.Button):
         duration: str,
     ) -> None:
         super().__init__(label="Yes", style=disnake.ButtonStyle.green, custom_id="yes")
+
         self.bot = bot
         self.interaction = interaction
         self.prize = prize
@@ -78,6 +78,7 @@ class GiveawayChannelYes(disnake.ui.Button):
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
         await interaction.response.defer(ephemeral=True)
+
         embed = custom_embed(
             title="Create giveaway", description="Choose a channel for the giveaway"
         )
@@ -106,6 +107,7 @@ class GiveawayChannelNo(disnake.ui.Button):
         duration: str,
     ) -> None:
         super().__init__(label="No", style=disnake.ButtonStyle.red, custom_id="no")
+
         self.bot = bot
         self.interaction = interaction
         self.prize = prize
@@ -115,6 +117,7 @@ class GiveawayChannelNo(disnake.ui.Button):
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
         await interaction.response.defer(ephemeral=True)
+
         embed = custom_embed(
             "Create giveaway",
             "Do users have to be in voice/stage channels to enter the giveaway?",
@@ -154,6 +157,7 @@ class GiveawayChannelSelect(disnake.ui.ChannelSelect):
             ],
             max_values=1,
         )
+
         self.bot = bot
         self.interaction = interaction
         self.prize = prize
@@ -163,6 +167,7 @@ class GiveawayChannelSelect(disnake.ui.ChannelSelect):
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
         await self.interaction.delete_original_response()
+
         embed = custom_embed(
             "Create giveaway",
             "Do users have to be in voice/stage channels to enter the giveaway?",

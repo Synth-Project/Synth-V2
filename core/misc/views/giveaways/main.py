@@ -1,9 +1,8 @@
 import disnake
 from disnake.ext import commands
-from core.database.models.giveaways import VoiceEnum
 from core.misc.embed import custom_embed
-from core.misc.giveaway import Giveaway
 from core.misc.views.giveaways import *
+from core.misc.views.giveaways.channel_select import GiveawaySettingsChannel
 
 
 class CreateModal(disnake.ui.Modal):
@@ -52,26 +51,23 @@ class CreateModal(disnake.ui.Modal):
 
     async def callback(self, interaction):
         prize = interaction.text_values["prize"]
-        description = (
-            interaction.text_values["description"]
-            if interaction.text_values["description"]
-            else None
-        )
+        description = interaction.text_values.get("description", "")
         winners = interaction.text_values["winners"]
         duration = interaction.text_values["duration"].lower()
+
         if not winners.isdigit():
-            await interaction.send(
+            return await interaction.send(
                 "❌ The number of winners must be a number", ephemeral=True
             )
-            return
+
         if int(winners) < 1:
-            await interaction.send(
+            return await interaction.send(
                 "❌ The number of winners must be greater than 0", ephemeral=True
             )
-            return
+
         embed = custom_embed(
             title="Create giveaway",
-            description=f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Channel: {interaction.channel.mention}\nMaybe you want to change the channel?",
+            description=f"{description}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Channel: {interaction.channel.mention}\nMaybe you want to change the channel?",
         )
         await interaction.send(
             embed=embed,

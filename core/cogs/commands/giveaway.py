@@ -2,7 +2,7 @@ from typing import Union
 from disnake.ext import commands, tasks
 import disnake
 from core.misc.giveaway import GiveawayView
-from core.database.models.giveaways import GiveawayModel
+from core.database.models.giveaway import GiveawayModel
 from core.misc.views.giveaways.main import CreateModal
 import random
 import datetime
@@ -34,28 +34,31 @@ class Giveaway(commands.Cog):
         msg = await self._get_message(
             giveaway_data.channel_id, giveaway_data.message_id
         )
-        if not msg:
-            if await GiveawayModel.get(giveaway_data.message_id) is None:
-                return
-            await GiveawayModel.delete(giveaway_data)
-            return
-        view = disnake.ui.View.from_message(msg)
 
+        if not msg:
+            if not await GiveawayModel.get(giveaway_data.message_id):
+                return
+            return await GiveawayModel.delete(giveaway_data)
+
+        view = disnake.ui.View.from_message(msg)
         winner_amount = giveaway_data.winners
+
         embed = msg.embeds[0]
         embed.title = f"🎉 | The giveaway is over"
         embed.description = embed.description.replace("Ends", "Ended")
 
         users = [await self.bot.fetch_user(W) for W in giveaway_data.members]
-        if len(users) < winner_amount:
-            winners = random.sample(users, len(users))
-        else:
-            winners = random.sample(users, winner_amount)
 
+        winners = random.sample(
+            users, len(users) if len(users) < winner_amount else winner_amount
+        )
         winners = ", ".join(w.mention for w in winners)
+
         view.children[0].disabled = True
         # view.children[1].disabled = True
+
         await msg.edit(embed=embed, content=winners, view=view)
+
         if len(users) > 0:
             await msg.reply(
                 f"⭐ The giveaway is over, {'winners' if winner_amount > 1 else 'winner'}: "
@@ -63,6 +66,7 @@ class Giveaway(commands.Cog):
             )
         else:
             await msg.reply(f"❗ Not enough participants to end the giveaway.")
+
         giveaway_data.ended = True
         await giveaway_data.save()
 
@@ -73,7 +77,9 @@ class Giveaway(commands.Cog):
         """
         for giveaway in await GiveawayModel.all():
             if giveaway.ended:
-                if datetime.datetime.now().timestamp() > giveaway.end_time + 260000:
+                data = round(datetime.datetime.now().timestamp())
+
+                if data > giveaway.end_time + 260000:
                     msg = await self._get_message(
                         giveaway.channel_id, giveaway.message_id
                     )
@@ -88,7 +94,9 @@ class Giveaway(commands.Cog):
                     ):
                         await GiveawayModel.delete(giveaway)
             else:
-                if datetime.datetime.now().timestamp() > giveaway.end_time:
+                data = round(datetime.datetime.now().timestamp())
+
+                if data >= giveaway.end_time:
                     await self.end_gw(giveaway)
 
     @commands.slash_command()
@@ -122,18 +130,18 @@ class Giveaway(commands.Cog):
             )
             return
 
-        datb = await GiveawayModel.get_or_none(message_id=message_id)
-        if datb is None:
+        giveaway = await GiveawayModel.get_or_none(message_id=message_id)
+        if not giveaway:
             await interaction.send("❌ Giveaway was not found.", ephemeral=True)
             return
 
-        if datb.winners <= 1:
+        if giveaway.winners <= 1:
             await interaction.send(
                 "❌ You can't reroll a giveaway with only one entry.", ephemeral=True
             )
             return
 
-        users = [await self.bot.fetch_user(W) for W in datb.members]
+        users = [await self.bot.fetch_user(W) for W in giveaway.members]
         winners_mention = random.sample(users, min(winners, len(users)))
 
         winners_mention = ", ".join(w.mention for w in winners_mention)
@@ -158,21 +166,22 @@ class Giveaway(commands.Cog):
         if not message_id.isdigit():
             await interaction.send("❌ Message ID should be a number.", ephemeral=True)
             return
+        
         giveaway_msg = await self._get_message(interaction.channel.id, message_id)
         if not giveaway_msg:
             await interaction.send("❌ Message not found.", ephemeral=True)
             return
 
-        datb = await GiveawayModel.get_or_none(message_id=message_id)
-        if datb is None:
+        giveaway = await GiveawayModel.get_or_none(message_id=message_id)
+        if not giveaway:
             await interaction.send("❌ Giveaway was not found.", ephemeral=True)
             return
 
-        if datb.ended:
+        if giveaway.ended:
             await interaction.send("❌ Giveaway was already ended.", ephemeral=True)
             return
 
-        await self.end_gw(datb)
+        await self.end_gw(giveaway)
         await interaction.send("✅ Giveaway has been ended.", ephemeral=True)
 
 
