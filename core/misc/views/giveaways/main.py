@@ -73,5 +73,10 @@ class CreateModal(disnake.ui.Modal):
             title="Create giveaway",
             description=f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Channel: {interaction.channel.mention}\nMaybe you want to change the channel?",
         )
-        await interaction.send(embed=embed, ephemeral=True, view = GiveawaySettingsChannel(interaction, self.bot, prize, description, winners, duration, False))
-    
+        await interaction.send(
+            embed=embed,
+            ephemeral=True,
+            view=GiveawaySettingsChannel(
+                interaction, self.bot, prize, description, winners, duration, False
+            ),
+        )

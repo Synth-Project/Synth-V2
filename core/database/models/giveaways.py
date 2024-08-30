@@ -4,6 +4,7 @@ from enum import Enum
 
 # from tortoise.contrib.postgres.fields import ArrayField
 
+
 class VoiceEnum(Enum):
     NONE = "no"
     ANY_VC = "any_vc"
@@ -11,6 +12,7 @@ class VoiceEnum(Enum):
     SPECIFIED_SG = "specified_sg"
     SPECIFIED_VC = "specified_vc"
     SPECIFIED_CG = "category"
+
 
 class GiveawayModel(Model):
     prize = fields.CharField(max_length=32)

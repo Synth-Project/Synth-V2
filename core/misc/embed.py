@@ -109,9 +109,7 @@ class CreatePaginator(ui.View):
         embeds = []
 
         if len(items) == 0:
-            embed = custom_embed(
-                title, description
-            )
+            embed = custom_embed(title, description)
             return [embed]
 
         for chunk in splitted_items:

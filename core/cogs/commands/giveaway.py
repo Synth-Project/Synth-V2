@@ -17,7 +17,9 @@ class Giveaway(commands.Cog):
         self.check_giveaways.start()
         self.bot.add_view(GiveawayView(self.bot))
 
-    async def _get_message(self, channel_id: int, message_id: int) -> Union[disnake.abc.Messageable, bool]:
+    async def _get_message(
+        self, channel_id: int, message_id: int
+    ) -> Union[disnake.abc.Messageable, bool]:
         """Fetch a message from a channel and return whether it was successful."""
         try:
             channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
