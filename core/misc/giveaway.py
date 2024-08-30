@@ -175,13 +175,7 @@ class Giveaway:
         description: str | None,
         winners: int,
         duration: str,
-        voice: Union[
-            VoiceEnum.ANY_SG,
-            VoiceEnum.ANY_VC,
-            VoiceEnum.SPECIFIED_SG,
-            VoiceEnum.SPECIFIED_VC,
-            VoiceEnum.SPECIFIED_CG,
-        ],
+        voice: VoiceEnum,
         required_channel: Optional[disnake.abc.GuildChannel] = None,
         channel_to_send: disnake.abc.GuildChannel = None,
     ) -> None:
