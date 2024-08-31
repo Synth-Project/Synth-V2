@@ -10,10 +10,13 @@ from core.logger.logger import logger
 from core.main.config.config import settings
 
 
-class InviteTracker(InviteTracker):
+class ITracker(InviteTracker):
     def __init__(self) -> None:
         super().__init__(
-            bot=Bot(), db_url=settings.DATABASE_URL, use_db=True, use_cache=False
+            bot=Bot(), 
+            db_url="sqlite://invitetracker.sqlite3" if settings.DEBUG else settings.DATABASE_URL, 
+            use_db=True, 
+            use_cache=False, 
         )
 
 
@@ -28,7 +31,7 @@ class Bot(commands.AutoShardedInteractionBot):
             owner_ids=settings.OWNERS,
             test_guilds=settings.TEST_GUILDS,
         )
-        self.debug = False
+        self.debug = settings.DEBUG
 
     async def load_extensions(self: commands.Bot, cogs_paths: list[str] = None) -> None:
         loaded = total = 0
