@@ -1,4 +1,3 @@
-from encodings.aliases import aliases
 from typing import Union
 from disnake.ext import commands
 import disnake
@@ -33,8 +32,7 @@ class Utilities(commands.Cog):
         }
 
     @commands.slash_command(name="server")
-    async def server(self, interaction,
-        silent: bool = commands.Param(name="--silent", description="Silent mode", default=False)):
+    async def server(self, interaction):
         emoji_count = len(interaction.guild.emojis)
         list_of_bots = len([m for m in interaction.guild.members if m.bot])
         list_of_users = len([m for m in interaction.guild.members if not m.bot])
@@ -75,7 +73,7 @@ class Utilities(commands.Cog):
         )
         embed.set_thumbnail(url=interaction.guild.icon)
         embed.set_image(url=interaction.guild.banner)
-        await interaction.send(embed=embed, ephemeral=silent)
+        await interaction.send(embed=embed)
     
     @commands.slash_command(name="clear", description="Clear messages from chat")
     async def clear(
@@ -87,11 +85,9 @@ class Utilities(commands.Cog):
             description="The channel to clear messages from",
             default=None,
         ),
-        silent: bool = commands.Param(name="--silent", description="Silent mode", default=False),
     ) -> None:
         channel = channel or interaction.channel
-        if amount > 100:
-            amount = 100
+        amount = max(amount, 100)
         try:
             deleted = await channel.purge(limit=amount)
         except (disnake.Forbidden, disnake.HTTPException):
@@ -101,22 +97,20 @@ class Utilities(commands.Cog):
                     color=disnake.Color.red(),
                 ),
                 delete_after=10,
-                ephemeral=silent
             )
             return
         
-        await interaction.response.defer(ephemeral = silent)
+        await interaction.response.defer()
 
         embed = custom_embed()
         embed.title = "<a:loading:1168599537682755584> Cleaning messages..."
         embed.description = f"Deleted `{len(deleted)}` messages"
-        await interaction.send(embed=embed, delete_after=10, ephemeral=silent)
+        await interaction.send(embed=embed, delete_after=10)
 
     @commands.slash_command(
-        name="bot", description="Display information about the bot.", aliases=["synth"]
+        name="botinfo", description="Display information about the bot."
     )
-    async def _bot_info(self, interaction: disnake.MessageCommandInteraction,
-            silent: bool = commands.Param(name="--silent", description="Silent mode", default=False)):
+    async def _bot_info(self, interaction: disnake.MessageCommandInteraction):
         channels = set(self.bot.get_all_channels())
         big_builds = len([g for g in self.bot.guilds if g.member_count >= 1000])
 
@@ -157,7 +151,7 @@ class Utilities(commands.Cog):
             label="Documentation", url="https://synth.gitbook.io/"
         )
 
-        await interaction.send(embed=embed, components=[support, website], ephemeral=silent)
+        await interaction.send(embed=embed, components=[support, website])
 
     @commands.slash_command(
         name="user",
@@ -171,7 +165,6 @@ class Utilities(commands.Cog):
             name="user",
             default=None,
         ),
-        silent: bool = commands.Param(name="--silent", description="Silent mode", default=False),
     ) -> None:
         user = user or interaction.user
         embed = custom_embed(
@@ -215,7 +208,7 @@ class Utilities(commands.Cog):
                 name="<:list:1169690529643114547> Flags", value=flags, inline=False
             )
 
-        await interaction.send(embed=embed, ephemeral=silent)
+        await interaction.send(embed=embed)
 
     def check_if_user_is_developer(self, user_id: int) -> bool:
         return user_id in self.bot.owner_ids
