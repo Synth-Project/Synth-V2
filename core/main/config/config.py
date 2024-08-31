@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     @property
     def DATABASE_URL(self) -> str:
+        # return "sqlite://synthdb.sqlite3"  # FOR LOCAL ONLY
         return "postgres://synth:SyNTh@@1337@!@146.148.127.63:5432/synth"
 
     model_config = SettingsConfigDict(

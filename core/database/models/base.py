@@ -6,6 +6,4 @@ class BaseModel(Model):
     guild_id = fields.BigIntField()
 
     class Meta:
-        table = "base"
-        table_description = "Base model"
         abstract = True
