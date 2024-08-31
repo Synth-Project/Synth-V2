@@ -23,7 +23,7 @@ class Bot(commands.AutoShardedInteractionBot):
         )
         self.debug = False
 
-    async def load_extensions(bot: commands.Bot, cogs_paths: list[str] = None) -> None:
+    async def load_extensions(self: commands.Bot, cogs_paths: list[str] = None) -> None:
         loaded = total = 0
 
         if not cogs_paths:
@@ -39,7 +39,7 @@ class Bot(commands.AutoShardedInteractionBot):
                 extension_name = f"{path.replace('/', '.')}.{file_name[:-3]}"
 
                 try:
-                    bot.load_extension(extension_name)
+                    self.load_extension(extension_name)
                     loaded += 1
                     logger.info(f"[+] Loaded cog: {extension_name}")
                 except (
