@@ -3,11 +3,20 @@ import os
 
 import disnake
 from disnake.ext import commands
+from disnake.ext.invitetracker.tracker import InviteTracker
 
 from core.database import init_database, close_database
 from core.logger.logger import logger
 from core.main.config.config import settings
 
+class InviteTracker(InviteTracker):
+    def __init__(self) -> None:
+        super().__init__(
+            bot=Bot(),
+            db_url=settings.DATABASE_URL,
+            use_db=True,
+            use_cache=False
+        )
 
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
