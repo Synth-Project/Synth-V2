@@ -3,16 +3,26 @@ import disnake
 from PIL import Image, ImageDraw, ImageFont
 import io
 
+
 class Utilities(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super(Utilities, self).__init__()
         self.bot = bot
 
     @commands.slash_command(name="watermark")
-    async def watermark(self, interaction, attachment: disnake.Attachment ,text: str = commands.Param(max_length=50, min_length=1, default="Synth")):
+    async def watermark(
+        self,
+        interaction,
+        attachment: disnake.Attachment,
+        text: str = commands.Param(max_length=50, min_length=1, default="Synth"),
+    ):
         await interaction.response.defer()
         # Watermark System. TODO: rewrite this shit lol
-        if attachment.content_type == "image/png" or attachment.content_type == "image/jpeg" or attachment.content_type == "image/jpg":
+        if (
+            attachment.content_type == "image/png"
+            or attachment.content_type == "image/jpeg"
+            or attachment.content_type == "image/jpg"
+        ):
             image_bytes = await attachment.read()
             image = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
 
@@ -21,10 +31,13 @@ class Utilities(commands.Cog):
 
             text_image = Image.new("RGBA", image.size, (0, 0, 0, 0))
             draw = ImageDraw.Draw(text_image)
-            
+
             bbox = draw.textbbox((0, 0), text, font=font)
             text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            position = ((image.width - text_width) // 2, (image.height - text_height) // 2)
+            position = (
+                (image.width - text_width) // 2,
+                (image.height - text_height) // 2,
+            )
 
             draw.text(position, text, font=font, fill=(255, 255, 255, 128))
 
@@ -43,6 +56,7 @@ class Utilities(commands.Cog):
             await interaction.send("Watermark", file=file)
         else:
             await interaction.send("This is not an image!", ephemeral=True)
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Utilities(bot))
