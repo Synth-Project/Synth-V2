@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class StandartEmoji(Enum):
     ACTIVITY = "🕹️"
     ANNOUNCE = "📢"
@@ -46,4 +47,3 @@ class StandartEmoji(Enum):
     VOICE_CHANNEL = "🔊"
     WARNING = "⚠️"
     WRENCH = "🔧"
-

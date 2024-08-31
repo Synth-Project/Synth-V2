@@ -9,6 +9,7 @@ from memory_profiler import memory_usage
 
 startup = datetime.datetime.now()
 
+
 class Utilities(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super(Utilities, self).__init__()
@@ -36,7 +37,9 @@ class Utilities(commands.Cog):
         emoji_count = len(interaction.guild.emojis)
         list_of_bots = len([m for m in interaction.guild.members if m.bot])
         list_of_users = len([m for m in interaction.guild.members if not m.bot])
-        guild_created_at = disnake.utils.format_dt(interaction.guild.created_at, style="f")
+        guild_created_at = disnake.utils.format_dt(
+            interaction.guild.created_at, style="f"
+        )
         text_channels = len(interaction.guild.text_channels)
         voice_channels = len(interaction.guild.voice_channels)
         categories = len(interaction.guild.categories)
@@ -74,7 +77,7 @@ class Utilities(commands.Cog):
         embed.set_thumbnail(url=interaction.guild.icon)
         embed.set_image(url=interaction.guild.banner)
         await interaction.send(embed=embed)
-    
+
     @commands.slash_command(name="clear", description="Clear messages from chat")
     async def clear(
         self,
@@ -99,7 +102,7 @@ class Utilities(commands.Cog):
                 delete_after=10,
             )
             return
-        
+
         await interaction.response.defer()
 
         embed = custom_embed()
@@ -116,7 +119,7 @@ class Utilities(commands.Cog):
 
         embed = custom_embed(
             title="Information about Synth",
-            description="**Synth** - is a multi-functional Discord bot."
+            description="**Synth** - is a multi-functional Discord bot.",
         ).set_thumbnail(url=self.bot.user.avatar)
         embed.add_field(
             name="Main",
@@ -153,10 +156,7 @@ class Utilities(commands.Cog):
 
         await interaction.send(embed=embed, components=[support, website])
 
-    @commands.slash_command(
-        name="user",
-        description="Display information about user."
-    )
+    @commands.slash_command(name="user", description="Display information about user.")
     async def user(
         self,
         interaction: disnake.MessageCommandInteraction,
@@ -176,7 +176,13 @@ class Utilities(commands.Cog):
             f"<:created_at:1169684592006017034> Created at: {disnake.utils.format_dt(user.created_at, style='f')}\n"
         )
 
-        embed.set_thumbnail(url=user.display_avatar.url if user.display_avatar else user.avatar.url if user.avatar else None)
+        embed.set_thumbnail(
+            url=(
+                user.display_avatar.url
+                if user.display_avatar
+                else user.avatar.url if user.avatar else None
+            )
+        )
         embed.set_image(url=user.banner.url if user.banner else None)
 
         if isinstance(user, disnake.Member):
@@ -189,11 +195,7 @@ class Utilities(commands.Cog):
                 f"<:design:1169688944502378536> Roles: {', '.join([role.mention for role in user.roles if not role.is_default() and role.name != '@everyone'])}\n"
             )
 
-        embed.add_field(
-            name="Main information",
-            value = value,
-            inline=False
-        )
+        embed.add_field(name="Main information", value=value, inline=False)
 
         flags = " ".join(
             [
@@ -212,6 +214,7 @@ class Utilities(commands.Cog):
 
     def check_if_user_is_developer(self, user_id: int) -> bool:
         return user_id in self.bot.owner_ids
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Utilities(bot))
