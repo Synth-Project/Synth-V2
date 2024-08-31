@@ -63,18 +63,18 @@ class Bot(commands.AutoShardedInteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(
-            f"\nInvite link: https://discord.com/api/oauth2/authorize?client_id="
+            f"[#] Invite link: https://discord.com/api/oauth2/authorize?client_id="
             f"{self.user.id}&permissions=980937982&scope=bot%20applications.commands"
         )
-        logger.debug(f"Connected to {self.user}")
+        logger.info(f"[#] Connected to {self.user}")
 
         await self.load_extensions()
         await self.wait_until_ready()
 
         await self.change_presence(
             activity=disnake.Activity(
-                type=disnake.ActivityType.competing,
-                name=f"/help | v1.0",
-                status=disnake.Status.idle,
+                name = "Synth V2",
+                type = disnake.ActivityType.custom,
+                state = f"/help | v2.0"
             )
         )
