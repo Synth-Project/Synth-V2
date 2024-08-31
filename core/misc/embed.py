@@ -96,14 +96,14 @@ class CreatePaginator(ui.View):
 
     @staticmethod
     def generate_embeds(
-        items: list,
-        items_per_embed: int,
-        empty_list_message: str,
-        title: str = None,
-        description: str = None,
+            items: list,
+            items_per_embed: int,
+            empty_list_message: str,
+            title: str = None,
+            description: str = None,
     ) -> list[disnake.Embed]:
         splitted_items = [
-            items[i : i + items_per_embed]
+            items[i: i + items_per_embed]
             for i in range(0, len(items), items_per_embed)
         ]
         embeds = []
@@ -128,11 +128,11 @@ class CreatePaginator(ui.View):
 
 
 def custom_embed(
-    title: str = None,
-    description: str = "",
-    color: Union[disnake.Colour, int, None] = 0x2F3236,
-    image: str = None,
-    thumbnail: str = None,
+        title: str = None,
+        description: str = "",
+        color: Union[disnake.Colour, int, None] = 0x2F3236,
+        image: str = None,
+        thumbnail: str = None,
 ) -> disnake.Embed:
     """
     Create a custom embed.

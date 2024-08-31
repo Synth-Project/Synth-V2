@@ -1,12 +1,12 @@
-from encodings.aliases import aliases
-from typing import Union
-from disnake.ext import commands
-import disnake
+import datetime
 import sys
+from typing import Union
+
+import disnake
+from disnake.ext import commands
+from memory_profiler import memory_usage
 
 from core.misc.embed import custom_embed
-import datetime
-from memory_profiler import memory_usage
 
 startup = datetime.datetime.now()
 

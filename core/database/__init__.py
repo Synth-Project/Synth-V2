@@ -1,7 +1,7 @@
 from tortoise import Tortoise
 
-from core.main.config import settings
 from core.logger.logger import logger
+from core.main.config import settings
 
 
 async def init_database():

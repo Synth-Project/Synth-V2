@@ -1,5 +1,5 @@
-from core.main.config.config import settings
 from core import bot
+from core.main.config.config import settings
 
 if __name__ == "__main__":
     try:
