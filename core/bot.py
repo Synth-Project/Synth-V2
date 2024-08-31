@@ -73,8 +73,6 @@ class Bot(commands.AutoShardedInteractionBot):
 
         await self.change_presence(
             activity=disnake.Activity(
-                name = "Synth V2",
-                type = disnake.ActivityType.custom,
-                state = f"/help | v2.0"
+                name="Synth V2", type=disnake.ActivityType.custom, state=f"/help | v2.0"
             )
         )
