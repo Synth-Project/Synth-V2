@@ -34,12 +34,19 @@ class Utilities(commands.Cog):
         }
 
     @commands.slash_command(name="server")
-    async def server(self, interaction,
-                     silent: bool = commands.Param(name="--silent", description="Silent mode", default=False)):
+    async def server(
+        self,
+        interaction,
+        silent: bool = commands.Param(
+            name="--silent", description="Silent mode", default=False
+        ),
+    ):
         emoji_count = len(interaction.guild.emojis)
         list_of_bots = len([m for m in interaction.guild.members if m.bot])
         list_of_users = len([m for m in interaction.guild.members if not m.bot])
-        guild_created_at = disnake.utils.format_dt(interaction.guild.created_at, style="f")
+        guild_created_at = disnake.utils.format_dt(
+            interaction.guild.created_at, style="f"
+        )
         text_channels = len(interaction.guild.text_channels)
         voice_channels = len(interaction.guild.voice_channels)
         categories = len(interaction.guild.categories)
@@ -70,8 +77,8 @@ class Utilities(commands.Cog):
         embed.add_field(
             name="Members",
             value=f"<:members:1169684583369949285> All members: `{len(interaction.guild.members)}`\n"
-                  f"<:design:1169686174374301746> <:members:1169684583369949285> Human: `{list_of_users}`\n"
-                  f"<:design:1169688944502378536> <:bot:1169685346506776697> Bots: `{list_of_bots}`",
+            f"<:design:1169686174374301746> <:members:1169684583369949285> Human: `{list_of_users}`\n"
+            f"<:design:1169688944502378536> <:bot:1169685346506776697> Bots: `{list_of_bots}`",
             inline=False,
         )
         embed.set_thumbnail(url=interaction.guild.icon)
@@ -80,15 +87,17 @@ class Utilities(commands.Cog):
 
     @commands.slash_command(name="clear", description="Clear messages from chat")
     async def clear(
-            self,
-            interaction: disnake.MessageCommandInteraction,
-            amount: int,
-            channel: disnake.TextChannel = commands.Param(
-                name="channel",
-                description="The channel to clear messages from",
-                default=None,
-            ),
-            silent: bool = commands.Param(name="--silent", description="Silent mode", default=False),
+        self,
+        interaction: disnake.MessageCommandInteraction,
+        amount: int,
+        channel: disnake.TextChannel = commands.Param(
+            name="channel",
+            description="The channel to clear messages from",
+            default=None,
+        ),
+        silent: bool = commands.Param(
+            name="--silent", description="Silent mode", default=False
+        ),
     ) -> None:
         channel = channel or interaction.channel
         if amount > 100:
@@ -102,7 +111,7 @@ class Utilities(commands.Cog):
                     color=disnake.Color.red(),
                 ),
                 delete_after=10,
-                ephemeral=silent
+                ephemeral=silent,
             )
             return
 
@@ -116,38 +125,43 @@ class Utilities(commands.Cog):
     @commands.slash_command(
         name="bot", description="Display information about the bot.", aliases=["synth"]
     )
-    async def _bot_info(self, interaction: disnake.MessageCommandInteraction,
-                        silent: bool = commands.Param(name="--silent", description="Silent mode", default=False)):
+    async def _bot_info(
+        self,
+        interaction: disnake.MessageCommandInteraction,
+        silent: bool = commands.Param(
+            name="--silent", description="Silent mode", default=False
+        ),
+    ):
         channels = set(self.bot.get_all_channels())
         big_builds = len([g for g in self.bot.guilds if g.member_count >= 1000])
 
         embed = custom_embed(
             title="Information about Synth",
-            description="**Synth** - is a multi-functional Discord bot."
+            description="**Synth** - is a multi-functional Discord bot.",
         ).set_thumbnail(url=self.bot.user.avatar)
         embed.add_field(
             name="Main",
             value=f"<:clock:1169690592465395722> Ping: `{round(self.bot.latency * 1000)}` ms\n"
-                  f"<:activities:1169690504393404456> RAM: `{round(memory_usage()[0], 2)}` mb\n"
-                  f"<:icons_goodping:1169690518645649478> Uptime: {disnake.utils.format_dt(startup, style='F')}\n",
+            f"<:activities:1169690504393404456> RAM: `{round(memory_usage()[0], 2)}` mb\n"
+            f"<:icons_goodping:1169690518645649478> Uptime: {disnake.utils.format_dt(startup, style='F')}\n",
             inline=False,
         )
         embed.add_field(
             name="Popularity",
             value=f"<:info:1169685342077583480> Servers: `{len(self.bot.guilds)}`\n"
-                  f"<:globe:1169690501063123065> Big servers (1000+): `{big_builds}`\n"
-                  f"<:members:1169684583369949285> Users: `{len(set(self.bot.get_all_members()))}`\n"
-                  f"<:channels:1169684589640429599> Channels: `{len(channels)}`\n",
+            f"<:globe:1169690501063123065> Big servers (1000+): `{big_builds}`\n"
+            f"<:members:1169684583369949285> Users: `{len(set(self.bot.get_all_members()))}`\n"
+            f"<:channels:1169684589640429599> Channels: `{len(channels)}`\n",
             inline=False,
         )
         embed.add_field(
             name="Other Information",
             value=f"<:calendar:1169690539168366712> Created at: `31/10/2023`\n"
-                  f"<:created_at:1169684592006017034> Bot version: `v2.0.0`\n"
-                  f"<:wrench:1169690509929889802> Python version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`\n"
-                  f"<:owner:1169684595697004616> Owners: [Nixxoq](https://discord.com/users/999682446675161148), "
-                  f"[Weever](https://discord.com/users/419159175009009675), "
-                  f"[LazyDev](https://discord.com/users/1256533103967735811)",
+            f"<:created_at:1169684592006017034> Bot version: `v2.0.0`\n"
+            f"<:wrench:1169690509929889802> Python version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`\n"
+            f"<:owner:1169684595697004616> Owners: [Nixxoq](https://discord.com/users/999682446675161148), "
+            f"[Weever](https://discord.com/users/419159175009009675), "
+            f"[LazyDev](https://discord.com/users/1256533103967735811)",
             inline=False,
         )
 
@@ -158,21 +172,22 @@ class Utilities(commands.Cog):
             label="Documentation", url="https://synth.gitbook.io/"
         )
 
-        await interaction.send(embed=embed, components=[support, website], ephemeral=silent)
+        await interaction.send(
+            embed=embed, components=[support, website], ephemeral=silent
+        )
 
-    @commands.slash_command(
-        name="user",
-        description="Display information about user."
-    )
+    @commands.slash_command(name="user", description="Display information about user.")
     async def user(
-            self,
-            interaction: disnake.MessageCommandInteraction,
-            user: Union[disnake.User, disnake.Member] = commands.Param(
-                description="Choice user",
-                name="user",
-                default=None,
-            ),
-            silent: bool = commands.Param(name="--silent", description="Silent mode", default=False),
+        self,
+        interaction: disnake.MessageCommandInteraction,
+        user: Union[disnake.User, disnake.Member] = commands.Param(
+            description="Choice user",
+            name="user",
+            default=None,
+        ),
+        silent: bool = commands.Param(
+            name="--silent", description="Silent mode", default=False
+        ),
     ) -> None:
         user = user or interaction.user
         embed = custom_embed(
@@ -185,7 +200,12 @@ class Utilities(commands.Cog):
         )
 
         embed.set_thumbnail(
-            url=user.display_avatar.url if user.display_avatar else user.avatar.url if user.avatar else None)
+            url=(
+                user.display_avatar.url
+                if user.display_avatar
+                else user.avatar.url if user.avatar else None
+            )
+        )
         embed.set_image(url=user.banner.url if user.banner else None)
 
         if isinstance(user, disnake.Member):
@@ -198,11 +218,7 @@ class Utilities(commands.Cog):
                 f"<:design:1169688944502378536> Roles: {', '.join([role.mention for role in user.roles if not role.is_default() and role.name != '@everyone'])}\n"
             )
 
-        embed.add_field(
-            name="Main information",
-            value=value,
-            inline=False
-        )
+        embed.add_field(name="Main information", value=value, inline=False)
 
         flags = " ".join(
             [
