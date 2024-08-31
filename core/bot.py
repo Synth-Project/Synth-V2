@@ -13,10 +13,14 @@ from core.main.config.config import settings
 class ITracker(InviteTracker):
     def __init__(self) -> None:
         super().__init__(
-            bot=Bot(), 
-            db_url="sqlite://invitetracker.sqlite3" if settings.DEBUG else settings.DATABASE_URL, 
-            use_db=True, 
-            use_cache=False, 
+            bot=Bot(),
+            db_url=(
+                "sqlite://invitetracker.sqlite3"
+                if settings.DEBUG
+                else settings.DATABASE_URL
+            ),
+            use_db=True,
+            use_cache=False,
         )
 
 
