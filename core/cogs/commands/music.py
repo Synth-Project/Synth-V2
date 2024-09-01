@@ -5,9 +5,9 @@ import wavelink
 import disnake
 from disnake.ext import commands
 
-from core.misc.views.music import NavigationPanel
+from core import logger
+from core.misc.views.music.panel import NavigationPanel
 from core.misc.embed import custom_embed
-from core.logger.logger import logger
 from core.database.models.music import MusicModel
 
 
@@ -47,6 +47,8 @@ class Music(commands.Cog):
 
         if original and original.recommended:
             embed.set_footer(text=f"This track was recommended via {track.source}")
+        elif payload.player.queue.mode == wavelink.QueueMode.loop:
+            embed.set_footer(text="This track was looped")
 
         embed.set_image(url=track.artwork if track.artwork else None)
 
@@ -70,10 +72,16 @@ class Music(commands.Cog):
     ) -> None:
         player = payload.player
 
-        if player and not player.queue.is_empty:
+        assert player
+
+        if not player.queue.is_empty:
             new_track = player.queue.get()
 
             await player.play(new_track, add_history=False)
+
+        if player.queue.mode == wavelink.QueueMode.loop:
+            await player.play(payload.original, add_history=False)
+        
 
     @commands.slash_command(
         description="Search and play music from Youtube/Spotify/SoundCloud/Deezer/Apple Music"
@@ -95,9 +103,7 @@ class Music(commands.Cog):
         else:
             player: wavelink.Player = interaction.guild.voice_client
 
-        tracks: wavelink.Search = await wavelink.Playable.search(
-            query, source=wavelink.TrackSource.YouTubeMusic
-        )
+        tracks: wavelink.Search = await wavelink.Playable.search(query)
 
         if not tracks:
             error_embed.title = (
@@ -134,7 +140,7 @@ class Music(commands.Cog):
             embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
 
             embed.description = f"[{track.title}]({str(track.uri)})"
-            embed.add_field(name="Artist:", value=f"**`{track.author}`**", inline=True)
+            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
@@ -166,14 +172,6 @@ class Music(commands.Cog):
                         update.songs.pop()
                     update.songs.insert(0, track_info)
                     await update.save()
-                # TODO: check if track_info in update.songs via split ("—"), because it's trash.
-                # if track_info not in update.songs:
-                # if update.songs.count >= 3:
-                # TODO: Fix it, because it's not working
-                # update.songs.insert(0, track_info)
-                # else:
-                # update.songs.append(track_info)
-                # await update.save()
 
         await message.edit(
             embed=embed,

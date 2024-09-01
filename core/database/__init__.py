@@ -1,8 +1,7 @@
 from tortoise import Tortoise
 
 from core.main.config import settings
-from core.logger.logger import logger
-
+from core import logger
 
 async def init_database():
     logger.info("# Initializing database...")

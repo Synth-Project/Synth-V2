@@ -7,8 +7,7 @@ from disnake.ext import commands
 from core.main.config.config import settings
 
 from core.database import init_database, close_database
-from core.logger.logger import logger
-
+from core import logger
 
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
