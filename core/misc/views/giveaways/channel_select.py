@@ -1,7 +1,7 @@
 import disnake
 from disnake.ext import commands
 from core.misc.embed import custom_embed
-from core.misc.views.giveaways import *
+from core.misc.views.giveaways.voice import GiveawaySettingsVoice
 
 
 class GiveawaySettingsChannel(disnake.ui.View):
@@ -80,7 +80,8 @@ class GiveawayChannelYes(disnake.ui.Button):
         await interaction.response.defer(ephemeral=True)
 
         embed = custom_embed(
-            title="Create giveaway", description="Choose a channel for the giveaway"
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {interaction.channel.mention}\nChange the channel",
         )
         await self.interaction.edit_original_response(
             embed=embed,
@@ -119,8 +120,8 @@ class GiveawayChannelNo(disnake.ui.Button):
         await interaction.response.defer(ephemeral=True)
 
         embed = custom_embed(
-            "Create giveaway",
-            "Do users have to be in voice/stage channels to enter the giveaway?",
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {interaction.channel.mention}\nDo users have to be in voice/stage channels to enter the giveaway?",
         )
         await self.interaction.edit_original_response(
             embed=embed,
@@ -169,8 +170,8 @@ class GiveawayChannelSelect(disnake.ui.ChannelSelect):
         await self.interaction.delete_original_response()
 
         embed = custom_embed(
-            "Create giveaway",
-            "Do users have to be in voice/stage channels to enter the giveaway?",
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {interaction.channel.mention}\nDo users have to be in voice/stage channels to enter the giveaway?",
         )
         await interaction.send(
             embed=embed,

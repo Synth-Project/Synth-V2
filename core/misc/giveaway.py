@@ -54,73 +54,6 @@ class GiveawayView(disnake.ui.View):
         await interaction.response.defer(ephemeral=True)
         message_id = interaction.message.id
         data = await get_member_ids(message_id)
-        if data is None:
-            await interaction.send("❌ Giveaway not found", ephemeral=True)
-            return
-
-        match data.voice:
-            case VoiceEnum.SPECIFIED_VC:
-                if (
-                    interaction.author.voice
-                    or data.voice_id != interaction.author.voice.channel.id
-                ):
-                    voice = await _get_channel(self.bot, data.voice_id)
-                    if voice:
-                        await interaction.send(
-                            f"❌ You need to join to the required voice channel: {voice.mention}",
-                            ephemeral=True,
-                        )
-                        return
-
-            case VoiceEnum.SPECIFIED_SG:
-                if (
-                    interaction.author.voice
-                    or data.voice_id != interaction.author.voice.channel.id
-                ):
-                    stage = await _get_channel(self.bot, data.voice_id)
-                    if stage:
-                        await interaction.send(
-                            f"❌ You need to join to the required stage channel: {voice.mention}",
-                            ephemeral=True,
-                        )
-                        return
-
-            case VoiceEnum.SPECIFIED_CG:
-                if (
-                    interaction.author.voice
-                    or data.voice_id != interaction.author.voice.channel.category_id
-                ):
-                    category = await _get_channel(self.bot, data.voice_id)
-                    if category:
-                        await interaction.send(
-                            f"❌ You need to join to the required category: {category.mention}",
-                            ephemeral=True,
-                        )
-                        return
-
-            case VoiceEnum.ANY_VC:
-                if (
-                    interaction.author.voice
-                    or interaction.author.voice.channel.type
-                    != disnake.ChannelType.voice
-                ):
-                    await interaction.send(
-                        "❌ You need to join to the any voice channel",
-                        ephemeral=True,
-                    )
-                    return
-
-            case VoiceEnum.ANY_SG:
-                if (
-                    interaction.author.voice
-                    or interaction.author.voice.channel.type
-                    != disnake.ChannelType.stage_voice
-                ):
-                    await interaction.send(
-                        "❌ You need to join to the any stage channel",
-                        ephemeral=True,
-                    )
-                    return
 
         if interaction.author.id in data.members:
             await interaction.send(
@@ -146,10 +79,7 @@ class GiveawayView(disnake.ui.View):
     ):
         await interaction.response.defer(ephemeral=True)
         message_id = interaction.message.id
-
-        if not (data := await get_member_ids(message_id)):
-            await interaction.send("❌ Giveaway not found", ephemeral=True)
-            return
+        data = await get_member_ids(message_id)
 
         members_list = [
             f"**{member.name}** / **{member.id}**"
@@ -173,6 +103,68 @@ class GiveawayView(disnake.ui.View):
             ephemeral=True,
         )
 
+    async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
+        # return await super().interaction_check(interaction)
+        data = await get_member_ids(interaction.message.id)
+        if data is None:
+            await interaction.send("❌ Giveaway not found", ephemeral=True)
+            return False
+
+        if not data.ended:
+            voice = interaction.author.voice
+
+            match data.voice:
+                case VoiceEnum.SPECIFIED_VC:
+                    if not voice or data.voice_id != voice.channel.id:
+                        voice = await _get_channel(self.bot, data.voice_id)
+                        if voice:
+                            await interaction.send(
+                                f"❌ You need to join to the required voice channel: {voice.mention}",
+                                ephemeral=True,
+                            )
+                            return False
+
+                case VoiceEnum.SPECIFIED_SG:
+                    if not voice or data.voice_id != voice.channel.id:
+                        stage = await _get_channel(self.bot, data.voice_id)
+                        if stage:
+                            await interaction.send(
+                                f"❌ You need to join to the required stage channel: {stage.mention}",
+                                ephemeral=True,
+                            )
+                            return False
+
+                case VoiceEnum.SPECIFIED_CG:
+                    if not voice or data.voice_id != voice.channel.category_id:
+                        category = await _get_channel(self.bot, data.voice_id)
+                        if category:
+                            await interaction.send(
+                                f"❌ You need to join to the required category: {category.mention}",
+                                ephemeral=True,
+                            )
+                            return False
+
+                case VoiceEnum.ANY_VC:
+                    if not voice or voice.channel.type != disnake.ChannelType.voice:
+                        await interaction.send(
+                            "❌ You need to join to the any voice channel",
+                            ephemeral=True,
+                        )
+                        return False
+
+                case VoiceEnum.ANY_SG:
+                    if (
+                        not voice
+                        or voice.channel.type != disnake.ChannelType.stage_voice
+                    ):
+                        await interaction.send(
+                            "❌ You need to join to the any stage channel",
+                            ephemeral=True,
+                        )
+                        return False
+
+        return True
+
 
 class Giveaway:
     def __init__(self, bot: commands.Bot) -> None:
@@ -188,6 +180,7 @@ class Giveaway:
         voice: VoiceEnum,
         required_channel: Optional[disnake.abc.GuildChannel] = None,
         channel_to_send: disnake.abc.GuildChannel = None,
+        image_uri: Optional[str] = None,
     ) -> None:
         if not await _check_chat(channel_to_send):
             await interaction.send(
@@ -196,7 +189,6 @@ class Giveaway:
             )
             return
 
-        # Parse duration
         duration_delta = timedelta()
         for value, unit in re.findall(r"(\d+)([dhms])", duration):
             if unit in time_units:
@@ -211,10 +203,25 @@ class Giveaway:
 
         end_time = datetime.datetime.now() + duration_delta
         ends = disnake.utils.format_dt(end_time, style="R")
+        desc = (
+            f"{description or ''}\n"
+            f"- Prize: **{prize}**\n"
+            f"- Winners: **{winners}**\n"
+            f"- Ends: {ends}\n"
+        )
+        options = {
+            "ANY_VC": "Any voice channel",
+            "ANY_SG": "Any stage channel",
+            "SPECIFIED_VC": "Specified voice: {}",
+            "SPECIFIED_SG": "Specified stage: {}",
+            "SPECIFIED_CG": "Specified category: {}",
+        }
+        if required_channel:
+            desc += f"- Requirements: **{options.get(voice.value, '{}').format(required_channel.mention)}**\n"
         embed = custom_embed(
             "🎉 | Giveaway",
-            f"{description or ''}\n- Prize: **{prize}**\n- Winners: **{winners}**\n- Ends: {ends}",
-        )
+            desc,
+        ).set_image(url=image_uri if image_uri else None)
 
         msg = await channel_to_send.send(embed=embed)
         await GiveawayModel.create(
@@ -230,4 +237,3 @@ class Giveaway:
         )
 
         await msg.edit(view=GiveawayView(self.bot))
-        # await interaction.delete_original_response()

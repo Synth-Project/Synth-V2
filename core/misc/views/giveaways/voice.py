@@ -2,7 +2,7 @@ import disnake
 from disnake.ext import commands
 from core.database.models.giveaway import VoiceEnum
 from core.misc.embed import custom_embed
-from core.misc.giveaway import Giveaway
+from core.misc.views.giveaways.image import GiveawayImageSet
 
 
 class GiveawaySettingsVoice(disnake.ui.View):
@@ -124,21 +124,28 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
         }
         match selected_option:
             case "no" | "any_vc" | "any_sg":
-                await self.interaction.delete_original_response()
-                await Giveaway(self.bot).create(
-                    interaction,
-                    self.prize,
-                    self.description,
-                    self.winners,
-                    self.duration,
-                    option.get(selected_option),
-                    None,
-                    self.channel,
+                embed = custom_embed(
+                    title="Create giveaway",
+                    description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nDo you want to change image in embed?",
+                )
+                await self.interaction.edit_original_response(
+                    embed=embed,
+                    view=GiveawayImageSet(
+                        interaction,
+                        self.bot,
+                        self.prize,
+                        self.description,
+                        self.winners,
+                        self.duration,
+                        self.channel,
+                        option.get(selected_option),
+                        None,
+                    ),
                 )
             case "specified_vc":
                 embed = custom_embed(
-                    "Specify the voice channel",
-                    "Please choose the voice channel you want to require in giveaway",
+                    title="Create giveaway",
+                    description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nPlease choose the voice channel you want to require in giveaway",
                 )
                 await self.interaction.edit_original_response(
                     embed=embed,
@@ -155,8 +162,8 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
                 )
             case "specified_sg":
                 embed = custom_embed(
-                    "Specify the stage channel",
-                    "Please choose the stage channel you want to require in giveaway",
+                    title="Create giveaway",
+                    description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nPlease choose the stage channel you want to require in giveaway",
                 )
                 await self.interaction.edit_original_response(
                     embed=embed,
@@ -173,8 +180,8 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
                 )
             case "specified_cg":
                 embed = custom_embed(
-                    "Specify the category",
-                    "Please choose the category you want to require in giveaway",
+                    title="Create giveaway",
+                    description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nPlease choose the category you want to require in giveaway",
                 )
                 await self.interaction.edit_original_response(
                     embed=embed,
@@ -217,19 +224,25 @@ class VoiceSpecifiedSelect(disnake.ui.ChannelSelect):
         self.channel = channel
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
-        await self.interaction.delete_original_response()
-
-        selected_option = self.values[0]
         await interaction.response.defer(ephemeral=True)
-        await Giveaway(self.bot).create(
-            interaction,
-            self.prize,
-            self.description,
-            self.winners,
-            self.duration,
-            VoiceEnum.SPECIFIED_VC,
-            selected_option,
-            self.channel,
+        selected_option = self.values[0]
+        embed = custom_embed(
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nDo you want to change image in embed?",
+        )
+        await self.interaction.edit_original_response(
+            embed=embed,
+            view=GiveawayImageSet(
+                interaction,
+                self.bot,
+                self.prize,
+                self.description,
+                self.winners,
+                self.duration,
+                self.channel,
+                VoiceEnum.SPECIFIED_VC,
+                selected_option,
+            ),
         )
 
 
@@ -259,19 +272,25 @@ class StageSpecifiedSelect(disnake.ui.ChannelSelect):
         self.channel = channel
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
-        await self.interaction.delete_original_response()
-
-        selected_option = self.values[0]
         await interaction.response.defer(ephemeral=True)
-        await Giveaway(self.bot).create(
-            interaction,
-            self.prize,
-            self.description,
-            self.winners,
-            self.duration,
-            VoiceEnum.SPECIFIED_SG,
-            selected_option,
-            self.channel,
+        selected_option = self.values[0]
+        embed = custom_embed(
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nDo you want to change image in embed?",
+        )
+        await self.interaction.edit_original_response(
+            embed=embed,
+            view=GiveawayImageSet(
+                interaction,
+                self.bot,
+                self.prize,
+                self.description,
+                self.winners,
+                self.duration,
+                self.channel,
+                VoiceEnum.SPECIFIED_SG,
+                selected_option,
+            ),
         )
 
 
@@ -301,17 +320,23 @@ class CategorySpecifiedSelect(disnake.ui.ChannelSelect):
         self.channel = channel
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
-        await self.interaction.delete_original_response()
-
-        selected_option = self.values[0]
         await interaction.response.defer(ephemeral=True)
-        await Giveaway(self.bot).create(
-            interaction,
-            self.prize,
-            self.description,
-            self.winners,
-            self.duration,
-            VoiceEnum.SPECIFIED_CG,
-            selected_option,
-            self.channel,
+        selected_option = self.values[0]
+        embed = custom_embed(
+            title="Create giveaway",
+            description=f"{self.description}\n- Prize: **{self.prize}**\n- Winners: **{self.winners}**\n- Channel: {self.channel.mention}\nDo you want to change image in embed?",
+        )
+        await self.interaction.edit_original_response(
+            embed=embed,
+            view=GiveawayImageSet(
+                interaction,
+                self.bot,
+                self.prize,
+                self.description,
+                self.winners,
+                self.duration,
+                self.channel,
+                VoiceEnum.SPECIFIED_CG,
+                selected_option,
+            ),
         )
