@@ -19,10 +19,7 @@ class ITracker(InviteTracker):
                 if settings.DEBUG
                 else settings.DATABASE_URL
             ),
-            use_db=True,
-            use_cache=False,
         )
-
 
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""

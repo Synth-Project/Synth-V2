@@ -1,9 +1,10 @@
-disnake
+disnake~=2.9.2
 aiohttp
 pydantic
 pydantic_settings
 tortoise-orm[asyncpg]
-loguru
+loguru~=0.7.2
 git+https://github.com/Synth-discord-bot/Wavelink-Disnake
 git+https://github.com/Synth-discord-bot/disnake-ext-invitetracker
 memory_profiler
+pydantic-settings~=2.4.0
