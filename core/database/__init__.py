@@ -3,6 +3,7 @@ from tortoise import Tortoise
 from core.main.config import settings
 from core import logger
 
+
 async def init_database():
     logger.info("# Initializing database...")
     await Tortoise.init(

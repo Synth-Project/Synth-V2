@@ -81,7 +81,6 @@ class Music(commands.Cog):
 
         if player.queue.mode == wavelink.QueueMode.loop:
             await player.play(payload.original, add_history=False)
-        
 
     @commands.slash_command(
         description="Search and play music from Youtube/Spotify/SoundCloud/Deezer/Apple Music"

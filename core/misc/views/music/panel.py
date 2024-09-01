@@ -128,7 +128,7 @@ class NavigationPanel(disnake.ui.View):
                     f"`{index}.` **{music.author}** - {music.title}"
                     for index, music in queue_list[i : i + 10]
                 ),
-                image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417"
+                image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",
             )
             for i in range(0, len(queue_list), 10)
         ]

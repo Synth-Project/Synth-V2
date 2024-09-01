@@ -86,9 +86,7 @@ class NavigationDropdown(disnake.ui.Select):
                 title="There are no songs in the queue yet",
                 color=disnake.Color.red(),
             )
-            return await interaction.response.send_message(
-                embed=embed, ephemeral=True
-            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         track: wavelink.Track = player.current
 
@@ -96,16 +94,16 @@ class NavigationDropdown(disnake.ui.Select):
         file_like_object = io.BytesIO()
 
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': f'{track.title}.mp3',
-            'postprocessors': [],
+            "format": "bestaudio/best",
+            "outtmpl": f"{track.title}.mp3",
+            "postprocessors": [],
         }
 
         async def download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(track.uri, download=True)
                 filename = ydl.prepare_filename(info)
-                with open(filename, 'rb') as f:
+                with open(filename, "rb") as f:
                     file_like_object.write(f.read())
                 file_like_object.seek(0)  # Reset file pointer to the beginning
 
@@ -114,13 +112,12 @@ class NavigationDropdown(disnake.ui.Select):
 
         # Send the file to the Discord channel
         file_like_object.seek(0)  # Ensure we're at the start of the file-like object
-        await interaction.followup.send(file=disnake.File(file_like_object, 'audio.mp3'))
+        await interaction.followup.send(
+            file=disnake.File(file_like_object, "audio.mp3")
+        )
 
         # Clean up
         file_like_object.close()
-
-        
-
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
