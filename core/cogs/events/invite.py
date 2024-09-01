@@ -42,13 +42,16 @@ class InviteLogging(commands.Cog):
             member_id=interaction.user.id, guild=interaction.guild
         )
         if inviter:
-            await interaction.response.send_message(f"You were invited by {inviter.name}.")
+            await interaction.response.send_message(
+                f"You were invited by {inviter.name}."
+            )
         else:
             await interaction.response.send_message("I couldn't find who invited you.")
 
-    @invite.sub_command(name = "leaderboard")
+    @invite.sub_command(name="leaderboard")
     async def invite_leaderboard(self, interaction) -> None:
         await interaction.response.send_message("Not implemented yet.")
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(InviteLogging(bot))

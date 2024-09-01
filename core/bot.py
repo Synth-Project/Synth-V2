@@ -21,6 +21,7 @@ class ITracker(InviteTracker):
             ),
         )
 
+
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
