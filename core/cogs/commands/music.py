@@ -35,8 +35,8 @@ class Music(commands.Cog):
             return
 
         if (
-                payload.player.queue.mode == wavelink.QueueMode.loop
-                and original != payload.player.current
+            payload.player.queue.mode == wavelink.QueueMode.loop
+            and original != payload.player.current
         ):
             await payload.player.play(payload.original, add_history=False)
 
@@ -73,7 +73,7 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(
-            self, payload: wavelink.TrackEndEventPayload
+        self, payload: wavelink.TrackEndEventPayload
     ) -> None:
         player = payload.player
 
@@ -86,7 +86,9 @@ class Music(commands.Cog):
     @commands.slash_command(
         description="Search and play music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
     )
-    async def play(self, interaction: disnake.ApplicationCommandInteraction, *, query: str):
+    async def play(
+        self, interaction: disnake.ApplicationCommandInteraction, *, query: str
+    ):
         embed = custom_embed()
         error_embed = custom_embed(color=disnake.Color.red())
 
@@ -198,7 +200,7 @@ class Music(commands.Cog):
 
     @play.autocomplete("query")
     async def play_autocomplete(
-            self, interaction: disnake.ApplicationCommandInteraction, search_query: str
+        self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         if not interaction.author.voice:
             await interaction.response.autocomplete(
@@ -211,8 +213,11 @@ class Music(commands.Cog):
         if not search_query:
             result = await MusicModel.filter(user_id=interaction.author.id).first()
 
-            autocomplete_list = [song.name for song in (await result.songs.all())] if result else [
-                "❌ | Try to add a song for the first time"]
+            autocomplete_list = (
+                [song.name for song in (await result.songs.all())]
+                if result
+                else ["❌ | Try to add a song for the first time"]
+            )
 
             await interaction.response.autocomplete(choices=autocomplete_list)
             return

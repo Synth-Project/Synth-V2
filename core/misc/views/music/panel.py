@@ -12,13 +12,13 @@ from core.misc.views.music.queue import QueueDropdown
 
 class NavigationPanel(disnake.ui.View):
     def __init__(
-            self,
-            bot: commands.bot,
-            message_id: int,
-            player: wavelink.Player,
-            history_exists: bool = False,
-            *,
-            timeout: float | None = None,
+        self,
+        bot: commands.bot,
+        message_id: int,
+        player: wavelink.Player,
+        history_exists: bool = False,
+        *,
+        timeout: float | None = None,
     ) -> None:
 
         super().__init__(timeout=timeout)
@@ -38,9 +38,9 @@ class NavigationPanel(disnake.ui.View):
         self.add_item(NavigationDropdown(bot=self.bot))
 
         if player.queue.count >= 1 or (
-                player.auto_queue
-                and player.auto_queue.count >= 1
-                and player.autoplay == wavelink.AutoPlayMode.enabled
+            player.auto_queue
+            and player.auto_queue.count >= 1
+            and player.autoplay == wavelink.AutoPlayMode.enabled
         ):
             self.add_item(QueueDropdown(bot=self.bot, player=player))
 
@@ -59,7 +59,7 @@ class NavigationPanel(disnake.ui.View):
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
-            self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
@@ -74,7 +74,7 @@ class NavigationPanel(disnake.ui.View):
 
     @disnake.ui.button(label=">", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def skip(
-            self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
@@ -90,16 +90,16 @@ class NavigationPanel(disnake.ui.View):
             await interaction.response.defer(ephemeral=True)
 
         except (
-                wavelink.InvalidClientException,
-                wavelink.InvalidNodeException,
-                disnake.Forbidden,
-                disnake.NotFound,
+            wavelink.InvalidClientException,
+            wavelink.InvalidNodeException,
+            disnake.Forbidden,
+            disnake.NotFound,
         ):
             pass
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
-            self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
@@ -112,7 +112,7 @@ class NavigationPanel(disnake.ui.View):
 
     @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=1)
     async def queue(
-            self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         if self.queue_.is_empty:
             embed = custom_embed(
@@ -128,7 +128,7 @@ class NavigationPanel(disnake.ui.View):
                 title="Music Queue",
                 description="\n".join(
                     f"`{index}.` **{music.author}** - {music.title}"
-                    for index, music in queue_list[i: i + 10]
+                    for index, music in queue_list[i : i + 10]
                 ),
                 image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",
             )
@@ -142,7 +142,7 @@ class NavigationPanel(disnake.ui.View):
 
     @disnake.ui.button(label="Autoplay", style=disnake.ButtonStyle.green, row=1)
     async def autoplay(
-            self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
@@ -186,7 +186,10 @@ class NavigationPanel(disnake.ui.View):
             interaction.guild.voice_client.channel.id
         )
 
-        if not interaction.author.voice or not interaction.author.voice.channel.id == voice_channel.id:
+        if (
+            not interaction.author.voice
+            or not interaction.author.voice.channel.id == voice_channel.id
+        ):
             await interaction.response.send_message(
                 f":x: You must be in a {voice_channel.mention} to use this command",
                 ephemeral=True,
