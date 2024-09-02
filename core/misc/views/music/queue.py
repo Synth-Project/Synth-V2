@@ -22,7 +22,9 @@ class QueueDropdown(disnake.ui.Select):
 
         self.items_per_page = 23
         self.page = 1
-        self.emojis = (["<:youtube:1279826494847451199>"] * (len(self.queue) + 1))[: len(self.queue)]
+        self.emojis = (["<:youtube:1279826494847451199>"] * (len(self.queue) + 1))[
+            : len(self.queue)
+        ]
 
         super().__init__(
             placeholder="Skip to a track",

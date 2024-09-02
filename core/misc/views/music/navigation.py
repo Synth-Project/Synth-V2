@@ -94,7 +94,9 @@ class NavigationDropdown(disnake.ui.Select):
         track: wavelink.Playable = player.current
 
         await interaction.response.defer(ephemeral=True)
-        message = await interaction.followup.send("Downloading track, please wait...", ephemeral=True)
+        message = await interaction.followup.send(
+            "Downloading track, please wait...", ephemeral=True
+        )
 
         with io.BytesIO() as output:
             await asyncio.get_event_loop().run_in_executor(
@@ -104,7 +106,7 @@ class NavigationDropdown(disnake.ui.Select):
 
             await message.edit(
                 content="Here is the track in mp3 format",
-                file=disnake.File(output, f"{track.title}.mp3")
+                file=disnake.File(output, f"{track.title}.mp3"),
             )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
