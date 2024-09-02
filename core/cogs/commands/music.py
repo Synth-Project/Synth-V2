@@ -206,7 +206,6 @@ class Music(commands.Cog):
             )
             return
 
-        # Set attribute to identify autocomplete
         setattr(interaction, "is_autocomplete", True)
 
         if not search_query:
