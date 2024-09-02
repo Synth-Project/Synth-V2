@@ -7,6 +7,7 @@ import wavelink
 
 class QueueDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot, player: wavelink.Player) -> None:
+        # self.options = None
         self.bot = bot
 
         self.player = player
