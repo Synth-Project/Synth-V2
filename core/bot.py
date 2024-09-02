@@ -9,6 +9,7 @@ from core.database import init_database, close_database
 from core.logger.logger import logger
 from core.main.config.config import settings
 
+
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
@@ -76,4 +77,7 @@ class Bot(commands.AutoShardedInteractionBot):
             )
         )
 
-invitetracker = InviteTracker(bot=Bot(), db_url="sqlite://invitetracker.sqlite3", debug=True)
+
+invitetracker = InviteTracker(
+    bot=Bot(), db_url="sqlite://invitetracker.sqlite3", debug=True
+)
