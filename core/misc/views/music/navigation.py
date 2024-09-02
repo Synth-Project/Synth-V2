@@ -1,12 +1,14 @@
-import io
 import asyncio
+import io
+from typing import cast
 
 import disnake
-from disnake.ext import commands
 import wavelink
+from aiohttp.web_routedef import static
+from disnake.ext import commands
 
-import yt_dlp
 from core.misc.embed import custom_embed
+from core.misc.misc import download_track
 
 
 class NavigationDropdown(disnake.ui.Select):
@@ -44,8 +46,8 @@ class NavigationDropdown(disnake.ui.Select):
         )
         self.bot = bot
 
-    async def volume_change(self, interaction: disnake.MessageInteraction) -> None:
-        player: wavelink.Player = interaction.guild.voice_client
+    async def volume_change(self, interaction: disnake.Interaction) -> None:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         modal = disnake.ui.Modal(
             title="Enter the volume",
@@ -78,8 +80,9 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
 
-    async def download_track(self, interaction: disnake.MessageInteraction) -> None:
-        player: wavelink.Player = interaction.guild.voice_client
+    @staticmethod
+    async def download_track(interaction: disnake.Interaction) -> None:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         if not player.current:
             embed = custom_embed(
@@ -88,40 +91,25 @@ class NavigationDropdown(disnake.ui.Select):
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        track: wavelink.Track = player.current
+        track: wavelink.Playable = player.current
 
         await interaction.response.defer(ephemeral=True)
-        file_like_object = io.BytesIO()
+        message = await interaction.followup.send("Downloading track, please wait...", ephemeral=True)
 
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "outtmpl": f"{track.title}.mp3",
-            "postprocessors": [],
-        }
+        with io.BytesIO() as output:
+            await asyncio.get_event_loop().run_in_executor(
+                None, lambda: download_track(track, output)
+            )
+            output.seek(0)
 
-        async def download():
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(track.uri, download=True)
-                filename = ydl.prepare_filename(info)
-                with open(filename, "rb") as f:
-                    file_like_object.write(f.read())
-                file_like_object.seek(0)  # Reset file pointer to the beginning
-
-        # Run the download in an executor to avoid blocking the bot
-        await download()
-
-        # Send the file to the Discord channel
-        file_like_object.seek(0)  # Ensure we're at the start of the file-like object
-        await interaction.followup.send(
-            file=disnake.File(file_like_object, "audio.mp3")
-        )
-
-        # Clean up
-        file_like_object.close()
+            await message.edit(
+                content="Here is the track in mp3 format",
+                file=disnake.File(output, f"{track.title}.mp3")
+            )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
-        player: wavelink.Player = interaction.guild.voice_client
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         match selected_option:
             case "volume":
@@ -140,7 +128,7 @@ class NavigationDropdown(disnake.ui.Select):
                 else:
                     player.queue.shuffle()
 
-                track: wavelink.Track = player.current
+                track: wavelink.Playable = player.current
                 next_song = (
                     player.queue[0]
                     if not player.queue.is_empty

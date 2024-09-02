@@ -1,1 +1,1 @@
-from core.database.models.music import MusicModel
+from core.database.models.music import MusicModel, Song
