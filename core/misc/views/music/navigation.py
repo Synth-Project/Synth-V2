@@ -102,7 +102,7 @@ class NavigationDropdown(disnake.ui.Select):
                 None, lambda: download_track(track, output)
             )
             output.seek(0)
-            
+
             file_size = output.getbuffer().nbytes
             max_size = 25 * 1024 * 1024  # 25 MB
 

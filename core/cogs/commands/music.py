@@ -81,6 +81,5 @@ class Music(commands.Cog):
             await player.play(payload.original, add_history=False)
 
 
-
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Music(bot))
