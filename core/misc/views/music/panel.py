@@ -149,9 +149,13 @@ class NavigationPanel(disnake.ui.View):
         if player.autoplay == wavelink.AutoPlayMode.enabled:
             player.autoplay = wavelink.AutoPlayMode.disabled
             self.autoplay.style = disnake.ButtonStyle.red
+
         else:
             player.autoplay = wavelink.AutoPlayMode.enabled
+            self.queue_.mode = wavelink.QueueMode.normal
+
             self.autoplay.style = disnake.ButtonStyle.green
+            self.loop.style = disnake.ButtonStyle.red
 
         await interaction.response.edit_message(view=self)
 
@@ -162,8 +166,11 @@ class NavigationPanel(disnake.ui.View):
         assert player
 
         if self.queue_.mode == wavelink.QueueMode.normal:
+            player.autoplay = wavelink.AutoPlayMode.disabled
             self.queue_.mode = wavelink.QueueMode.loop
+
             self.loop.style = disnake.ButtonStyle.green
+            self.autoplay.style = disnake.ButtonStyle.red
         else:
             self.queue_.mode = wavelink.QueueMode.normal
             self.loop.style = disnake.ButtonStyle.red

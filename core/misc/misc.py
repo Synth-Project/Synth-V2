@@ -1,23 +1,26 @@
 from io import BytesIO
+from contextlib import redirect_stdout
 
 from wavelink import Playable
 from yt_dlp import YoutubeDL
 
 
 def download_track(track: Playable, output: BytesIO) -> None:
-    with YoutubeDL(
+    """
+    Download a track.
+    :param track: The track to download.
+    :param output: The output stream.
+    :return: None
+    """
+    with redirect_stdout(output), YoutubeDL(
         {
             "extract_audio": True,
             "format": "bestaudio",
-            "outtmpl": f"{track.title}.mp3",
+            "outtmpl": f"-",
+            "logtostderr": True,
             "postprocessors": [],
         }
     ) as ydl:
-        info = ydl.extract_info(track.uri, download=True)
-        filename = ydl.prepare_filename(info)
+        ydl.download([track.uri])
 
-        with open(filename, "rb") as f:
-            output.write(f.read())
-
-        output.seek(0)
-        return
+        return output.seek(0)

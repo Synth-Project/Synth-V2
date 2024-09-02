@@ -4,7 +4,6 @@ from typing import cast
 
 import disnake
 import wavelink
-from aiohttp.web_routedef import static
 from disnake.ext import commands
 
 from core.misc.embed import custom_embed
@@ -103,6 +102,16 @@ class NavigationDropdown(disnake.ui.Select):
                 None, lambda: download_track(track, output)
             )
             output.seek(0)
+            
+            file_size = output.getbuffer().nbytes
+            max_size = 25 * 1024 * 1024  # 25 MB
+
+            if file_size > max_size:
+                await message.edit(
+                    content=f"Error: The track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB).",
+                    ephemeral=True,
+                )
+                return
 
             await message.edit(
                 content="Here is the track in mp3 format",
