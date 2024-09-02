@@ -1,7 +1,7 @@
 import disnake
 from disnake.ext import commands
 
-from core.bot import ITracker
+from core.bot import invitetracker
 from core.logger.logger import logger
 
 
@@ -12,20 +12,20 @@ class InviteLogging(commands.Cog):
 
     @commands.Cog.listener("on_member_join")
     async def on_member_join(self, member: disnake.Member) -> None:
-        await ITracker().add_member(member)
+        await invitetracker.add_member(member)
 
     @commands.Cog.listener("on_member_remove")
     async def on_member_remove(self, member: disnake.Member) -> None:
         logger.info(f"Member {member} left the guild {member.guild.name}")
-        await ITracker().delete_member(member)
+        await invitetracker.delete_member(member)
 
     @commands.slash_command(name="invite")
-    async def invite(self, interaction) -> None:
+    async def invite(self, _) -> None:
         pass
 
     @invite.sub_command(name="list")
     async def invite_list(self, interaction) -> None:
-        invited_members = await ITracker().get_invited_members(
+        invited_members = await invitetracker.get_invited_members(
             user_id=interaction.user.id, guild=interaction.guild
         )
         if invited_members:
@@ -38,7 +38,7 @@ class InviteLogging(commands.Cog):
 
     @invite.sub_command(name="inviter")
     async def invite_inviter(self, interaction) -> None:
-        inviter = await ITracker().get_inviter(
+        inviter = await invitetracker.get_inviter(
             member_id=interaction.user.id, guild=interaction.guild
         )
         if inviter:

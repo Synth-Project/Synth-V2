@@ -9,19 +9,6 @@ from core.database import init_database, close_database
 from core.logger.logger import logger
 from core.main.config.config import settings
 
-
-class ITracker(InviteTracker):
-    def __init__(self) -> None:
-        super().__init__(
-            bot=Bot(),
-            db_url=(
-                "sqlite://invitetracker.sqlite3"
-                if settings.DEBUG
-                else settings.DATABASE_URL
-            ),
-        )
-
-
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
@@ -88,3 +75,5 @@ class Bot(commands.AutoShardedInteractionBot):
                 name="Synth V2", type=disnake.ActivityType.custom, state=f"/help | v2.0"
             )
         )
+
+invitetracker = InviteTracker(bot=Bot(), db_url="sqlite://invitetracker.sqlite3", debug=True)
