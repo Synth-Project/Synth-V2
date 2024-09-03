@@ -8,6 +8,7 @@ from disnake.ext import commands
 
 from core.misc.embed import custom_embed
 from core.misc.misc import download_track
+from core.misc.views.music.effects import EffectsDropdown
 
 
 class NavigationDropdown(disnake.ui.Select):
@@ -28,6 +29,12 @@ class NavigationDropdown(disnake.ui.Select):
                     label="Shuffle",
                     description="Shuffles your music queue",
                     value="shuffle",
+                ),
+                disnake.SelectOption(
+                    emoji="<:microphone:1280556431690567835>",
+                    label="Effects",
+                    description="Apply effects to your music",
+                    value="effects",
                 ),
                 disnake.SelectOption(
                     emoji="<:download:1279837205241659554>",
@@ -153,6 +160,14 @@ class NavigationDropdown(disnake.ui.Select):
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            case "effects":
+                embed = custom_embed(
+                    title="Effects"
+                )
+                view = disnake.ui.View()
+                view.add_item(EffectsDropdown(self.bot, player))
+                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
             case "download":
                 await self.download_track(interaction)

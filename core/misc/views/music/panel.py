@@ -23,8 +23,12 @@ class NavigationPanel(disnake.ui.View):
 
         super().__init__(timeout=timeout)
 
-        self.message_id = message_id
         self.bot = bot
+        self.message_id = message_id
+
+        self.player = player
+        self.history_exists = history_exists
+
         self.queue_ = (
             player.queue
             if not player.queue.is_empty
@@ -35,20 +39,23 @@ class NavigationPanel(disnake.ui.View):
             )
         )
 
+        self._setup_hooks()
+
+    def _setup_hooks(self) -> None:
         self.add_item(NavigationDropdown(bot=self.bot))
 
-        if player.queue.count >= 1 or (
-            player.auto_queue
-            and player.auto_queue.count >= 1
-            and player.autoplay == wavelink.AutoPlayMode.enabled
+        if self.player.queue.count >= 1 or (
+            self.player.auto_queue
+            and self.player.auto_queue.count >= 1
+            and self.player.autoplay == wavelink.AutoPlayMode.enabled
         ):
-            self.add_item(QueueDropdown(bot=self.bot, player=player))
+            self.add_item(QueueDropdown(bot=self.bot, player=self.player))
 
-        self.previous.disabled = not history_exists
+        self.previous.disabled = not self.history_exists
         self.skip.disabled = not len(self.queue_) >= 1
         self.autoplay.style = (
             disnake.ButtonStyle.green
-            if player.autoplay == wavelink.AutoPlayMode.enabled
+            if self.player.autoplay == wavelink.AutoPlayMode.enabled
             else disnake.ButtonStyle.red
         )
         self.loop.style = (
