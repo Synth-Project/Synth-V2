@@ -42,7 +42,7 @@ class EffectsDropdown(disnake.ui.Select):
                 description=description,
                 value=value,
             )
-            
+
         yield disnake.SelectOption(
             emoji=self.reset_emoji,
             label="Reset",

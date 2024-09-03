@@ -162,12 +162,12 @@ class NavigationDropdown(disnake.ui.Select):
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
             case "effects":
-                embed = custom_embed(
-                    title="Effects"
-                )
+                embed = custom_embed(title="Effects")
                 view = disnake.ui.View()
                 view.add_item(EffectsDropdown(self.bot, player))
-                await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
 
             case "download":
                 await self.download_track(interaction)
