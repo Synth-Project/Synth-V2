@@ -10,3 +10,5 @@ logs/**/*.log
 # Ignore virtual environments
 venv/
 .venv/
+
+.idea/

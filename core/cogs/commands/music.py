@@ -107,9 +107,9 @@ class Music(commands.Cog):
                 wavelink.Player, interaction.guild.voice_client
             )
 
-        # Handle request based on context
-        if getattr(interaction, "is_autocomplete", False):
-            delattr(interaction, "is_autocomplete")
+        if " — " in query:
+            # if getattr(interaction, "is_autocomplete", False):
+            # delattr(interaction, "is_autocomplete")
             track_info = await MusicModel.filter(user_id=interaction.author.id).first()
             if track_info:
                 song = await Song.filter(name=query).first()
@@ -208,7 +208,7 @@ class Music(commands.Cog):
             )
             return
 
-        setattr(interaction, "is_autocomplete", True)
+        # setattr(interaction, "is_autocomplete", True)
 
         if not search_query:
             result = await MusicModel.filter(user_id=interaction.author.id).first()
