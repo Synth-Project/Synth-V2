@@ -87,7 +87,9 @@ class NavigationDropdown(disnake.ui.Select):
         )
 
     @staticmethod
-    async def download_track(interaction: disnake.Interaction, audio_format: str) -> None:
+    async def download_track(
+        interaction: disnake.Interaction, audio_format: str
+    ) -> None:
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         if not player.current:
@@ -166,7 +168,7 @@ class NavigationDropdown(disnake.ui.Select):
 
                 view = disnake.ui.View()
                 view.add_item(EffectsDropdown(self.bot, player, interaction))
-                await interaction.edit_original_response(embed=embed, view = view)
+                await interaction.edit_original_response(embed=embed, view=view)
 
             case "download":
                 await self.download_track(interaction)

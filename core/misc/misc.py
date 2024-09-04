@@ -26,6 +26,7 @@ def download_track(track: Playable, output: BytesIO) -> None:
 
         return output.seek(0)
 
+
 def create_ping_command_string(command_name: str, guild: disnake.Guild) -> str:
     """
     Create a string to ping a command in a message.

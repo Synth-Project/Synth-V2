@@ -19,7 +19,10 @@ class EffectsDropdown(disnake.ui.Select):
     }
 
     def __init__(
-        self, bot: commands.Bot, player: wavelink.Player, interaction: disnake.Interaction
+        self,
+        bot: commands.Bot,
+        player: wavelink.Player,
+        interaction: disnake.Interaction,
     ) -> None:
         super().__init__(
             placeholder="Effects controls",
