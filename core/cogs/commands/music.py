@@ -17,7 +17,7 @@ class Music(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(
-        #description="Search, play, stop, pause, resume, skip, and queue music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
+        # description="Search, play, stop, pause, resume, skip, and queue music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
     )
     async def player(self, _) -> None:
         pass
@@ -26,7 +26,11 @@ class Music(commands.Cog):
         description="Search and play music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
     )
     async def play(
-        self, interaction: disnake.ApplicationCommandInteraction, *, query: str, volume: int = commands.Param(default=100, max_length=3, min_length = 1)
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        *,
+        query: str,
+        volume: int = commands.Param(default=100, max_length=3, min_length=1),
     ):
         embed = custom_embed()
         error_embed = custom_embed(color=disnake.Color.red())
@@ -109,7 +113,7 @@ class Music(commands.Cog):
             setattr(player, "interaction", interaction)
             setattr(player, "first_play", True)
             await player.play(track, add_history=False)
-        
+
         volume = min(100, max(1, volume))
         await player.set_volume(volume)
 
