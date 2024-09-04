@@ -116,7 +116,9 @@ class NavigationPanel(disnake.ui.View):
 
         await interaction.response.edit_message(view=self)
 
-    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=1, disabled=True)
+    @disnake.ui.button(
+        label="Queue", style=disnake.ButtonStyle.blurple, row=1, disabled=True
+    )
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
