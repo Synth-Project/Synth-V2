@@ -7,6 +7,7 @@ from disnake.ext import commands
 
 from core.database.models.music import MusicModel, Song
 from core.misc.embed import custom_embed
+from core.misc.misc import create_ping_command_string
 from core.misc.views.music.panel import NavigationPanel
 
 
@@ -84,7 +85,7 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
+            embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}\n{create_ping_command_string('play', interaction.guild)}"
             embed.description = f"[{track.title}]({str(track.uri)})"
             embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(

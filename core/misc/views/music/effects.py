@@ -19,7 +19,7 @@ class EffectsDropdown(disnake.ui.Select):
     }
 
     def __init__(
-        self, bot: commands.Bot, player: wavelink.Player, message: disnake.Message
+        self, bot: commands.Bot, player: wavelink.Player, interaction: disnake.Interaction
     ) -> None:
         super().__init__(
             placeholder="Effects controls",
@@ -29,7 +29,7 @@ class EffectsDropdown(disnake.ui.Select):
         )
         self.bot: commands.Bot = bot
         self.player: wavelink.Player = player
-        self.message: disnake.Message = message
+        self.interaction: disnake.Message = interaction
 
         self.filters: wavelink.Filters = player.filters
         self.selected_states: dict = {option.value: False for option in self.options}
@@ -59,7 +59,7 @@ class EffectsDropdown(disnake.ui.Select):
                 title="Adjust the track effects",
                 description="All filters have been disabled or set to default",
             )
-            await self.message.edit(embed=embed)
+            await self.interaction.edit_original_response(embed=embed)
         else:
             await self.toggle_filter(selected_option, interaction)
 
@@ -93,7 +93,7 @@ class EffectsDropdown(disnake.ui.Select):
             description=f"**{status} filter:** {selected_option.capitalize()}.\n**Enabled filters:** {', '.join([key.capitalize() for key, val in self.selected_states.items() if val]) or 'None'}",
         )
 
-        await self.message.edit(embed=embed)
+        await self.interaction.edit_original_response(embed=embed)
 
         self.update_option_emojis(selected_option)
 

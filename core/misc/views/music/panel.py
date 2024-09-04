@@ -122,20 +122,13 @@ class NavigationPanel(disnake.ui.View):
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        if self.queue_.is_empty:
-            embed = custom_embed(
-                title="Music Queue", description="No music in the queue"
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
         queue_list = list(enumerate(self.queue_, start=1))
 
         embeds = [
             custom_embed(
                 title="Music Queue",
                 description="\n".join(
-                    f"`{index}.` **{music.author}** - {music.title}"
+                    f"`{index}.` `{music.author}` - {music.title}"
                     for index, music in queue_list[i : i + 10]
                 ),
                 image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",

@@ -1,6 +1,7 @@
 from io import BytesIO
 from contextlib import redirect_stdout
 
+import disnake
 from wavelink import Playable
 from yt_dlp import YoutubeDL
 
@@ -24,3 +25,13 @@ def download_track(track: Playable, output: BytesIO) -> None:
         ydl.download([track.uri])
 
         return output.seek(0)
+
+def create_ping_command_string(command_name: str, guild: disnake.Guild) -> str:
+    """
+    Create a string to ping a command in a message.
+    :param command_name: The name of the command.
+    :param guild: The guild to get the command from.
+    :return: A string to ping the command.
+    """
+    command = guild.get_command_named(command_name)
+    return "</{}:{}:>".format(command.name, command.id)
