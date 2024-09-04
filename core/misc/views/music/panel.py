@@ -49,6 +49,7 @@ class NavigationPanel(disnake.ui.View):
             and self.player.auto_queue.count >= 1
             and self.player.autoplay == wavelink.AutoPlayMode.enabled
         ):
+            self.queue.disabled = False
             self.add_item(QueueDropdown(bot=self.bot, player=self.player))
 
         self.previous.disabled = not self.history_exists
@@ -63,6 +64,7 @@ class NavigationPanel(disnake.ui.View):
             if self.queue_.mode == wavelink.QueueMode.loop
             else disnake.ButtonStyle.red
         )
+        self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
@@ -109,15 +111,12 @@ class NavigationPanel(disnake.ui.View):
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        await player.pause(not player.paused)
+        self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
 
-        if player.paused:
-            await player.pause(False)
-            await interaction.response.edit_message(content=f"")
-        else:
-            await player.pause(True)
-            await interaction.response.edit_message(content=f"")
+        await interaction.response.edit_message(view=self)
 
-    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=1)
+    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple, row=1, disabled=True)
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):

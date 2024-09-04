@@ -99,8 +99,7 @@ class NavigationDropdown(disnake.ui.Select):
 
         track: wavelink.Playable = player.current
 
-        await interaction.response.defer(ephemeral=True)
-        message = await interaction.followup.send(
+        await interaction.response.send_message(
             "Downloading track, please wait...", ephemeral=True
         )
 
@@ -114,13 +113,13 @@ class NavigationDropdown(disnake.ui.Select):
             max_size = 25 * 1024 * 1024  # 25 MB
 
             if file_size > max_size:
-                await message.edit(
+                await interaction.edit_original_response(
                     content=f"Error: The track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB).",
                     ephemeral=True,
                 )
                 return
 
-            await message.edit(
+            await interaction.edit_original_response(
                 content="Here is the track in mp3 format",
                 file=disnake.File(output, f"{track.title}.mp3"),
             )
