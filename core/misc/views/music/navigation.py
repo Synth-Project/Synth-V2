@@ -73,22 +73,17 @@ class NavigationDropdown(disnake.ui.Select):
         )
         new_volume = int(response_modal.text_values.get("new_volume", 0))
 
-        if new_volume > 100 or new_volume < 1:
-            error_embed = custom_embed(color=disnake.Color.red())
-            error_embed.title = f"Please enter a number, between `1` and `100`"
-            return await response_modal.response.send_message(
-                embed=error_embed, ephemeral=True
-            )
+        volume = min(100, max(1, new_volume))
 
-        await player.set_volume(new_volume)
+        await player.set_volume(volume)
         await response_modal.response.send_message(
-            embed=custom_embed(title=f"Set volume to {new_volume}"),
+            embed=custom_embed(title=f"Set volume to {volume}"),
             ephemeral=True,
         )
 
     @staticmethod
     async def download_track(
-        interaction: disnake.Interaction, audio_format: str
+        interaction: disnake.Interaction, audio_format: str = "mp3"
     ) -> None:
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
@@ -123,7 +118,7 @@ class NavigationDropdown(disnake.ui.Select):
 
             await interaction.edit_original_response(
                 content="Here is the track in mp3 format",
-                file=disnake.File(output, f"{track.title}.ogg"),
+                file=disnake.File(output, f"{track.title}.{audio_format}"),
             )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
@@ -171,7 +166,7 @@ class NavigationDropdown(disnake.ui.Select):
                 await interaction.edit_original_response(embed=embed, view=view)
 
             case "download":
-                await self.download_track(interaction)
+                await self.download_track(interaction, "ogg")
 
             case "disconnect":
                 await player.disconnect()

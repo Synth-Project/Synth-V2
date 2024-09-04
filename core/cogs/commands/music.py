@@ -17,10 +17,16 @@ class Music(commands.Cog):
         self.bot = bot
 
     @commands.slash_command(
+        #description="Search, play, stop, pause, resume, skip, and queue music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
+    )
+    async def player(self, _) -> None:
+        pass
+
+    @player.sub_command(
         description="Search and play music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
     )
     async def play(
-        self, interaction: disnake.ApplicationCommandInteraction, *, query: str
+        self, interaction: disnake.ApplicationCommandInteraction, *, query: str, volume: int = commands.Param(default=100, max_length=3, min_length = 1)
     ):
         embed = custom_embed()
         error_embed = custom_embed(color=disnake.Color.red())
@@ -85,7 +91,7 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}\n{create_ping_command_string('play', interaction.guild)}"
+            embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
             embed.description = f"[{track.title}]({str(track.uri)})"
             embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(
@@ -103,6 +109,9 @@ class Music(commands.Cog):
             setattr(player, "interaction", interaction)
             setattr(player, "first_play", True)
             await player.play(track, add_history=False)
+        
+        volume = min(100, max(1, volume))
+        await player.set_volume(volume)
 
         history_exists = player.queue.history.count > 0
 
