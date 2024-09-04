@@ -11,7 +11,6 @@ async def init_database():
         modules={
             "models": [
                 "core.database.models.__init__",
-                "disnake.ext.invitetracker.database.models.__init__",
             ]
         },
     )

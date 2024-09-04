@@ -3,7 +3,6 @@ import os
 
 import disnake
 from disnake.ext import commands
-from disnake.ext.invitetracker.tracker import InviteTracker
 
 from core.database import init_database, close_database
 from core.logger.logger import logger
@@ -76,8 +75,3 @@ class Bot(commands.AutoShardedInteractionBot):
                 name="Synth V2", type=disnake.ActivityType.custom, state=f"/help | v2.0"
             )
         )
-
-
-invitetracker = InviteTracker(
-    bot=Bot(), db_url="sqlite://invitetracker.sqlite3", debug=True
-)
