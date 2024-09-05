@@ -78,3 +78,15 @@ class Bot(commands.AutoShardedInteractionBot):
                 status=disnake.Status.idle,
             )
         )
+
+        logger.info(self.get_avatar())
+
+    def get_bot(self) -> "Bot":
+        """Returns the bot instance."""
+        return self
+
+    def get_avatar(self) -> str | None:
+        """Returns the URL of the bot's avatar if set, otherwise returns None."""
+        if self.user and self.user.avatar:
+            return self.user.avatar.url
+        return None

@@ -28,14 +28,18 @@ class Music(commands.Cog):
         query: str,
         volume: int = commands.Param(default=100, max_length=3, min_length=1),
     ):
-        embed = custom_embed()
-        error_embed = custom_embed(color=disnake.Color.red())
+        embed = custom_embed(author=interaction.author)
+        error_embed = custom_embed(color=disnake.Color.red(), author=interaction.author)
 
         if query.startswith("❌"):
             error_embed.title = (
                 "Query is not provided. Please enter a query and re-invoke the command."
             )
             return await interaction.send(embed=error_embed, ephemeral=True)
+
+        await interaction.response.send_message(
+            "<a:loading:1281259173639884882> Searching for tracks..."
+        )
 
         if not interaction.guild.voice_client:
             player: wavelink.Player = await interaction.author.voice.channel.connect(
@@ -59,7 +63,7 @@ class Music(commands.Cog):
             error_embed.title = (
                 "Could not find any tracks with that query. Please try again."
             )
-            return await interaction.send(embed=error_embed, ephemeral=True)
+            return await interaction.edit_original_response(embed=error_embed)
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
@@ -88,11 +92,11 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed.set_author(
-                icon_url=interaction.user.display_avatar.url,
-                name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
-                url=str(track.uri),
-            )
+            # embed.set_author(
+            #     icon_url=interaction.user.display_avatar.url,
+            #     name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
+            #     url=str(track.uri),
+            # )
 
             embed.title = f"{track.title}"
             embed.url = str(track.uri)
@@ -108,10 +112,6 @@ class Music(commands.Cog):
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
             text=f"Volume: {player.volume}% (No filters, todo: display filters)",
-        )
-
-        await interaction.response.send_message(
-            "<a:loading:1281259173639884882> Searching for tracks..."
         )
         await interaction.edit_original_response(content=None, embed=embed)
 
