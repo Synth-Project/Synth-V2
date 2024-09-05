@@ -16,15 +16,11 @@ class Music(commands.Cog):
         super(Music, self).__init__()
         self.bot = bot
 
-    @commands.slash_command(
-        # description="Search, play, stop, pause, resume, skip, and queue music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
-    )
+    @commands.slash_command()
     async def player(self, _) -> None:
         pass
 
-    @player.sub_command(
-        description="Search and play music from YouTube/Spotify/SoundCloud/Deezer/Apple Music"
-    )
+    @player.sub_command(description="Search and play music from nearly any platform")
     async def play(
         self,
         interaction: disnake.ApplicationCommandInteraction,
@@ -37,7 +33,7 @@ class Music(commands.Cog):
 
         if query.startswith("❌"):
             error_embed.title = (
-                "Query is not provided. Please enter a query and try again."
+                "Query is not provided. Please enter a query and re-invoke the command."
             )
             return await interaction.send(embed=error_embed, ephemeral=True)
 
@@ -51,8 +47,6 @@ class Music(commands.Cog):
             )
 
         if " — " in query:
-            # if getattr(interaction, "is_autocomplete", False):
-            # delattr(interaction, "is_autocomplete")
             track_info = await MusicModel.filter(user_id=interaction.author.id).first()
             if track_info:
                 song = await Song.filter(name=query).first()
@@ -85,7 +79,6 @@ class Music(commands.Cog):
                 inline=True,
             )
             embed.set_image(url=track.artwork)
-
         else:
             track: wavelink.Playable = tracks[0]
             await player.queue.put_wait(track)
@@ -95,18 +88,32 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed.title = f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}"
-            embed.description = f"[{track.title}]({str(track.uri)})"
-            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
+            embed.set_author(
+                icon_url=interaction.user.display_avatar.url,
+                name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
+                url=str(track.uri),
+            )
+
+            embed.title = f"{track.title}"
+            embed.url = str(track.uri)
+
+            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=False)
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
-                inline=True,
+                inline=False,
             )
             embed.set_image(url=track.artwork)
 
-        await interaction.response.defer()
-        message = await interaction.followup.send(embed=embed)
+        embed.set_footer(
+            icon_url=interaction.bot.user.display_avatar.url,
+            text=f"Volume: {player.volume}% (No filters, todo: display filters)",
+        )
+
+        await interaction.response.send_message(
+            "<a:loading:1281259173639884882> Searching for tracks..."
+        )
+        await interaction.edit_original_response(content=None, embed=embed)
 
         if not player.playing:
             track = player.queue.get()
@@ -114,18 +121,19 @@ class Music(commands.Cog):
             setattr(player, "first_play", True)
             await player.play(track, add_history=False)
 
-        volume = min(100, max(1, volume))
-        await player.set_volume(volume)
+        await player.set_volume(min(100, max(1, volume)))
 
         history_exists = player.queue.history.count > 0
 
         result = await MusicModel.get_or_none(
             user_id=interaction.author.id
         ).prefetch_related("songs")
+
         if not result:
             music_model = await MusicModel.create(user_id=interaction.author.id)
             song = await Song.create(name=track_info["track"], url=track_info["url"])
             await music_model.songs.add(song)
+
         else:
             if not await result.songs.filter(url=track_info["url"]).exists():
                 if len(result.songs) >= 3:
@@ -134,11 +142,11 @@ class Music(commands.Cog):
                     await Song.create(name=track_info["track"], url=track_info["url"])
                 )
 
-        await message.edit(
+        await interaction.edit_original_response(
             embed=embed,
             view=NavigationPanel(
                 self.bot,
-                message.id,
+                (await interaction.original_response()).id,
                 history_exists=history_exists,
                 player=player,
             ),
@@ -149,12 +157,9 @@ class Music(commands.Cog):
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         if not interaction.author.voice:
-            await interaction.response.autocomplete(
+            return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
             )
-            return
-
-        # setattr(interaction, "is_autocomplete", True)
 
         if not search_query:
             result = await MusicModel.filter(user_id=interaction.author.id).first()
@@ -165,8 +170,7 @@ class Music(commands.Cog):
                 else ["❌ | Try to add a song for the first time"]
             )
 
-            await interaction.response.autocomplete(choices=autocomplete_list)
-            return
+            return await interaction.response.autocomplete(choices=autocomplete_list)
 
         search_results = await wavelink.Playable.search(search_query)
 

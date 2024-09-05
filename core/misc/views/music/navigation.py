@@ -39,7 +39,7 @@ class NavigationDropdown(disnake.ui.Select):
                 disnake.SelectOption(
                     emoji="<:download:1279837205241659554>",
                     label="Download",
-                    description="Download current music in mp3 format",
+                    description="Download current music in any format",
                     value="download",
                 ),
                 disnake.SelectOption(
@@ -84,8 +84,6 @@ class NavigationDropdown(disnake.ui.Select):
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
-        # view = self.view
-        # await interaction.edit_original_response(view = view)
 
         match selected_option:
             case "volume":

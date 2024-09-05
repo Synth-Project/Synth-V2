@@ -81,7 +81,7 @@ class DownloadDropdown(disnake.ui.Select):
                 return
 
             await interaction.edit_original_response(
-                content="Here is the track in mp3 format",
+                content=f"Here is the track in {audio_format} format",
                 file=disnake.File(output, f"{track.title}.{audio_format}"),
             )
 
