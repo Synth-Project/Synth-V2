@@ -187,10 +187,8 @@ class Music(commands.Cog):
     #     if not interaction.guild.voice_client:
     #         error_embed.title = "❌ | You are not connected to a voice channel"
     #         return await interaction.response.send_message(embed=error_embed)
-        
+
     #     player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
-
-
 
 
 def setup(bot: commands.Bot) -> None:

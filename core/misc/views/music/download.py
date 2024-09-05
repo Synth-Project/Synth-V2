@@ -8,6 +8,7 @@ import wavelink
 from core.misc.embed import custom_embed
 from core.misc.misc import download_track
 
+
 class DownloadDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot) -> None:
         super().__init__(
@@ -55,12 +56,12 @@ class DownloadDropdown(disnake.ui.Select):
                 title="There are no songs in the queue yet",
                 color=disnake.Color.red(),
             )
-            return await interaction.response.edit_message(embed=embed, view = None)
+            return await interaction.response.edit_message(embed=embed, view=None)
 
         track: wavelink.Playable = player.current
 
         await interaction.response.edit_message(
-            "Downloading track, please wait...", view = None, embed = None
+            "Downloading track, please wait...", view=None, embed=None
         )
 
         with io.BytesIO() as output:
@@ -83,7 +84,6 @@ class DownloadDropdown(disnake.ui.Select):
                 content="Here is the track in mp3 format",
                 file=disnake.File(output, f"{track.title}.{audio_format}"),
             )
-    
-    
+
     async def callback(self, interaction: disnake.Interaction) -> None:
         await self.download_track(interaction, self.values[0])

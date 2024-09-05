@@ -81,7 +81,6 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
 
-
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
@@ -129,13 +128,15 @@ class NavigationDropdown(disnake.ui.Select):
                 await interaction.edit_original_response(embed=embed, view=view)
 
             case "download":
-                embed = custom_embed(title="Download a track", description="Choose an format for downloading a track")
+                embed = custom_embed(
+                    title="Download a track",
+                    description="Choose an format for downloading a track",
+                )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
                 view = disnake.ui.View()
                 view.add_item(DownloadDropdown(self.bot))
                 await interaction.edit_original_response(embed=embed, view=view)
-
 
             case "disconnect":
                 await player.disconnect()
