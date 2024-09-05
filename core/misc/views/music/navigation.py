@@ -7,7 +7,7 @@ import wavelink
 from disnake.ext import commands
 
 from core.misc.embed import custom_embed
-from core.misc.misc import download_track
+from core.misc.views.music.download import DownloadDropdown
 from core.misc.views.music.effects import EffectsDropdown
 
 
@@ -81,49 +81,12 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
 
-    @staticmethod
-    async def download_track(
-        interaction: disnake.Interaction, audio_format: str = "mp3"
-    ) -> None:
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
-
-        if not player.current:
-            embed = custom_embed(
-                title="There are no songs in the queue yet",
-                color=disnake.Color.red(),
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        track: wavelink.Playable = player.current
-
-        await interaction.response.send_message(
-            "Downloading track, please wait...", ephemeral=True
-        )
-
-        with io.BytesIO() as output:
-            await asyncio.get_event_loop().run_in_executor(
-                None, lambda: download_track(track, output)
-            )
-            output.seek(0)
-
-            file_size = output.getbuffer().nbytes
-            max_size = 25 * 1024 * 1024  # 25 MB
-
-            if file_size > max_size:
-                await interaction.edit_original_response(
-                    content=f"Error: The track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB).",
-                    ephemeral=True,
-                )
-                return
-
-            await interaction.edit_original_response(
-                content="Here is the track in mp3 format",
-                file=disnake.File(output, f"{track.title}.{audio_format}"),
-            )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        # view = self.view
+        # await interaction.edit_original_response(view = view)
 
         match selected_option:
             case "volume":
@@ -166,7 +129,13 @@ class NavigationDropdown(disnake.ui.Select):
                 await interaction.edit_original_response(embed=embed, view=view)
 
             case "download":
-                await self.download_track(interaction, "ogg")
+                embed = custom_embed(title="Download a track", description="Choose an format for downloading a track")
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+                view = disnake.ui.View()
+                view.add_item(DownloadDropdown(self.bot))
+                await interaction.edit_original_response(embed=embed, view=view)
+
 
             case "disconnect":
                 await player.disconnect()

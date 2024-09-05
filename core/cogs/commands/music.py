@@ -178,6 +178,20 @@ class Music(commands.Cog):
 
         await interaction.response.autocomplete(choices=autocomplete_options)
 
+    # @player.sub_command(
+    #     description="Skip the current song",
+    # )
+    # async def skip(self, interaction: disnake.ApplicationCommandInteraction):
+    #     embed = custom_embed()
+    #     error_embed = custom_embed(color=disnake.Color.red())
+    #     if not interaction.guild.voice_client:
+    #         error_embed.title = "❌ | You are not connected to a voice channel"
+    #         return await interaction.response.send_message(embed=error_embed)
+        
+    #     player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Music(bot))

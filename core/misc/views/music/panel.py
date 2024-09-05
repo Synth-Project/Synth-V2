@@ -192,7 +192,7 @@ class NavigationPanel(disnake.ui.View):
             or not interaction.author.voice.channel.id == voice_channel.id
         ):
             await interaction.response.send_message(
-                f":x: You must be in a {voice_channel.mention} to use this command",
+                f"❌ | You must be in a {voice_channel.mention} to use this command",
                 ephemeral=True,
             )
             return False
