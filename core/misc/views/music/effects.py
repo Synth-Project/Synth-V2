@@ -93,7 +93,7 @@ class EffectsDropdown(disnake.ui.Select):
 
         embed = custom_embed(
             title="Adjust the track effects",
-            description=f"**{status} filter:** {selected_option.capitalize()}.\n**Enabled filters:** {', '.join([key.capitalize() for key, val in self.selected_states.items() if val]) or 'None'}",
+            description=f"**{status} filter:** `{selected_option.capitalize()}``.\n**Enabled filters:** {', '.join([key.capitalize() for key, val in self.selected_states.items() if val]) or 'None'}",
         )
 
         await self.interaction.edit_original_response(embed=embed)

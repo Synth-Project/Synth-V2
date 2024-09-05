@@ -5,6 +5,7 @@ import disnake
 from disnake.ext import commands
 import wavelink
 
+from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.misc import download_track
 
@@ -54,7 +55,7 @@ class DownloadDropdown(disnake.ui.Select):
         if not player.current:
             embed = custom_embed(
                 title="There are no songs in the queue yet",
-                color=disnake.Color.red(),
+                color=BasicColors.ERROR,
             )
             return await interaction.response.edit_message(embed=embed, view=None)
 

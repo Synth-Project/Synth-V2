@@ -38,11 +38,11 @@ class NavigationPanel(disnake.ui.View):
                 else player.queue
             )
         )
+        self.add_item(NavigationDropdown(bot=self.bot))
 
         self._setup_hooks()
 
     def _setup_hooks(self) -> None:
-        self.add_item(NavigationDropdown(bot=self.bot))
 
         if self.player.queue.count >= 1 or (
             self.player.auto_queue
@@ -65,6 +65,19 @@ class NavigationPanel(disnake.ui.View):
             else disnake.ButtonStyle.red
         )
         self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
+
+        self._check_items(["Pause", "Resume", ">", "<", "Queue"])
+
+    def _check_items(self, whitelist: list) -> None:
+        if not self.player.paused:
+            for item in self.children:
+                print(type(item))
+                if isinstance(item, disnake.ui.Button):
+                    if item.label not in whitelist:
+                        item.disabled = self.player.paused
+                elif isinstance(item, disnake.ui.Select):
+                    if item.placeholder not in whitelist:
+                        item.disabled = self.player.paused
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
@@ -112,7 +125,7 @@ class NavigationPanel(disnake.ui.View):
     ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         await player.pause(not player.paused)
-        self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
+        self._check_items(["Pause", "Resume"])
 
         await interaction.response.edit_message(view=self)
 

@@ -2,27 +2,35 @@ import disnake
 
 from typing import Union
 from core.main.main import bot
+from core.misc.color import BasicColors
 
 
 def custom_embed(
     title: str = None,
     description: str = "",
-    color: Union[disnake.Colour, int, None] = 0x2F3236,
+    color: Union[disnake.Colour, int, None] = BasicColors.DEFAULT,
     image: str = None,
     thumbnail: str = None,
     footer: str = "Synth 2024 | All Rights Reserved",
     author: Union[disnake.Member, disnake.User] = None,
 ) -> disnake.Embed:
     """
-    Create a custom embed.
-    :param title: The title of the embed.
-    :param description: The description of the embed.
-    :param color: The color of the embed.
-    :param image: The image of the embed.
-    :param thumbnail: The thumbnail of the embed.
-    :return: The created embed.
-    """
+    Creates a custom embed.
 
+    Args:
+        title (str, optional): The title of the embed. Defaults to None.
+        description (str, optional): The description of the embed. Defaults to "".
+        color (Union[disnake.Colour, int, None], optional): The color of the embed. Defaults to 0x2F3236.
+        image (str, optional): The URL of the image in the embed. Defaults to None.
+        thumbnail (str, optional): The URL of the thumbnail in the embed. Defaults to None.
+        footer (str, optional): The footer of the embed. Defaults to "Synth 2024 | All Rights Reserved".
+        author (Union[disnake.Member, disnake.User], optional): The author of the embed. Defaults to None.
+
+    Returns:
+        disnake.Embed: The custom embed.
+    """
+    if isinstance(color, BasicColors):
+        color = color.value
     embed = disnake.Embed()
     embed.set_footer(text=footer, icon_url=bot.Bot().get_avatar())
 

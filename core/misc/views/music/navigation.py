@@ -6,6 +6,7 @@ import disnake
 import wavelink
 from disnake.ext import commands
 
+from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.views.music.download import DownloadDropdown
 from core.misc.views.music.effects import EffectsDropdown
@@ -92,7 +93,7 @@ class NavigationDropdown(disnake.ui.Select):
                 if player.queue.is_empty and player.auto_queue.is_empty:
                     embed = custom_embed(
                         title="There are no songs in the queue yet",
-                        color=disnake.Color.red(),
+                        color=BasicColors.ERROR,
                     )
                     return await interaction.response.send_message(
                         embed=embed, ephemeral=True
@@ -112,7 +113,7 @@ class NavigationDropdown(disnake.ui.Select):
                 embed = custom_embed(
                     title="Shuffled the queue",
                     description=f"Current song: **{track.title}**\nNext song: **{next_song.title}**",
-                    color=disnake.Colour.green(),
+                    color=BasicColors.SUCCESS,
                 )
 
                 await interaction.response.send_message(embed=embed, ephemeral=True)

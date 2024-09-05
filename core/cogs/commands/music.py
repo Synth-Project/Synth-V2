@@ -6,6 +6,7 @@ import wavelink
 from disnake.ext import commands
 
 from core.database.models.music import MusicModel, Song
+from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.misc import create_ping_command_string
 from core.misc.views.music.panel import NavigationPanel
@@ -29,7 +30,7 @@ class Music(commands.Cog):
         volume: int = commands.Param(default=100, max_length=3, min_length=1),
     ):
         embed = custom_embed(author=interaction.author)
-        error_embed = custom_embed(color=disnake.Color.red(), author=interaction.author)
+        error_embed = custom_embed(color=BasicColors.ERROR, author=interaction.author)
 
         if query.startswith("❌"):
             error_embed.title = (
@@ -173,12 +174,14 @@ class Music(commands.Cog):
             return await interaction.response.autocomplete(choices=autocomplete_list)
 
         search_results = await wavelink.Playable.search(search_query)
-
-        autocomplete_options = [
-            f"{track.title} — {track.author}"
-            for index, track in enumerate(search_results, start=1)
-            if len(f"{track.title} — {track.author}") <= 100 and index < 25
-        ]
+        if len(search_results) != 0:
+            autocomplete_options = [
+                f"{track.title} — {track.author}"
+                for index, track in enumerate(search_results, start=1)
+                if len(f"{track.title} — {track.author}") <= 100 and index < 25
+            ]
+        else:
+            autocomplete_options = ["❌ | No results found"]
 
         await interaction.response.autocomplete(choices=autocomplete_options)
 

@@ -79,8 +79,6 @@ class Bot(commands.AutoShardedInteractionBot):
             )
         )
 
-        logger.info(self.get_avatar())
-
     def get_bot(self) -> "Bot":
         """Returns the bot instance."""
         return self
