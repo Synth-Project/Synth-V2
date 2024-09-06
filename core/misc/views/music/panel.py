@@ -109,10 +109,10 @@ class NavigationPanel(disnake.ui.View):
             await interaction.response.defer(ephemeral=True)
 
         except (
-                wavelink.InvalidClientException,
-                wavelink.InvalidNodeException,
-                disnake.Forbidden,
-                disnake.NotFound,
+            wavelink.InvalidClientException,
+            wavelink.InvalidNodeException,
+            disnake.Forbidden,
+            disnake.NotFound,
         ):
             pass
 
@@ -142,7 +142,7 @@ class NavigationPanel(disnake.ui.View):
                 title="Music Queue",
                 description="\n".join(
                     f"`{index}.` `{music.author}` - {music.title}"
-                    for index, music in queue_list[i: i + 10]
+                    for index, music in queue_list[i : i + 10]
                 ),
                 image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",
             )
@@ -201,8 +201,8 @@ class NavigationPanel(disnake.ui.View):
         )
 
         if (
-                not interaction.author.voice
-                or not interaction.author.voice.channel.id == voice_channel.id
+            not interaction.author.voice
+            or not interaction.author.voice.channel.id == voice_channel.id
         ):
             await interaction.response.send_message(
                 f"❌ | You must be in a {voice_channel.mention} to use this command",
