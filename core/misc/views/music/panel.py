@@ -43,17 +43,13 @@ class NavigationPanel(disnake.ui.View):
         self._setup_hooks()
 
     def _setup_hooks(self) -> None:
-
-        if self.player.queue.count >= 1 or (
-            self.player.auto_queue
-            and self.player.auto_queue.count >= 1
-            and self.player.autoplay == wavelink.AutoPlayMode.enabled
-        ):
-            self.queue.disabled = False
+        if self.queue_.count >= 1:
             self.add_item(QueueDropdown(bot=self.bot, player=self.player))
 
-        self.previous.disabled = not self.history_exists
-        self.skip.disabled = not len(self.queue_) >= 1
+        self.queue.disabled = self.player.paused or self.queue_.count < 1
+        self.skip.disabled = self.player.paused or len(self.queue_) < 1
+        self.previous.disabled = self.player.paused or not self.history_exists
+
         self.autoplay.style = (
             disnake.ButtonStyle.green
             if self.player.autoplay == wavelink.AutoPlayMode.enabled
@@ -66,18 +62,19 @@ class NavigationPanel(disnake.ui.View):
         )
         self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
 
-        self._check_items(["Pause", "Resume", ">", "<", "Queue"])
+    def _check_items(self, whitelist: list[str]) -> None:
+        for item in self.children:
+            if isinstance(item, disnake.ui.Button):
+                if item.label not in whitelist:
+                    item.disabled = self.player.paused
 
-    def _check_items(self, whitelist: list) -> None:
-        if not self.player.paused:
-            for item in self.children:
-                print(type(item))
-                if isinstance(item, disnake.ui.Button):
-                    if item.label not in whitelist:
-                        item.disabled = self.player.paused
-                elif isinstance(item, disnake.ui.Select):
-                    if item.placeholder not in whitelist:
-                        item.disabled = self.player.paused
+            elif isinstance(item, disnake.ui.Select):
+                if item.placeholder not in whitelist:
+                    item.disabled = self.player.paused
+
+        self.queue.disabled = self.player.paused or self.queue_.count < 1
+        self.skip.disabled = self.player.paused or len(self.queue_) < 1
+        self.previous.disabled = self.player.paused or not self.history_exists
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
@@ -112,19 +109,22 @@ class NavigationPanel(disnake.ui.View):
             await interaction.response.defer(ephemeral=True)
 
         except (
-            wavelink.InvalidClientException,
-            wavelink.InvalidNodeException,
-            disnake.Forbidden,
-            disnake.NotFound,
+                wavelink.InvalidClientException,
+                wavelink.InvalidNodeException,
+                disnake.Forbidden,
+                disnake.NotFound,
         ):
             pass
 
-    @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
+    @disnake.ui.button(style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         await player.pause(not player.paused)
+        self.resume_and_pause.label = "Resume" if player.paused else "Pause"
+        self.player = player
+
         self._check_items(["Pause", "Resume"])
 
         await interaction.response.edit_message(view=self)
@@ -142,7 +142,7 @@ class NavigationPanel(disnake.ui.View):
                 title="Music Queue",
                 description="\n".join(
                     f"`{index}.` `{music.author}` - {music.title}"
-                    for index, music in queue_list[i : i + 10]
+                    for index, music in queue_list[i: i + 10]
                 ),
                 image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",
             )
@@ -201,8 +201,8 @@ class NavigationPanel(disnake.ui.View):
         )
 
         if (
-            not interaction.author.voice
-            or not interaction.author.voice.channel.id == voice_channel.id
+                not interaction.author.voice
+                or not interaction.author.voice.channel.id == voice_channel.id
         ):
             await interaction.response.send_message(
                 f"❌ | You must be in a {voice_channel.mention} to use this command",

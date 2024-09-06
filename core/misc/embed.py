@@ -8,23 +8,23 @@ from core.misc.color import BasicColors
 def custom_embed(
     title: str = None,
     description: str = "",
-    color: Union[disnake.Colour, int, None] = BasicColors.DEFAULT,
+    color: Union[disnake.Colour, int, BasicColors, None] = BasicColors.DEFAULT,
     image: str = None,
     thumbnail: str = None,
     footer: str = "Synth 2024 | All Rights Reserved",
     author: Union[disnake.Member, disnake.User] = None,
 ) -> disnake.Embed:
     """
-    Creates a custom embed.
+    creates a custom embed.
 
     Args:
-        title (str, optional): The title of the embed. Defaults to None.
-        description (str, optional): The description of the embed. Defaults to "".
-        color (Union[disnake.Colour, int, None], optional): The color of the embed. Defaults to 0x2F3236.
-        image (str, optional): The URL of the image in the embed. Defaults to None.
-        thumbnail (str, optional): The URL of the thumbnail in the embed. Defaults to None.
-        footer (str, optional): The footer of the embed. Defaults to "Synth 2024 | All Rights Reserved".
-        author (Union[disnake.Member, disnake.User], optional): The author of the embed. Defaults to None.
+        title (str, optional): The title of the embed. defaults to None.
+        description (str, optional): The description of the embed. defaults to "".
+        color (Union[disnake.Colour, int, BasicColors, None], optional): The color of the embed. defaults to 0x2F3236.
+        image (str, optional): The URL of the image in the embed. defaults to None.
+        thumbnail (str, optional): The URL of the thumbnail in the embed. defaults to None.
+        footer (str, optional): The footer of the embed. defaults to "Synth 2024 | All Rights Reserved".
+        author (Union[disnake.Member, disnake.User], optional): The author of the embed. defaults to None.
 
     Returns:
         disnake.Embed: The custom embed.

@@ -1,5 +1,3 @@
-import asyncio
-import io
 from typing import cast
 
 import disnake

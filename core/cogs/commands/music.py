@@ -8,7 +8,6 @@ from disnake.ext import commands
 from core.database.models.music import MusicModel, Song
 from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
-from core.misc.misc import create_ping_command_string
 from core.misc.views.music.panel import NavigationPanel
 
 
