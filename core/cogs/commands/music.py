@@ -66,6 +66,9 @@ class Music(commands.Cog):
             return await interaction.edit_original_response(embed=error_embed)
 
         if isinstance(tracks, wavelink.Playlist):
+            for track in tracks.tracks:
+                track.extras = {"requested_by": interaction.author.id}
+
             added: int = await player.queue.put_wait(tracks)
             track_info = {"track": f"{tracks.name} — {added} songs", "url": query}
 
@@ -85,33 +88,36 @@ class Music(commands.Cog):
             embed.set_image(url=track.artwork)
         else:
             track: wavelink.Playable = tracks[0]
+            track.extras = {"requested_by": interaction.author.id}
+
             await player.queue.put_wait(track)
+
             track_info = {
                 "track": f"{track.title} — {track.author}",
                 "url": track.uri,
                 "source": track.source,
             }
 
-            # embed.set_author(
-            #     icon_url=interaction.user.display_avatar.url,
-            #     name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
-            #     url=str(track.uri),
-            # )
+            embed.set_author(
+                icon_url=interaction.user.display_avatar.url,
+                name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
+                url=str(track.uri),
+            )
 
             embed.title = f"{track.title}"
             embed.url = str(track.uri)
 
-            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=False)
+            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
-                inline=False,
+                inline=True,
             )
             embed.set_image(url=track.artwork)
 
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
-            text=f"Volume: {player.volume}% (No filters, todo: display filters)",
+            text=f"Volume: {player.volume}% // Synth Music 2024",
         )
         await interaction.edit_original_response(content=None, embed=embed)
 
@@ -119,9 +125,11 @@ class Music(commands.Cog):
             track = player.queue.get()
             setattr(player, "interaction", interaction)
             setattr(player, "first_play", True)
+            player.inactive_timeout = 300
             await player.play(track, add_history=False)
 
-        await player.set_volume(min(100, max(1, volume)))
+        if not player.playing or not player.current:
+            await player.set_volume(min(100, max(1, volume)))
 
         history_exists = player.queue.history.count > 0
 
@@ -149,6 +157,7 @@ class Music(commands.Cog):
                 (await interaction.original_response()).id,
                 history_exists=history_exists,
                 player=player,
+                interaction=interaction
             ),
         )
 

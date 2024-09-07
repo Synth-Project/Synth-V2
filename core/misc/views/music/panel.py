@@ -1,9 +1,10 @@
-from typing import cast
+from typing import cast, Union
 
 import disnake
 from disnake.ext import commands
 import wavelink
 
+from core.misc.color import BasicColors
 from core.misc.paginator import CreatePaginator
 from core.misc.embed import custom_embed
 from core.misc.views.music.navigation import NavigationDropdown
@@ -19,6 +20,7 @@ class NavigationPanel(disnake.ui.View):
         history_exists: bool = False,
         *,
         timeout: float | None = None,
+        interaction: Union[disnake.Interaction, disnake.WebhookMessage],
     ) -> None:
 
         super().__init__(timeout=timeout)
@@ -28,6 +30,7 @@ class NavigationPanel(disnake.ui.View):
 
         self.player = player
         self.history_exists = history_exists
+        self.interaction = interaction
 
         self.queue_ = (
             player.queue
@@ -38,13 +41,12 @@ class NavigationPanel(disnake.ui.View):
                 else player.queue
             )
         )
-        self.add_item(NavigationDropdown(bot=self.bot))
+        self.add_item(NavigationDropdown(bot=self.bot, interaction=self.interaction))
 
         self._setup_hooks()
 
     def _setup_hooks(self) -> None:
-        if self.queue_.count >= 1:
-            self.add_item(QueueDropdown(bot=self.bot, player=self.player))
+        self.add_item(QueueDropdown(bot=self.bot, player=self.player))
 
         self.queue.disabled = self.player.paused or self.queue_.count < 1
         self.skip.disabled = self.player.paused or len(self.queue_) < 1
@@ -84,9 +86,9 @@ class NavigationPanel(disnake.ui.View):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         previous_track = player.queue.history.get()
-        self.queue_.put_at(0, previous_track)
-
         skipped_track = await player.skip()
+
+        self.queue_.put_at(0, previous_track)
         self.queue_.put_at(1, skipped_track)
 
         await interaction.response.defer(ephemeral=True)
@@ -100,6 +102,7 @@ class NavigationPanel(disnake.ui.View):
 
         try:
             self.queue_.history.put_at(0, player.current)
+            # self.queue_.put_at(0, player.current)
 
             await player.skip()
 
@@ -204,10 +207,18 @@ class NavigationPanel(disnake.ui.View):
             not interaction.author.voice
             or not interaction.author.voice.channel.id == voice_channel.id
         ):
+            embed = custom_embed(
+                title="Error", color=BasicColors.ERROR,
+                description="❌ | You must be in a voice channel to use this command"
+            )
             await interaction.response.send_message(
-                f"❌ | You must be in a {voice_channel.mention} to use this command",
+                embed=embed,
                 ephemeral=True,
             )
+            if isinstance(self.interaction, disnake.Interaction):
+                await self.interaction.edit_original_response(view=self)
+            elif isinstance(self.interaction, disnake.WebhookMessage):
+                await self.interaction.edit(view=self)
             return False
 
         return True
