@@ -178,11 +178,13 @@ class Giveaway:
             await interaction.edit_original_message(
                 f"❌ | The channel {channel_to_send.mention} is unavailable to me. Give me more permissions",
                 embed=None,
-                view = None,
+                view=None,
             )
             return
-        
-        if not await self.check_duration(duration) or not await self.check_image(image_uri):
+
+        if not await self.check_duration(duration) or not await self.check_image(
+            image_uri
+        ):
             return
 
         await interaction.delete_original_response()
@@ -219,10 +221,7 @@ class Giveaway:
 
         await msg.edit(view=GiveawayView(self.bot))
 
-    async def check_duration(
-        self,
-        duration: str
-    ) -> bool:
+    async def check_duration(self, duration: str) -> bool:
         """
         Validate the duration string.
 
@@ -247,13 +246,13 @@ class Giveaway:
             return True
         except Exception:
             return False
-                
+
     async def check_channel(self, channel: disnake.abc.GuildChannel) -> bool:
         """Check if the bot has permission to send messages in the given channel.
-        
+
         Args:
             channel (disnake.abc.GuildChannel): The channel to check.
-        
+
         Returns:
             bool: Whether the bot has permission to send messages in the channel or not.
         """
@@ -263,16 +262,15 @@ class Giveaway:
             return True
         except:
             return False
-        
+
     async def check_image(self, image_uri: str) -> bool:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.head(image_uri) as response:
                     # Проверяем тип содержимого
-                    content_type = response.headers.get('Content-Type', '')
-                    if content_type.startswith('image'):
+                    content_type = response.headers.get("Content-Type", "")
+                    if content_type.startswith("image"):
                         return True
             return False
         except Exception:
             return False
-

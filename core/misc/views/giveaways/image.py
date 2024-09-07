@@ -116,7 +116,7 @@ class GiveawayImageModal(disnake.ui.Modal):
             return await interaction.send(
                 "❌ | Invalid image URL", ephemeral=True, delete_after=5
             )
-        
+
         await Giveaway(self.bot).create(
             self.interaction,
             self.prize,

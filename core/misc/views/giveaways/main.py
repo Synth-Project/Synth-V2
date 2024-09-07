@@ -65,7 +65,7 @@ class CreateModal(disnake.ui.Modal):
             return await interaction.send(
                 "❌ | The number of winners must be greater than 0", ephemeral=True
             )
-        
+
         if not await Giveaway(self.bot).check_duration(duration):
             return await interaction.send(
                 "❌ | The maximum giveaway duration has been exceeded",
