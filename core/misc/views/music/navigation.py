@@ -12,7 +12,11 @@ from core.misc.views.music.shuffle import ShuffleView
 
 
 class NavigationDropdown(disnake.ui.Select):
-    def __init__(self, bot: commands.Bot, interaction: Union[disnake.Interaction, disnake.WebhookMessage]) -> None:
+    def __init__(
+        self,
+        bot: commands.Bot,
+        interaction: Union[disnake.Interaction, disnake.WebhookMessage],
+    ) -> None:
         super().__init__(
             placeholder="Music controls",
             min_values=1,
@@ -53,16 +57,24 @@ class NavigationDropdown(disnake.ui.Select):
         self.interaction: disnake.Interaction = interaction
         self.bot = bot
 
-    async def _edit_view(self, embed: disnake.Embed = None, clear_view: bool = False) -> None:
+    async def _edit_view(
+        self, embed: disnake.Embed = None, clear_view: bool = False
+    ) -> None:
         if embed:
             (
-                await self.interaction.edit_original_response(embed=embed, view=self.view)
+                await self.interaction.edit_original_response(
+                    embed=embed, view=self.view
+                )
                 if isinstance(self.interaction, disnake.Interaction)
-                else await self.interaction.edit(embed=embed, view=None if clear_view else self.view)
+                else await self.interaction.edit(
+                    embed=embed, view=None if clear_view else self.view
+                )
             )
         else:
             (
-                await self.interaction.edit_original_response(view=None if clear_view else self.view)
+                await self.interaction.edit_original_response(
+                    view=None if clear_view else self.view
+                )
                 if isinstance(self.interaction, disnake.Interaction)
                 else await self.interaction.edit(view=None if clear_view else self.view)
             )
@@ -152,8 +164,14 @@ class NavigationDropdown(disnake.ui.Select):
                 )
 
                 await interaction.response.send_message(
-                    embed=embed, view=ShuffleView(self.bot, interaction, player.previous_queue, player.previous_auto_queue),
-                    ephemeral=True
+                    embed=embed,
+                    view=ShuffleView(
+                        self.bot,
+                        interaction,
+                        player.previous_queue,
+                        player.previous_auto_queue,
+                    ),
+                    ephemeral=True,
                 )
 
                 await self._edit_view()

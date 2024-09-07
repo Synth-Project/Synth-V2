@@ -208,8 +208,9 @@ class NavigationPanel(disnake.ui.View):
             or not interaction.author.voice.channel.id == voice_channel.id
         ):
             embed = custom_embed(
-                title="Error", color=BasicColors.ERROR,
-                description="❌ | You must be in a voice channel to use this command"
+                title="Error",
+                color=BasicColors.ERROR,
+                description="❌ | You must be in a voice channel to use this command",
             )
             await interaction.response.send_message(
                 embed=embed,

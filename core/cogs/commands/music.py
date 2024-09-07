@@ -157,7 +157,7 @@ class Music(commands.Cog):
                 (await interaction.original_response()).id,
                 history_exists=history_exists,
                 player=player,
-                interaction=interaction
+                interaction=interaction,
             ),
         )
 
