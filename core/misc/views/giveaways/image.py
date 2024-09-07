@@ -112,8 +112,13 @@ class GiveawayImageModal(disnake.ui.Modal):
 
     async def callback(self, interaction: disnake.MessageInteraction) -> None:
         await interaction.response.defer(ephemeral=True)
+        if not await Giveaway(self.bot).check_image(interaction.text_values["image"]):
+            return await interaction.send(
+                "❌ | Invalid image URL", ephemeral=True, delete_after=5
+            )
+        
         await Giveaway(self.bot).create(
-            interaction,
+            self.interaction,
             self.prize,
             self.description,
             self.winners,

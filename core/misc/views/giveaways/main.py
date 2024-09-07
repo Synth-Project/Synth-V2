@@ -1,6 +1,7 @@
 import disnake
 from disnake.ext import commands
 from core.misc.embed import custom_embed
+from core.misc.giveaway import Giveaway
 from core.misc.views.giveaways import *
 from core.misc.views.giveaways.channel_select import GiveawaySettingsChannel
 
@@ -57,12 +58,18 @@ class CreateModal(disnake.ui.Modal):
 
         if not winners.isdigit():
             return await interaction.send(
-                "❌ The number of winners must be a number", ephemeral=True
+                "❌ | The number of winners must be a number", ephemeral=True
             )
 
         if int(winners) < 1:
             return await interaction.send(
-                "❌ The number of winners must be greater than 0", ephemeral=True
+                "❌ | The number of winners must be greater than 0", ephemeral=True
+            )
+        
+        if not await Giveaway(self.bot).check_duration(duration):
+            return await interaction.send(
+                "❌ | The maximum giveaway duration has been exceeded",
+                ephemeral=True,
             )
 
         embed = custom_embed(

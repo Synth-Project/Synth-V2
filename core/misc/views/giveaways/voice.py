@@ -150,7 +150,7 @@ class DropDownForSettingsVoice(disnake.ui.StringSelect):
                 await self.interaction.edit_original_response(
                     embed=embed,
                     view=GiveawaySettingsVoice(
-                        self.interaction,
+                        self.interaction,   
                         self.bot,
                         self.prize,
                         self.description,

@@ -31,6 +31,15 @@ class Giveaway(commands.Cog):
             return False
 
     async def end_gw(self, giveaway_data: GiveawayModel):
+        """
+        End a giveaway and pick the winners.
+
+        Args:
+            giveaway_data (GiveawayModel): The giveaway model to end.
+
+        Returns:
+            None
+        """
         msg = await self._get_message(
             giveaway_data.channel_id, giveaway_data.message_id
         )
@@ -55,7 +64,6 @@ class Giveaway(commands.Cog):
         winners = ", ".join(w.mention for w in winners)
 
         view.children[0].disabled = True
-        # view.children[1].disabled = True
 
         await msg.edit(embed=embed, content=winners, view=view)
 

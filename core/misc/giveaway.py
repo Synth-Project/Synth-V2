@@ -2,6 +2,7 @@ import asyncio
 from datetime import timedelta
 import datetime
 import re
+import aiohttp
 import disnake
 from disnake.ext import commands
 from core.misc.embed import custom_embed, CreatePaginator
@@ -18,15 +19,6 @@ async def get_member_ids(message_id) -> Optional[GiveawayModel]:
     if not result:
         return None
     return result
-
-
-async def _check_chat(channel: disnake.abc.GuildChannel) -> bool:
-    try:
-        msg = await channel.send(".")
-        await msg.delete()
-        return True
-    except:
-        return False
 
 
 async def _get_channel(bot, channel_id: int) -> Union[disnake.abc.GuildChannel, bool]:
@@ -182,24 +174,22 @@ class Giveaway:
         channel_to_send: disnake.abc.GuildChannel = None,
         image_uri: Optional[str] = None,
     ) -> None:
-        if not await _check_chat(channel_to_send):
-            await interaction.send(
-                "❌ The channel is unavailable to me. Give me more permissions",
-                ephemeral=True,
+        if not await self.check_channel(channel_to_send):
+            await interaction.edit_original_message(
+                f"❌ | The channel {channel_to_send.mention} is unavailable to me. Give me more permissions",
+                embed=None,
+                view = None,
             )
             return
+        
+        if not await self.check_duration(duration) or not await self.check_image(image_uri):
+            return
 
+        await interaction.delete_original_response()
         duration_delta = timedelta()
         for value, unit in re.findall(r"(\d+)([dhms])", duration):
             if unit in time_units:
-                try:
-                    duration_delta += timedelta(**{time_units[unit]: int(value)})
-                except OverflowError:
-                    await interaction.send(
-                        "❌ The maximum giveaway duration has been exceeded",
-                        ephemeral=True,
-                    )
-                    return
+                duration_delta += timedelta(**{time_units[unit]: int(value)})
 
         end_time = datetime.datetime.now() + duration_delta
         ends = disnake.utils.format_dt(end_time, style="R")
@@ -209,15 +199,6 @@ class Giveaway:
             f"- Winners: **{winners}**\n"
             f"- Ends: {ends}\n"
         )
-        options = {
-            "ANY_VC": "Any voice channel",
-            "ANY_SG": "Any stage channel",
-            "SPECIFIED_VC": "Specified voice: {}",
-            "SPECIFIED_SG": "Specified stage: {}",
-            "SPECIFIED_CG": "Specified category: {}",
-        }
-        if required_channel:
-            desc += f"- Requirements: **{options.get(voice.value, '{}').format(required_channel.mention)}**\n"
         embed = custom_embed(
             "🎉 | Giveaway",
             desc,
@@ -237,3 +218,61 @@ class Giveaway:
         )
 
         await msg.edit(view=GiveawayView(self.bot))
+
+    async def check_duration(
+        self,
+        duration: str
+    ) -> bool:
+        """
+        Validate the duration string.
+
+        Args:
+            duration (str): The duration string.
+
+        Returns:
+            bool: Whether the duration is valid or not.
+        """
+        if not duration:
+            return False
+
+        try:
+            duration_delta = timedelta()
+            for value, unit in re.findall(r"(\d+)([dhms])", duration):
+                if unit not in time_units:
+                    return False
+                try:
+                    duration_delta += timedelta(**{time_units[unit]: int(value)})
+                except (ValueError, OverflowError):
+                    return False
+            return True
+        except Exception:
+            return False
+                
+    async def check_channel(self, channel: disnake.abc.GuildChannel) -> bool:
+        """Check if the bot has permission to send messages in the given channel.
+        
+        Args:
+            channel (disnake.abc.GuildChannel): The channel to check.
+        
+        Returns:
+            bool: Whether the bot has permission to send messages in the channel or not.
+        """
+        try:
+            msg = await channel.send(".")
+            await msg.delete()
+            return True
+        except:
+            return False
+        
+    async def check_image(self, image_uri: str) -> bool:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.head(image_uri) as response:
+                    # Проверяем тип содержимого
+                    content_type = response.headers.get('Content-Type', '')
+                    if content_type.startswith('image'):
+                        return True
+            return False
+        except Exception:
+            return False
+
