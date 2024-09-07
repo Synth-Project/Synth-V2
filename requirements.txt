@@ -4,3 +4,5 @@ pydantic
 pydantic_settings
 tortoise-orm[asyncpg]
 loguru
+git+https://github.com/Synth-discord-bot/Wavelink-Disnake
+git+https://github.com/Synth-discord-bot/disnake-ext-invitetracker

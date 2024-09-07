@@ -1,1 +1,3 @@
-# START THE BOT: python -m core.main.main
+> [!IMPORTANT]
+> START THE BOT: 
+> - python -m core.main.main
