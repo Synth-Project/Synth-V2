@@ -50,7 +50,9 @@ class Music(commands.Cog):
                 wavelink.Player, interaction.guild.voice_client
             )
 
-        if " — " in query:
+        tag, query = query.split(" ", maxsplit=1)
+
+        if tag.startswith("history:"):
             track_info = await MusicModel.filter(user_id=interaction.author.id).first()
             if track_info:
                 song = await Song.filter(name=query).first()
@@ -174,7 +176,7 @@ class Music(commands.Cog):
             result = await MusicModel.filter(user_id=interaction.author.id).first()
 
             autocomplete_list = (
-                [song.name for song in (await result.songs.all())]
+                [f"history: {song.name}" for song in (await result.songs.all())]
                 if result
                 else ["❌ | Try to add a song for the first time"]
             )
@@ -184,7 +186,7 @@ class Music(commands.Cog):
         search_results = await wavelink.Playable.search(search_query)
         if len(search_results) != 0:
             autocomplete_options = [
-                f"{track.title} — {track.author}"
+                f"autocomplete: {track.title} — {track.author}"
                 for index, track in enumerate(search_results, start=1)
                 if len(f"{track.title} — {track.author}") <= 100 and index < 25
             ]
