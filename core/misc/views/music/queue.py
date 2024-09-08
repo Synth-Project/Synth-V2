@@ -28,7 +28,9 @@ class QueueDropdown(disnake.ui.Select):
             placeholder="Skip to a track",
             min_values=1,
             max_values=1,
-            options=self._get_options(),
+            options=self._get_options()
+            or [disnake.SelectOption(emoji="❌", label="Queue is empty", value="none")],
+            disabled=not len(self.queue) >= 1,
         )
 
     def _get_options(self):

@@ -85,6 +85,6 @@ class Bot(commands.AutoShardedInteractionBot):
 
     def get_avatar(self) -> str | None:
         """Returns the URL of the bot's avatar if set, otherwise returns None."""
-        if self.user and self.user.avatar:
-            return self.user.avatar.url
+        if self.user and self.user.display_avatar:
+            return self.user.display_avatar.url
         return None

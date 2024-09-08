@@ -1,8 +1,10 @@
 from datetime import timedelta
-from disnake.ext import commands
+
 import wavelink
+from disnake.ext import commands
 
 from core import logger
+from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.views.music.panel import NavigationPanel
 
@@ -37,9 +39,16 @@ class MusicEvent(commands.Cog):
         ):
             await payload.player.play(payload.original, add_history=False)
 
-        embed = custom_embed()
-        embed.title = f"Now playing - {track.title}"
-        embed.description = f"[{track.title}]({str(track.uri)})"
+        requestor = getattr(track.extras, "requested_by", None)
+        if requestor:
+            requestor = await self.bot.get_or_fetch_user(requestor)
+
+        embed = custom_embed(
+            author=requestor,
+            title="Now playing",
+            description=f"[{track.title}]({str(track.uri)})",
+            footer_text=f"Volume: {payload.player.volume}% // Synth Music 2024",
+        )
         embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
         embed.add_field(
             name="Duration:",
@@ -48,9 +57,9 @@ class MusicEvent(commands.Cog):
         )
 
         if original and original.recommended:
-            embed.set_footer(text=f"This track was recommended via {track.source}")
+            embed.set_footer(text=f"Auto recommended // Synth Music 2024")
         elif payload.player.queue.mode == wavelink.QueueMode.loop:
-            embed.set_footer(text="This track was looped")
+            embed.set_footer(text="This track was looped // Synth Music 2024")
 
         embed.set_image(url=track.artwork if track.artwork else None)
 
@@ -65,6 +74,7 @@ class MusicEvent(commands.Cog):
                 message.id,
                 history_exists=history_exists,
                 player=payload.player,
+                interaction=message,
             ),
         )
 
@@ -79,6 +89,17 @@ class MusicEvent(commands.Cog):
         if not player.queue.is_empty:
             new_track = player.queue.get()
             await player.play(new_track, add_history=False)
+
+    @commands.Cog.listener()
+    async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
+        embed = custom_embed(
+            title="Disconnected from voice channel",
+            color=BasicColors.SUCCESS,
+            description="Disconnected from voice channel due to inactivity",
+        )
+
+        await player.interaction.followup.send(embed=embed)
+        await player.disconnect()
 
 
 def setup(bot: commands.Bot) -> None:

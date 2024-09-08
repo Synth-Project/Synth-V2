@@ -1,6 +1,4 @@
-import asyncio
-import io
-from typing import cast
+from typing import cast, Union
 
 import disnake
 import wavelink
@@ -10,10 +8,15 @@ from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.views.music.download import DownloadDropdown
 from core.misc.views.music.effects import EffectsDropdown
+from core.misc.views.music.shuffle import ShuffleView
 
 
 class NavigationDropdown(disnake.ui.Select):
-    def __init__(self, bot: commands.Bot) -> None:
+    def __init__(
+        self,
+        bot: commands.Bot,
+        interaction: Union[disnake.Interaction, disnake.WebhookMessage],
+    ) -> None:
         super().__init__(
             placeholder="Music controls",
             min_values=1,
@@ -51,7 +54,30 @@ class NavigationDropdown(disnake.ui.Select):
                 ),
             ],
         )
+        self.interaction: disnake.Interaction = interaction
         self.bot = bot
+
+    async def _edit_view(
+        self, embed: disnake.Embed = None, clear_view: bool = False
+    ) -> None:
+        if embed:
+            (
+                await self.interaction.edit_original_response(
+                    embed=embed, view=None if clear_view else self.view
+                )
+                if isinstance(self.interaction, disnake.Interaction)
+                else await self.interaction.edit(
+                    embed=embed, view=None if clear_view else self.view
+                )
+            )
+        else:
+            (
+                await self.interaction.edit_original_response(
+                    view=None if clear_view else self.view
+                )
+                if isinstance(self.interaction, disnake.Interaction)
+                else await self.interaction.edit(view=None if clear_view else self.view)
+            )
 
     async def volume_change(self, interaction: disnake.Interaction) -> None:
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
@@ -77,10 +103,21 @@ class NavigationDropdown(disnake.ui.Select):
         volume = min(100, max(1, new_volume))
 
         await player.set_volume(volume)
-        await response_modal.response.send_message(
+        await response_modal.send(
             embed=custom_embed(title=f"Set volume to {volume}"),
             ephemeral=True,
         )
+
+        embed = None
+
+        if isinstance(self.interaction, disnake.Interaction):
+            embed = (await self.interaction.original_response()).embeds[0]
+        elif isinstance(self.interaction, disnake.WebhookMessage):
+            embed = self.interaction.embeds[0]
+
+        embed.set_footer(text=f"Volume: {volume}% // Synth Music 2024")
+
+        await self._edit_view(embed=embed)
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         selected_option = self.values[0]
@@ -90,14 +127,24 @@ class NavigationDropdown(disnake.ui.Select):
             case "volume":
                 await self.volume_change(interaction)
             case "shuffle":
+                if not hasattr(player, "previous_queue"):
+                    player.previous_queue = player.queue.copy()
+                if not hasattr(player, "previous_auto_queue"):
+                    player.previous_auto_queue = player.auto_queue.copy()
+
                 if player.queue.is_empty and player.auto_queue.is_empty:
                     embed = custom_embed(
                         title="There are no songs in the queue yet",
                         color=BasicColors.ERROR,
                     )
-                    return await interaction.response.send_message(
-                        embed=embed, ephemeral=True
+                    await interaction.response.send_message(
+                        embed=embed,
+                        ephemeral=True,
                     )
+
+                    await self._edit_view()
+
+                    return
                 elif player.queue.is_empty and not player.auto_queue.is_empty:
                     player.auto_queue.shuffle()
                 else:
@@ -116,7 +163,18 @@ class NavigationDropdown(disnake.ui.Select):
                     color=BasicColors.SUCCESS,
                 )
 
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                await interaction.response.send_message(
+                    embed=embed,
+                    view=ShuffleView(
+                        self.bot,
+                        interaction,
+                        player.previous_queue,
+                        player.previous_auto_queue,
+                    ),
+                    ephemeral=True,
+                )
+
+                await self._edit_view()
 
             case "effects":
                 embed = custom_embed(title="Adjust the track effects")
@@ -125,6 +183,8 @@ class NavigationDropdown(disnake.ui.Select):
                 view = disnake.ui.View()
                 view.add_item(EffectsDropdown(self.bot, player, interaction))
                 await interaction.edit_original_response(embed=embed, view=view)
+
+                await self._edit_view()
 
             case "download":
                 embed = custom_embed(
@@ -137,6 +197,8 @@ class NavigationDropdown(disnake.ui.Select):
                 view.add_item(DownloadDropdown(self.bot))
                 await interaction.edit_original_response(embed=embed, view=view)
 
+                await self._edit_view()
+
             case "disconnect":
                 await player.disconnect()
 
@@ -144,4 +206,4 @@ class NavigationDropdown(disnake.ui.Select):
                     title=f"Disconnected from voice channel",
                     color=disnake.Colour.red(),
                 )
-                await interaction.response.edit_message(embed=embed, view=None)
+                await self._edit_view(embed=embed, clear_view=True)

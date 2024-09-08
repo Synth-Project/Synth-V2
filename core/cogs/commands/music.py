@@ -8,7 +8,6 @@ from disnake.ext import commands
 from core.database.models.music import MusicModel, Song
 from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
-from core.misc.misc import create_ping_command_string
 from core.misc.views.music.panel import NavigationPanel
 
 
@@ -51,7 +50,9 @@ class Music(commands.Cog):
                 wavelink.Player, interaction.guild.voice_client
             )
 
-        if " — " in query:
+        tag, query = query.split(" ", maxsplit=1)
+
+        if tag.startswith("history:"):
             track_info = await MusicModel.filter(user_id=interaction.author.id).first()
             if track_info:
                 song = await Song.filter(name=query).first()
@@ -67,6 +68,9 @@ class Music(commands.Cog):
             return await interaction.edit_original_response(embed=error_embed)
 
         if isinstance(tracks, wavelink.Playlist):
+            for track in tracks.tracks:
+                track.extras = {"requested_by": interaction.author.id}
+
             added: int = await player.queue.put_wait(tracks)
             track_info = {"track": f"{tracks.name} — {added} songs", "url": query}
 
@@ -86,7 +90,10 @@ class Music(commands.Cog):
             embed.set_image(url=track.artwork)
         else:
             track: wavelink.Playable = tracks[0]
+            track.extras = {"requested_by": interaction.author.id}
+
             await player.queue.put_wait(track)
+
             track_info = {
                 "track": f"{track.title} — {track.author}",
                 "url": track.uri,
@@ -96,16 +103,17 @@ class Music(commands.Cog):
             embed.title = f"{track.title}"
             embed.url = str(track.uri)
 
-            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=False)
+            embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
             embed.add_field(
                 name="Duration:",
                 value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
-                inline=False,
+                inline=True,
             )
             embed.set_image(url=track.artwork)
 
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
+            text=f"Volume: {player.volume}% // Synth Music 2024",
             text=f"Volume: {player.volume}% // Synth Music 2024",
         )
         await interaction.edit_original_response(content=None, embed=embed)
@@ -114,9 +122,11 @@ class Music(commands.Cog):
             track = player.queue.get()
             setattr(player, "interaction", interaction)
             setattr(player, "first_play", True)
+            player.inactive_timeout = 300
             await player.play(track, add_history=False)
 
-        await player.set_volume(min(100, max(1, volume)))
+        if not player.playing or not player.current:
+            await player.set_volume(min(100, max(1, volume)))
 
         history_exists = player.queue.history.count > 0
 
@@ -144,6 +154,7 @@ class Music(commands.Cog):
                 (await interaction.original_response()).id,
                 history_exists=history_exists,
                 player=player,
+                interaction=interaction,
             ),
         )
 
@@ -160,7 +171,7 @@ class Music(commands.Cog):
             result = await MusicModel.filter(user_id=interaction.author.id).first()
 
             autocomplete_list = (
-                [song.name for song in (await result.songs.all())]
+                [f"history: {song.name}" for song in (await result.songs.all())]
                 if result
                 else ["❌ | Try to add a song for the first time"]
             )
@@ -170,7 +181,7 @@ class Music(commands.Cog):
         search_results = await wavelink.Playable.search(search_query)
         if len(search_results) != 0:
             autocomplete_options = [
-                f"{track.title} — {track.author}"
+                f"autocomplete: {track.title} — {track.author}"
                 for index, track in enumerate(search_results, start=1)
                 if len(f"{track.title} — {track.author}") <= 100 and index < 25
             ]

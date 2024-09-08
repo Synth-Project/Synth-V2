@@ -32,7 +32,7 @@ class EffectsDropdown(disnake.ui.Select):
         )
         self.bot: commands.Bot = bot
         self.player: wavelink.Player = player
-        self.interaction: disnake.Message = interaction
+        self.interaction: disnake.Interaction = interaction
 
         self.filters: wavelink.Filters = player.filters
         self.selected_states: dict = {option.value: False for option in self.options}

@@ -77,7 +77,7 @@ class DownloadDropdown(disnake.ui.Select):
             if file_size > max_size:
                 await interaction.edit_original_response(
                     content=f"Error: The track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB).",
-                    ephemeral=True,
+                    # ephemeral=True,
                 )
                 return
 
