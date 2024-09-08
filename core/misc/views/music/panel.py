@@ -107,14 +107,16 @@ class NavigationPanel(disnake.ui.View):
             pass
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
-    async def resume_and_pause(self, _: disnake.ui.Button, interaction: disnake.MessageInteraction):
+    async def resume_and_pause(
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         await player.pause(not player.paused)
         self.resume_and_pause.label = "Resume" if player.paused else "Pause"
-        
+
         if player.paused:
             for item in self.children:
-                if item != self.resume_and_pause:  
+                if item != self.resume_and_pause:
                     item.disabled = True
 
             await interaction.response.edit_message(view=self)
