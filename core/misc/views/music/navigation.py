@@ -63,7 +63,7 @@ class NavigationDropdown(disnake.ui.Select):
         if embed:
             (
                 await self.interaction.edit_original_response(
-                    embed=embed, view=self.view
+                    embed=embed, view=None if clear_view else self.view
                 )
                 if isinstance(self.interaction, disnake.Interaction)
                 else await self.interaction.edit(
