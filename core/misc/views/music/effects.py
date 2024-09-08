@@ -6,9 +6,9 @@ from core.misc.embed import custom_embed
 
 
 class EffectsDropdown(disnake.ui.Select):
-    positive_emoji = disnake.PartialEmoji(name="🟢")
-    negative_emoji = disnake.PartialEmoji(name="🔴")
-    reset_emoji = disnake.PartialEmoji(name="🔄")
+    positive_emoji = "<:checkmark:1282338829486788670>"
+    negative_emoji = "<:crossmark:1282338837456224394>"
+    reset_emoji = "<:reset:1282339240583106580>"
 
     FILTERS = {
         "equalizer": lambda f: f.equalizer,
@@ -43,7 +43,7 @@ class EffectsDropdown(disnake.ui.Select):
             yield disnake.SelectOption(
                 emoji=self.negative_emoji,
                 label=label.capitalize(),
-                description=f"The {label.capitalize()} filter to apply to the player",
+                # description=f"The {label.capitalize()} filter to apply to the player",
                 value=label,
             )
         yield disnake.SelectOption(

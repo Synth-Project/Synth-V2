@@ -93,12 +93,6 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            # embed.set_author(
-            #     icon_url=interaction.user.display_avatar.url,
-            #     name=f"{'Now playing' if not player.playing else 'Added to queue'} - {track.title}",
-            #     url=str(track.uri),
-            # )
-
             embed.title = f"{track.title}"
             embed.url = str(track.uri)
 
@@ -112,7 +106,7 @@ class Music(commands.Cog):
 
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
-            text=f"Volume: {player.volume}% (No filters, todo: display filters)",
+            text=f"Volume: {player.volume}% // Synth Music 2024",
         )
         await interaction.edit_original_response(content=None, embed=embed)
 

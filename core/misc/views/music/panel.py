@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import cast
 
 import disnake
@@ -66,19 +67,6 @@ class NavigationPanel(disnake.ui.View):
         )
         self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
 
-        self._check_items(["Pause", "Resume", ">", "<", "Queue"])
-
-    def _check_items(self, whitelist: list) -> None:
-        if not self.player.paused:
-            for item in self.children:
-                print(type(item))
-                if isinstance(item, disnake.ui.Button):
-                    if item.label not in whitelist:
-                        item.disabled = self.player.paused
-                elif isinstance(item, disnake.ui.Select):
-                    if item.placeholder not in whitelist:
-                        item.disabled = self.player.paused
-
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def previous(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
@@ -120,14 +108,22 @@ class NavigationPanel(disnake.ui.View):
             pass
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
-    async def resume_and_pause(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
+    async def resume_and_pause(self, _: disnake.ui.Button, interaction: disnake.MessageInteraction):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         await player.pause(not player.paused)
-        self._check_items(["Pause", "Resume"])
+        self.resume_and_pause.label = "Resume" if player.paused else "Pause"
+        
+        if player.paused:
+            for item in self.children:
+                if item != self.resume_and_pause:  
+                    item.disabled = True
 
-        await interaction.response.edit_message(view=self)
+            await interaction.response.edit_message(view=self)
+        else:
+            for item in self.children:
+                item.disabled = False
+
+            await interaction.response.edit_message(view=self)
 
     @disnake.ui.button(
         label="Queue", style=disnake.ButtonStyle.blurple, row=1, disabled=True
@@ -139,12 +135,11 @@ class NavigationPanel(disnake.ui.View):
 
         embeds = [
             custom_embed(
-                title="Music Queue",
+                title=f"{interaction.guild.name}'s Queue",
                 description="\n".join(
-                    f"`{index}.` `{music.author}` - {music.title}"
-                    for index, music in queue_list[i : i + 10]
+                    f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title}"
+                    for _, music in queue_list[i : i + 10]
                 ),
-                image="https://github.com/user-attachments/assets/571bb335-1cae-40e5-a5b5-0defe6ba1417",
             )
             for i in range(0, len(queue_list), 10)
         ]
