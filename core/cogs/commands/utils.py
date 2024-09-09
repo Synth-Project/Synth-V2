@@ -91,12 +91,16 @@ class Utilities(commands.Cog):
         interaction: disnake.MessageCommandInteraction,
         message_count: int,
         channel: disnake.TextChannel = commands.Param(
-            name="channel", description="The channel to clear messages from", default=None
+            name="channel",
+            description="The channel to clear messages from",
+            default=None,
         ),
         target_user: Union[disnake.User, disnake.Member] = commands.Param(
             name="user", description="The user to clear messages from", default=None
         ),
-        silent_mode: bool = commands.Param(name="--silent", description="Silent mode", default=False),
+        silent_mode: bool = commands.Param(
+            name="--silent", description="Silent mode", default=False
+        ),
     ) -> None:
         channel = channel or interaction.channel
 
@@ -105,7 +109,8 @@ class Utilities(commands.Cog):
 
         try:
             deleted_messages = await channel.purge(
-                limit=message_count, check=lambda m: m.author == target_user if target_user else None
+                limit=message_count,
+                check=lambda m: m.author == target_user if target_user else None,
             )
         except (disnake.Forbidden, disnake.HTTPException):
             await interaction.send(
