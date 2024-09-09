@@ -86,24 +86,27 @@ class Utilities(commands.Cog):
         await interaction.send(embed=embed, ephemeral=silent)
 
     @commands.slash_command(name="clear", description="Clear messages from chat")
-    async def clear(
+    async def _clear_messages(
         self,
         interaction: disnake.MessageCommandInteraction,
-        amount: int,
+        message_count: int,
         channel: disnake.TextChannel = commands.Param(
-            name="channel",
-            description="The channel to clear messages from",
-            default=None,
+            name="channel", description="The channel to clear messages from", default=None
         ),
-        silent: bool = commands.Param(
-            name="--silent", description="Silent mode", default=False
+        target_user: Union[disnake.User, disnake.Member] = commands.Param(
+            name="user", description="The user to clear messages from", default=None
         ),
+        silent_mode: bool = commands.Param(name="--silent", description="Silent mode", default=False),
     ) -> None:
         channel = channel or interaction.channel
-        if amount > 100:
-            amount = 100
+
+        if message_count > 100:
+            message_count = 100
+
         try:
-            deleted = await channel.purge(limit=amount)
+            deleted_messages = await channel.purge(
+                limit=message_count, check=lambda m: m.author == target_user if target_user else None
+            )
         except (disnake.Forbidden, disnake.HTTPException):
             await interaction.send(
                 embed=custom_embed(
@@ -111,16 +114,16 @@ class Utilities(commands.Cog):
                     color=disnake.Color.red(),
                 ),
                 delete_after=10,
-                ephemeral=silent,
+                ephemeral=silent_mode,
             )
             return
 
-        await interaction.response.defer(ephemeral=silent)
+        await interaction.response.defer(ephemeral=silent_mode)
 
         embed = custom_embed()
         embed.title = "<a:loading:1168599537682755584> Cleaning messages..."
-        embed.description = f"Deleted `{len(deleted)}` messages"
-        await interaction.send(embed=embed, delete_after=10, ephemeral=silent)
+        embed.description = f"Deleted `{len(deleted_messages)}` messages"
+        await interaction.send(embed=embed, delete_after=10, ephemeral=silent_mode)
 
     @commands.slash_command(
         name="bot", description="Display information about the bot.", aliases=["synth"]
