@@ -6,7 +6,6 @@ from core.main.main import bot
 from core.misc.color import BasicColors
 
 
-
 def custom_embed(
     title: str = None,
     description: str = "",
@@ -51,6 +50,7 @@ def custom_embed(
 
     return embed
 
+
 def error_embed(
     title: str = None,
     description: str = "",
@@ -66,8 +66,7 @@ def error_embed(
         image=image,
         thumbnail=thumbnail,
         footer_text=footer_text,
-        author=author
+        author=author,
     )
-    
 
     return embed
