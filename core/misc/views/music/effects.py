@@ -6,9 +6,9 @@ from core.misc.embed import custom_embed
 
 
 class EffectsDropdown(disnake.ui.Select):
-    positive_emoji = "<:checkmark:1282338829486788670>"
-    negative_emoji = "<:crossmark:1282338837456224394>"
-    reset_emoji = "<:reset:1282339240583106580>"
+    positive_emoji = disnake.PartialEmoji(name="checkmark", id=1282338829486788670)
+    negative_emoji = disnake.PartialEmoji(name="crossmark", id=1282338837456224394)
+    reset_emoji = disnake.PartialEmoji(name="reset", id=1282339240583106580)
 
     FILTERS = {
         "equalizer": lambda f: f.equalizer,
@@ -25,7 +25,7 @@ class EffectsDropdown(disnake.ui.Select):
         interaction: disnake.Interaction,
     ) -> None:
         super().__init__(
-            placeholder="Effects controls",
+            placeholder="Choose an effect",
             min_values=1,
             max_values=1,
             options=list(self.generate_options()),

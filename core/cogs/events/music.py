@@ -92,6 +92,7 @@ class MusicEvent(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
+        await player.disconnect()
         embed = custom_embed(
             title="Disconnected from voice channel",
             color=BasicColors.SUCCESS,
@@ -99,7 +100,6 @@ class MusicEvent(commands.Cog):
         )
 
         await player.interaction.followup.send(embed=embed)
-        await player.disconnect()
 
 
 def setup(bot: commands.Bot) -> None:

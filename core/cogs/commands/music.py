@@ -8,6 +8,7 @@ from disnake.ext import commands
 from core.database.models.music import MusicModel, Song
 from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
+from core.misc.misc import shorten_text
 from core.misc.views.music.panel import NavigationPanel
 
 
@@ -28,6 +29,16 @@ class Music(commands.Cog):
         query: str,
         volume: int = commands.Param(default=100, max_length=3, min_length=1),
     ):
+        """
+        Search and play music from nearly any platform
+
+        Parameters:
+            query (str): The query to search for
+            volume (int): The volume to set the player to (default is 100)
+
+        Returns:
+            None
+        """
         embed = custom_embed(author=interaction.author)
         error_embed = custom_embed(color=BasicColors.ERROR, author=interaction.author)
 
@@ -50,14 +61,15 @@ class Music(commands.Cog):
                 wavelink.Player, interaction.guild.voice_client
             )
 
-        tag, query = query.split(" ", maxsplit=1)
+        if any(tag in query for tag in ["history:", "autocomplete:"]):
+            tag, query = query.split(" ", maxsplit=1)
 
-        if tag.startswith("history:"):
-            track_info = await MusicModel.filter(user_id=interaction.author.id).first()
-            if track_info:
-                song = await Song.filter(name=query).first()
-                if song:
-                    query = song.url
+            if tag.startswith("history:"):
+                track_info = await MusicModel.filter(user_id=interaction.author.id).first()
+                if track_info:
+                    song = await Song.filter(name=query).first()
+                    if song:
+                        query = song.url
 
         tracks: wavelink.Search = await wavelink.Playable.search(query)
 
@@ -161,6 +173,23 @@ class Music(commands.Cog):
     async def play_autocomplete(
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
+        """Autocomplete for the music play command
+
+        If the user is not in a voice channel, returns a single option
+        that tells the user to join a voice channel first.
+
+        If the search query is empty, returns a list of all the songs the
+        user has played before.
+
+        Otherwise, searches for the given query and returns up to 25
+        results.
+
+        :param interaction: The interaction that triggered this autocomplete
+        :type interaction: disnake.ApplicationCommandInteraction
+        :param search_query: The search query given by the user
+        :type search_query: str
+        """
+
         if not interaction.author.voice:
             return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
@@ -170,7 +199,7 @@ class Music(commands.Cog):
             result = await MusicModel.filter(user_id=interaction.author.id).first()
 
             autocomplete_list = (
-                [f"history: {song.name}" for song in (await result.songs.all())]
+                [f"History: {shorten_text(song.name)}" for song in (await result.songs.all())]
                 if result
                 else ["❌ | Try to add a song for the first time"]
             )
@@ -178,13 +207,13 @@ class Music(commands.Cog):
             return await interaction.response.autocomplete(choices=autocomplete_list)
 
         search_results = await wavelink.Playable.search(search_query)
-        if len(search_results) != 0:
-            autocomplete_options = [
-                f"autocomplete: {track.title} — {track.author}"
-                for index, track in enumerate(search_results, start=1)
-                if len(f"{track.title} — {track.author}") <= 100 and index < 25
-            ]
-        else:
+        autocomplete_options = [
+            f"Founded: {shorten_text(f'{track.title} — {track.author}')}"
+            for index, track in enumerate(search_results)
+            if index < 25
+        ]
+
+        if not autocomplete_options:
             autocomplete_options = ["❌ | No results found"]
 
         await interaction.response.autocomplete(choices=autocomplete_options)
