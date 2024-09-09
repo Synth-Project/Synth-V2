@@ -1,6 +1,7 @@
-import asyncio
-import io
 from typing import cast
+
+import asyncio, io
+
 import disnake
 from disnake.ext import commands
 import wavelink
@@ -9,11 +10,14 @@ from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
 from core.misc.misc import download_track
 
+# ! Max file size (25MB)
+MAX_FILE_SIZE_MB = 25 * 1024 * 1024
+
 
 class DownloadDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot) -> None:
         super().__init__(
-            placeholder="Choose an format",
+            placeholder="Choose a format",
             min_values=1,
             max_values=1,
             options=[
@@ -43,26 +47,37 @@ class DownloadDropdown(disnake.ui.Select):
                 ),
             ],
         )
-
         self.bot = bot
 
     @staticmethod
     async def download_track(
-        interaction: disnake.Interaction, audio_format: str = "mp3"
+        interaction: disnake.Interaction, audio_format: str
     ) -> None:
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        """
+        Download the current track
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction that triggered the download
+        audio_format: str
+            The format to download the track in
 
-        if not player.current:
+        Returns: None
+        """
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        if not player or not player.current:
             embed = custom_embed(
-                title="There are no songs in the queue yet",
+                title="<:crossmark:1282338837456224394> There are no songs in the queue yet",
                 color=BasicColors.ERROR,
             )
             return await interaction.response.edit_message(embed=embed, view=None)
 
-        track: wavelink.Playable = player.current
+        track = player.current
 
         await interaction.response.edit_message(
-            "Downloading track, please wait...", view=None, embed=None
+            content="<a:loading:1281259173639884882> Downloading track, please wait...",
+            embed=None,
+            view=None,
         )
 
         with io.BytesIO() as output:
@@ -72,12 +87,10 @@ class DownloadDropdown(disnake.ui.Select):
             output.seek(0)
 
             file_size = output.getbuffer().nbytes
-            max_size = 25 * 1024 * 1024  # 25 MB
 
-            if file_size > max_size:
+            if file_size > MAX_FILE_SIZE_MB:
                 await interaction.edit_original_response(
-                    content=f"Error: The track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB).",
-                    # ephemeral=True,
+                    content=f"Error: Track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB)."
                 )
                 return
 

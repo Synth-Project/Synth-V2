@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import cast
+from typing import cast, Union
 
 import disnake
 from disnake.ext import commands
@@ -89,8 +89,6 @@ class NavigationPanel(disnake.ui.View):
 
         try:
             self.queue_.history.put_at(0, player.current)
-            # self.queue_.put_at(0, player.current)
-
             await player.skip()
 
             message = await interaction.channel.fetch_message(self.message_id)

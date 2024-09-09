@@ -18,7 +18,7 @@ def custom_embed(
     """
     creates a custom embed.
 
-    Args:
+    Parameters:
         title (str, optional): The title of the embed. defaults to None.
         description (str, optional): The description of the embed. defaults to "".
         color (Union[disnake.Colour, int, BasicColors, None], optional): The color of the embed. defaults to 0x2F3236.

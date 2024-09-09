@@ -1,17 +1,23 @@
-from typing import cast, Union
+from typing import cast, Union, Optional
 
 import disnake
-import wavelink
 from disnake.ext import commands
+import wavelink
 
 from core.misc.color import BasicColors
 from core.misc.embed import custom_embed
+
 from core.misc.views.music.download import DownloadDropdown
 from core.misc.views.music.effects import EffectsDropdown
 from core.misc.views.music.shuffle import ShuffleView
 
 
 class NavigationDropdown(disnake.ui.Select):
+    """
+    Navigation dropdown menu class for music player
+    :disnake.ui.Select:
+    """
+
     def __init__(
         self,
         bot: commands.Bot,
@@ -25,13 +31,13 @@ class NavigationDropdown(disnake.ui.Select):
                 disnake.SelectOption(
                     emoji="<:volume:1279835253577351262>",
                     label="Volume",
-                    description="Change the music volume (> 1 minute)",
+                    description="Change the music volume",
                     value="volume",
                 ),
                 disnake.SelectOption(
                     emoji="<:shuffle:1279835431315308605>",
                     label="Shuffle",
-                    description="Shuffles your music queue",
+                    description="Shuffle your music queue",
                     value="shuffle",
                 ),
                 disnake.SelectOption(
@@ -43,13 +49,13 @@ class NavigationDropdown(disnake.ui.Select):
                 disnake.SelectOption(
                     emoji="<:download:1279837205241659554>",
                     label="Download",
-                    description="Download current music in any format",
+                    description="Download the current track",
                     value="download",
                 ),
                 disnake.SelectOption(
                     emoji="<:disconnect:1279835624257486868>",
                     label="Disconnect",
-                    description="Force-disconnect from the voice channel",
+                    description="Disconnect from the voice channel",
                     value="disconnect",
                 ),
             ],
@@ -58,152 +64,219 @@ class NavigationDropdown(disnake.ui.Select):
         self.bot = bot
 
     async def _edit_view(
-        self, embed: disnake.Embed = None, clear_view: bool = False
+        self, embed: Optional[disnake.Embed] = None, clear_view: bool = False
     ) -> None:
-        if embed:
-            (
-                await self.interaction.edit_original_response(
-                    embed=embed, view=None if clear_view else self.view
-                )
-                if isinstance(self.interaction, disnake.Interaction)
-                else await self.interaction.edit(
-                    embed=embed, view=None if clear_view else self.view
-                )
-            )
-        else:
-            (
-                await self.interaction.edit_original_response(
-                    view=None if clear_view else self.view
-                )
-                if isinstance(self.interaction, disnake.Interaction)
-                else await self.interaction.edit(view=None if clear_view else self.view)
-            )
+        """
+        Edit the entered view
 
-    async def volume_change(self, interaction: disnake.Interaction) -> None:
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        Parameters:
+        embed: Optional[disnake.Embed]
+            The embed to send
+        clear_view: bool
+            Whether to clear the view
 
+        Returns: None
+        """
+        edit_func = (
+            self.interaction.edit_original_response
+            if isinstance(self.interaction, disnake.Interaction)
+            else self.interaction.edit
+        )
+        await edit_func(embed=embed, view=None if clear_view else self.view)
+
+    async def _send_modal(
+        self, interaction: disnake.Interaction, title: str, custom_id: str, label: str
+    ) -> disnake.ModalInteraction:
+        """
+        Send a modal to the user
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+        title: str
+            The title of the modal
+        custom_id: str
+            The custom id of the modal
+        label: str
+            The label of the modal
+
+        Returns: disnake.ModalInteraction
+            The modal interaction
+        """
         modal = disnake.ui.Modal(
-            title="Enter the volume",
-            custom_id="volume",
+            title=title,
+            custom_id=custom_id,
             components=[
                 disnake.ui.TextInput(
-                    label="New volume:",
-                    custom_id="new_volume",
+                    label=label,
+                    custom_id="input_value",
                     style=disnake.TextInputStyle.short,
                 )
             ],
         )
-        await interaction.response.send_modal(modal=modal)
-        response_modal: disnake.ModalInteraction = await self.bot.wait_for(
+        await interaction.response.send_modal(modal)
+        return await self.bot.wait_for(
             "modal_submit",
-            check=lambda i: i.custom_id == "volume" and i.user == interaction.user,
+            check=lambda i: i.custom_id == custom_id and i.user == interaction.user,
         )
-        new_volume = int(response_modal.text_values.get("new_volume", 0))
 
+    async def volume_change(self, interaction: disnake.Interaction) -> None:
+        """
+        Change the volume of the player
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+
+        Returns: None
+        """
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        response_modal = await self._send_modal(
+            interaction, "Enter the volume", "volume", "New volume:"
+        )
+        new_volume = int(response_modal.text_values.get("input_value", "0"))
         volume = min(100, max(1, new_volume))
 
         await player.set_volume(volume)
         await response_modal.send(
-            embed=custom_embed(title=f"Set volume to {volume}"),
+            embed=custom_embed(title=f"<:checkmark:1282338829486788670> Set volume to {volume}"), ephemeral=True
+        )
+
+        embed = (await self.interaction.original_response()).embeds[0]
+        embed.set_footer(text=f"Volume: {volume}% // Synth Music 2024")
+        await self._edit_view(embed=embed)
+
+    async def shuffle_queue(
+        self, interaction: disnake.Interaction, player: wavelink.Player
+    ) -> None:
+        """
+        Shuffle the queue
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+        player: wavelink.Player
+            The player to shuffle
+
+        Returns: None
+        """
+        if player.queue.is_empty and player.auto_queue.is_empty:
+            embed = custom_embed(title="<:crossmark:1282338837456224394> No songs in the queue", color=BasicColors.ERROR)
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        # TODO: Make the shuffle removed if not queue found
+
+        if not hasattr(player, "previous_queue"):
+            player.previous_queue = player.queue.copy()
+        if not hasattr(player, "previous_auto_queue"):
+            player.previous_auto_queue = player.auto_queue.copy()
+
+        (player.auto_queue if player.queue.is_empty else player.queue).shuffle()
+        next_song = (
+            player.queue[0] if not player.queue.is_empty else player.auto_queue[0]
+        )
+
+        embed = custom_embed(
+            title="<:shuffle:1279835431315308605> Shuffled the queue",
+            description=f"Current song: **{player.current.title}**\nNext song: **{next_song.title}**",
+            color=BasicColors.SUCCESS,
+        )
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral=True,
+            view=ShuffleView(
+                self.bot, interaction, player.previous_queue, player.previous_auto_queue
+            ),
+        )
+
+    async def handle_effects(
+        self, interaction: disnake.Interaction, player: wavelink.Player
+    ) -> None:
+        """
+        Handle the effects of the player
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+        player: wavelink.Player
+            The player to handle effects for
+
+        Returns: None
+        """
+        embed = custom_embed(
+            title="<:microphone:1280556431690567835> Adjust the track effects", description="**Filters enabled:** TODO"
+        )
+        await interaction.response.send_message(
+            embed=embed,
+            view=disnake.ui.View().add_item(
+                EffectsDropdown(self.bot, player, interaction)
+            ),
             ephemeral=True,
         )
 
-        embed = None
+    async def handle_download(self, interaction: disnake.Interaction) -> None:
+        """
+        Handle the download of the player
 
-        if isinstance(self.interaction, disnake.Interaction):
-            embed = (await self.interaction.original_response()).embeds[0]
-        elif isinstance(self.interaction, disnake.WebhookMessage):
-            embed = self.interaction.embeds[0]
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
 
-        embed.set_footer(text=f"Volume: {volume}% // Synth Music 2024")
+        Returns: None
+        """
+        embed = custom_embed(
+            title="<:download:1279837205241659554> Download a track",
+            description="Choose the track output format (up to 25mb)",
+        )
 
-        await self._edit_view(embed=embed)
+        await interaction.response.send_message(
+            embed=embed,
+            view=disnake.ui.View().add_item(DownloadDropdown(self.bot)),
+            ephemeral=True,
+        )
+
+    async def handle_disconnect(
+        self, interaction: disnake.Interaction, player: wavelink.Player
+    ) -> None:
+        """
+        Handle the disconnect of the player
+
+        Parameters:
+        _: disnake.Interaction
+            The interaction to send the modal to
+        player: wavelink.Player
+            The player to disconnect
+
+        Returns: None
+        """
+        await player.disconnect()
+        embed = custom_embed(
+            author=interaction.user,
+            title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
+            color=BasicColors.ERROR,
+        )
+        await self._edit_view(embed=embed, clear_view=True)
 
     async def callback(self, interaction: disnake.Interaction) -> None:
-        selected_option = self.values[0]
+        """
+        The callback for the view
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+
+        Returns: None
+        """
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        match selected_option:
-            case "volume":
-                await self.volume_change(interaction)
-            case "shuffle":
-                if not hasattr(player, "previous_queue"):
-                    player.previous_queue = player.queue.copy()
-                if not hasattr(player, "previous_auto_queue"):
-                    player.previous_auto_queue = player.auto_queue.copy()
+        option_actions = {
+            "volume": self.volume_change,
+            "shuffle": lambda i: self.shuffle_queue(i, player),
+            "effects": lambda i: self.handle_effects(i, player),
+            "download": self.handle_download,
+            "disconnect": lambda i: self.handle_disconnect(i, player),
+        }
 
-                if player.queue.is_empty and player.auto_queue.is_empty:
-                    embed = custom_embed(
-                        title="There are no songs in the queue yet",
-                        color=BasicColors.ERROR,
-                    )
-                    await interaction.response.send_message(
-                        embed=embed,
-                        ephemeral=True,
-                    )
-
-                    await self._edit_view()
-
-                    return
-                elif player.queue.is_empty and not player.auto_queue.is_empty:
-                    player.auto_queue.shuffle()
-                else:
-                    player.queue.shuffle()
-
-                track: wavelink.Playable = player.current
-                next_song = (
-                    player.queue[0]
-                    if not player.queue.is_empty
-                    else player.auto_queue[0]
-                )
-
-                embed = custom_embed(
-                    title="Shuffled the queue",
-                    description=f"Current song: **{track.title}**\nNext song: **{next_song.title}**",
-                    color=BasicColors.SUCCESS,
-                )
-
-                await interaction.response.send_message(
-                    embed=embed,
-                    view=ShuffleView(
-                        self.bot,
-                        interaction,
-                        player.previous_queue,
-                        player.previous_auto_queue,
-                    ),
-                    ephemeral=True,
-                )
-
-                await self._edit_view()
-
-            case "effects":
-                embed = custom_embed(title="Adjust the track effects")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-
-                view = disnake.ui.View()
-                view.add_item(EffectsDropdown(self.bot, player, interaction))
-                await interaction.edit_original_response(embed=embed, view=view)
-
-                await self._edit_view()
-
-            case "download":
-                embed = custom_embed(
-                    title="Download a track",
-                    description="Choose an format for downloading a track",
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-
-                view = disnake.ui.View()
-                view.add_item(DownloadDropdown(self.bot))
-                await interaction.edit_original_response(embed=embed, view=view)
-
-                await self._edit_view()
-
-            case "disconnect":
-                await player.disconnect()
-
-                embed = custom_embed(
-                    title=f"Disconnected from voice channel",
-                    color=disnake.Colour.red(),
-                )
-                await self._edit_view(embed=embed, clear_view=True)
+        action = option_actions.get(self.values[0])
+        if action:
+            await action(interaction)

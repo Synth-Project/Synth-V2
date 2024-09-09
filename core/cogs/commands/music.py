@@ -114,7 +114,6 @@ class Music(commands.Cog):
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
             text=f"Volume: {player.volume}% // Synth Music 2024",
-            text=f"Volume: {player.volume}% // Synth Music 2024",
         )
         await interaction.edit_original_response(content=None, embed=embed)
 
@@ -190,17 +189,8 @@ class Music(commands.Cog):
 
         await interaction.response.autocomplete(choices=autocomplete_options)
 
-    # @player.sub_command(
-    #     description="Skip the current song",
-    # )
-    # async def skip(self, interaction: disnake.ApplicationCommandInteraction):
-    #     embed = custom_embed()
-    #     error_embed = custom_embed(color=disnake.Color.red())
-    #     if not interaction.guild.voice_client:
-    #         error_embed.title = "❌ | You are not connected to a voice channel"
-    #         return await interaction.response.send_message(embed=error_embed)
+    # TODO: Add subcommands: previous, next, volume, shuffle, queue, effects, pause, resume
 
-    #     player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
 
 def setup(bot: commands.Bot) -> None:
