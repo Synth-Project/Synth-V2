@@ -37,6 +37,7 @@ def create_ping_command_string(command_name: str, guild: disnake.Guild) -> str:
     command = guild.get_command_named(command_name)
     return "</{}:{}:>".format(command.name, command.id)
 
+
 def shorten_text(text: str, max_length: int = 75) -> str:
     """
     Shorten a given text to a certain length.
@@ -52,5 +53,5 @@ def shorten_text(text: str, max_length: int = 75) -> str:
     str: The shortened text.
     """
     if len(text) > max_length:
-        return text[:max_length - 3] + "..."
+        return text[: max_length - 3] + "..."
     return text

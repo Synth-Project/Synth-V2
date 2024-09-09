@@ -65,7 +65,9 @@ class Music(commands.Cog):
             tag, query = query.split(" ", maxsplit=1)
 
             if tag.startswith("history:"):
-                track_info = await MusicModel.filter(user_id=interaction.author.id).first()
+                track_info = await MusicModel.filter(
+                    user_id=interaction.author.id
+                ).first()
                 if track_info:
                     song = await Song.filter(name=query).first()
                     if song:
@@ -199,7 +201,10 @@ class Music(commands.Cog):
             result = await MusicModel.filter(user_id=interaction.author.id).first()
 
             autocomplete_list = (
-                [f"History: {shorten_text(song.name)}" for song in (await result.songs.all())]
+                [
+                    f"History: {shorten_text(song.name)}"
+                    for song in (await result.songs.all())
+                ]
                 if result
                 else ["❌ | Try to add a song for the first time"]
             )
