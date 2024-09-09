@@ -18,7 +18,11 @@ class QueueDropdown(disnake.ui.Select):
         self.page = 1
 
         options = self._get_options() or [
-            disnake.SelectOption(emoji="<:crossmark:1282338837456224394>", label="Queue is empty", value="none")
+            disnake.SelectOption(
+                emoji="<:crossmark:1282338837456224394>",
+                label="Queue is empty",
+                value="none",
+            )
         ]
         super().__init__(
             placeholder="Skip to a track",

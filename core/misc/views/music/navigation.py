@@ -139,7 +139,10 @@ class NavigationDropdown(disnake.ui.Select):
 
         await player.set_volume(volume)
         await response_modal.send(
-            embed=custom_embed(title=f"<:checkmark:1282338829486788670> Set volume to {volume}"), ephemeral=True
+            embed=custom_embed(
+                title=f"<:checkmark:1282338829486788670> Set volume to {volume}"
+            ),
+            ephemeral=True,
         )
 
         embed = (await self.interaction.original_response()).embeds[0]
@@ -161,9 +164,12 @@ class NavigationDropdown(disnake.ui.Select):
         Returns: None
         """
         if player.queue.is_empty and player.auto_queue.is_empty:
-            embed = custom_embed(title="<:crossmark:1282338837456224394> No songs in the queue", color=BasicColors.ERROR)
+            embed = custom_embed(
+                title="<:crossmark:1282338837456224394> No songs in the queue",
+                color=BasicColors.ERROR,
+            )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
         # TODO: Make the shuffle removed if not queue found
 
         if not hasattr(player, "previous_queue"):
@@ -204,7 +210,8 @@ class NavigationDropdown(disnake.ui.Select):
         Returns: None
         """
         embed = custom_embed(
-            title="<:microphone:1280556431690567835> Adjust the track effects", description="**Filters enabled:** TODO"
+            title="<:microphone:1280556431690567835> Adjust the track effects",
+            description="**Filters enabled:** TODO",
         )
         await interaction.response.send_message(
             embed=embed,

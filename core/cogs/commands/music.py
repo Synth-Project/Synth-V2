@@ -192,6 +192,5 @@ class Music(commands.Cog):
     # TODO: Add subcommands: previous, next, volume, shuffle, queue, effects, pause, resume
 
 
-
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(Music(bot))
