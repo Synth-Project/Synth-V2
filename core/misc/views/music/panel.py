@@ -7,7 +7,7 @@ import wavelink
 
 from core.misc.color import BasicColors
 from core.misc.paginator import CreatePaginator
-from core.misc.embed import custom_embed
+from core.misc.embed import custom_embed, error_embed
 from core.misc.views.music.navigation import NavigationDropdown
 from core.misc.views.music.queue import QueueDropdown
 
@@ -28,10 +28,14 @@ class NavigationPanel(disnake.ui.View):
 
         self.bot = bot
         self.message_id = message_id
-
-        self.player = player
-        self.history_exists = history_exists
         self.interaction = interaction
+
+        self.player: wavelink.Player = player
+        self.history_exists: bool = history_exists
+        self.queue_dropdown = QueueDropdown(bot=self.bot, player=self.player)
+        self.navigation_dropdown = NavigationDropdown(
+            bot=self.bot, interaction=self.interaction
+        )
 
         self.queue_ = (
             player.queue
@@ -42,27 +46,33 @@ class NavigationPanel(disnake.ui.View):
                 else player.queue
             )
         )
-        self.add_item(NavigationDropdown(bot=self.bot, interaction=self.interaction))
 
         self._setup_hooks()
 
     def _setup_hooks(self) -> None:
-        self.add_item(QueueDropdown(bot=self.bot, player=self.player))
+        self.add_item(self.navigation_dropdown)
+        self.add_item(self.queue_dropdown)
 
         self.queue.disabled = self.player.paused or self.queue_.count < 1
         self.skip.disabled = self.player.paused or len(self.queue_) < 1
         self.previous.disabled = self.player.paused or not self.history_exists
+        self.queue_dropdown.disabled = self.player.paused or self.queue_.count < 1
+        self.navigation_dropdown.disabled = self.player.paused
 
         self.autoplay.style = (
             disnake.ButtonStyle.green
             if self.player.autoplay == wavelink.AutoPlayMode.enabled
             else disnake.ButtonStyle.red
         )
+        self.autoplay.disabled = self.player.paused
+
         self.loop.style = (
             disnake.ButtonStyle.green
             if self.queue_.mode == wavelink.QueueMode.loop
             else disnake.ButtonStyle.red
         )
+        self.loop.disabled = self.player.paused
+
         self.resume_and_pause.label = "Resume" if self.player.paused else "Pause"
 
     @disnake.ui.button(label="<", style=disnake.ButtonStyle.green, row=0, disabled=True)
@@ -121,6 +131,11 @@ class NavigationPanel(disnake.ui.View):
         else:
             for item in self.children:
                 item.disabled = False
+
+            self.queue.disabled = self.player.paused or self.queue_.count < 1
+            self.skip.disabled = self.player.paused or len(self.queue_) < 1
+            self.previous.disabled = self.player.paused or not self.history_exists
+            self.queue_dropdown.disabled = self.queue_.count < 1
 
             await interaction.response.edit_message(view=self)
 
@@ -188,29 +203,30 @@ class NavigationPanel(disnake.ui.View):
         await interaction.response.edit_message(view=self)
 
     async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
+        voice_channel_id = interaction.guild.voice_client.channel.id
         voice_channel = interaction.guild.get_channel_or_thread(
-            interaction.guild.voice_client.channel.id
-        ) or await interaction.guild.fetch_channel(
-            interaction.guild.voice_client.channel.id
-        )
+            voice_channel_id
+        ) or await interaction.guild.fetch_channel(voice_channel_id)
 
-        if (
-            not interaction.author.voice
-            or not interaction.author.voice.channel.id == voice_channel.id
+        if not (
+            interaction.author.voice
+            and interaction.author.voice.channel.id == voice_channel.id
         ):
-            embed = custom_embed(
-                title="Error",
-                color=BasicColors.ERROR,
-                description="❌ | You must be in a voice channel to use this command",
+            embed = error_embed(
+                title="A misunderstanding happened",
+                description=f"<:crossmark:1282338837456224394> You must be in {voice_channel.mention} to use this command",
             )
-            await interaction.response.send_message(
-                embed=embed,
-                ephemeral=True,
+            embed.set_author(
+                name=interaction.user.display_name,
+                icon_url=interaction.user.display_avatar.url,
             )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
             if isinstance(self.interaction, disnake.Interaction):
                 await self.interaction.edit_original_response(view=self)
             elif isinstance(self.interaction, disnake.WebhookMessage):
                 await self.interaction.edit(view=self)
+
             return False
 
         return True

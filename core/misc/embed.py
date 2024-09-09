@@ -6,6 +6,7 @@ from core.main.main import bot
 from core.misc.color import BasicColors
 
 
+
 def custom_embed(
     title: str = None,
     description: str = "",
@@ -47,5 +48,26 @@ def custom_embed(
     embed.colour = color
     embed.set_image(url=image)
     embed.set_thumbnail(url=thumbnail)
+
+    return embed
+
+def error_embed(
+    title: str = None,
+    description: str = "",
+    image: str = None,
+    thumbnail: str = None,
+    footer_text: str = "Synth 2024 // All rights reserved",
+    author: Union[disnake.Member, disnake.User] = None,
+):
+    embed = custom_embed(
+        title=title,
+        description=description,
+        color=BasicColors.ERROR,
+        image=image,
+        thumbnail=thumbnail,
+        footer_text=footer_text,
+        author=author
+    )
+    
 
     return embed

@@ -81,7 +81,7 @@ class ShuffleView(disnake.ui.View):
             description=f"Current song: **{track.title}**\nNext song: **{next_song.title if next_song else 'None'}**",
             color=BasicColors.SUCCESS,
         )
-        await self.send_response(interaction, embed)
+        await self.send_response(interaction, embed, view=self)
 
     @disnake.ui.button(label="Cancel", style=disnake.ButtonStyle.red)
     async def cancel(

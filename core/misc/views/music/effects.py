@@ -8,7 +8,7 @@ from core.misc.embed import custom_embed
 class EffectsDropdown(disnake.ui.Select):
     positive_emoji = disnake.PartialEmoji(name="checkmark", id=1282338829486788670)
     negative_emoji = disnake.PartialEmoji(name="crossmark", id=1282338837456224394)
-    reset_emoji = disnake.PartialEmoji(name="reset", id=1282339240583106580)
+    reset_emoji = disnake.PartialEmoji(name="reset", id=1282736680201355314)
 
     FILTERS = {
         "equalizer": lambda f: f.equalizer,
