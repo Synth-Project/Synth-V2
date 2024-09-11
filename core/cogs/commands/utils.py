@@ -1,12 +1,18 @@
+import asyncio
 import datetime
 import sys
 from typing import Union
 
 import disnake
-from disnake.ext import commands
+from disnake.ext import commands, tasks
 from memory_profiler import memory_usage
 
-from core.misc.embed import custom_embed
+from core.database.models.reminder import Remind, ReminderType
+from core.database.repositories.reminder import ReminderRepository
+from core.misc.embed import CreatePaginator, custom_embed
+from core.misc.emoji import StandartEmoji
+from core.misc.util.misc import generate_time_options, shorten_text
+from core.misc.util.views.main import MainReminderView
 
 startup = datetime.datetime.now()
 
@@ -32,6 +38,50 @@ class Utilities(commands.Cog):
             1048576: "⚠️",
             133172312: "<:synthdev:1169689479452311582>",
         }
+
+    async def cog_load(self):
+        self.check_reminds.start()
+
+    async def _get_message(self, channel_id: int):
+        """Fetch a channel and return whether it was successful."""
+        try:
+            channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
+                channel_id
+            )
+            return channel
+        except disnake.HTTPException:
+            return False
+
+    async def remind(self, remind: Remind):
+        user_model = await ReminderRepository().get_one(reminds=remind)
+        if remind.type == ReminderType.DM:
+            channel = await self.bot.getch_user(user_model.id)
+        else:
+            channel = await self._get_message(remind.channel_id)
+
+        if not channel:
+            await Remind.delete(remind)
+            return
+
+        embed = custom_embed("Reminder", remind.text)
+
+        if isinstance(channel, (disnake.User, disnake.Member)):
+            try:
+                await channel.send(embed=embed)
+            except:
+                await Remind.delete(remind)
+        else:
+            await channel.send(content=f"<@{user_model.id}>", embed=embed)
+
+        await Remind.delete(remind)
+
+    @tasks.loop(seconds=1)
+    async def check_reminds(self):
+        result = await ReminderRepository().get_all_reminds()
+        if result:
+            for remind in result:
+                if remind.time <= datetime.datetime.now().timestamp():
+                    await self.remind(remind)
 
     @commands.slash_command(name="server")
     async def server(
@@ -242,6 +292,88 @@ class Utilities(commands.Cog):
             )
 
         await interaction.send(embed=embed, ephemeral=silent)
+
+    @commands.slash_command()
+    async def reminder(self, _):
+        pass
+
+    @reminder.sub_command(name="create", description="Create a reminder")
+    async def create(
+        self,
+        inter: disnake.MessageCommandInteraction,
+        text: str = commands.Param(name="text"),
+        time: int = commands.Param(autocomplete=True),
+    ):
+        embed = custom_embed(
+            "Reminder", "Select the method of reminder message", author=inter.author
+        )
+        embed.add_field(name="Text", value=text, inline=True)
+        embed.add_field(name="Time", value=time, inline=True)
+        await inter.response.send_message(
+            embed=embed, ephemeral=True, view=MainReminderView(self.bot, time, text)
+        )
+
+    @create.autocomplete("time")
+    async def time_autocomplete(
+        self, inter: disnake.MessageCommandInteraction, string: str
+    ):
+        if not string:
+            string = "15"
+
+        options = generate_time_options(string.lower())
+
+        if not options:
+            try:
+                number = int(string)
+                if number > 0:
+                    options = [
+                        disnake.OptionChoice(
+                            name=f"{number} seconds", value=str(number)
+                        ),
+                        disnake.OptionChoice(
+                            name=f"{number} minutes", value=str(number * 60)
+                        ),
+                        disnake.OptionChoice(
+                            name=f"{number} hours", value=str(number * 3600)
+                        ),
+                        disnake.OptionChoice(
+                            name=f"{number} days", value=str(number * 86400)
+                        ),
+                    ]
+            except ValueError:
+                return []
+
+        await inter.response.autocomplete(choices=options)
+
+    @reminder.sub_command()
+    async def list(self, inter: disnake.MessageCommandInteraction):
+        result = await ReminderRepository().get_all_reminds()
+        if not result:
+            return await inter.response.send_message(
+                f"{StandartEmoji.DENY.value} **{inter.author.name}**, You don't have any reminders",
+                ephemeral=True,
+            )
+
+        reminders_list = [
+            f"- **{shorten_text(remind.text, 10)}**\n - Time: {disnake.utils.format_dt(remind.time, style='R')}\n - Type: {str(remind.type.value).capitalize()}"
+            for remind in result
+            if result
+        ]
+        total_reminders = len(reminders_list)
+
+        embeds = CreatePaginator.generate_embeds(
+            items=reminders_list,
+            items_per_embed=10,
+            empty_list_message="You don't have any reminders",
+            title="Reminder",
+            description=f"Total reminders: **{total_reminders}**",
+        )
+
+        await inter.send(
+            embed=embeds[0],
+            view=CreatePaginator(embeds, inter.author.id, 120),
+            ephemeral=True,
+        )
 
     def check_if_user_is_developer(self, user_id: int) -> bool:
         return user_id in self.bot.owner_ids

@@ -3,6 +3,9 @@ from typing import Union
 import disnake
 from disnake import ui, ButtonStyle, MessageInteraction
 
+from core.main.main import bot
+from core.misc.color import BasicColors
+
 
 class PreviousButton(ui.Button):
     def __init__(self, disabled):
@@ -130,27 +133,67 @@ class CreatePaginator(ui.View):
 def custom_embed(
     title: str = None,
     description: str = "",
-    color: Union[disnake.Colour, int, None] = 0x2F3236,
-    image: str = None,
-    thumbnail: str = None,
+    color: Union[disnake.Colour, int, BasicColors, None] = BasicColors.DEFAULT,
+    image_url: str = None,
+    thumbnail_url: str = None,
+    footer_text: str = "Synth 2024 // All rights reserved",
+    author: Union[disnake.Member, disnake.User, disnake.Guild] = None,
 ) -> disnake.Embed:
     """
-    Create a custom embed.
-    :param title: The title of the embed.
-    :param description: The description of the embed.
-    :param color: The color of the embed.
-    :param image: The image of the embed.
-    :param thumbnail: The thumbnail of the embed.
-    :return: The created embed.
-    """
+    Creates a custom embed.
 
+    Parameters:
+        title (str, optional): The title of the embed. Defaults to None.
+        description (str, optional): The description of the embed. Defaults to "".
+        color (Union[disnake.Colour, int, BasicColors, None], optional): The color of the embed. Defaults to 0x2F3236.
+        image_url (str, optional): The URL of the image in the embed. Defaults to None.
+        thumbnail_url (str, optional): The URL of the thumbnail in the embed. Defaults to None.
+        footer_text (str, optional): The footer of the embed. Defaults to "Synth 2024 | All Rights Reserved".
+        author (Union[disnake.Member, disnake.User], optional): The author of the embed. Defaults to None.
+
+    Returns:
+        disnake.Embed: The custom embed.
+    """
     embed = disnake.Embed()
-    embed.set_footer(text="Synth © 2024 | All Rights Reserved")
+
+    if color is BasicColors.DEFAULT:
+        color = BasicColors.DEFAULT.value
+
+    embed.set_footer(text=footer_text, icon_url=bot.get_avatar())
+
+    if author:
+        if isinstance(author, (disnake.Member, disnake.User)):
+            embed.set_author(
+                name=author.display_name, icon_url=author.default_avatar.url
+            )
+        else:
+            embed.set_author(name=author.name, icon_url=author.icon.url)
 
     embed.title = title
     embed.description = description
-    embed.colour = color
-    embed.set_image(url=image)
-    embed.set_thumbnail(url=thumbnail)
+    embed.color = color
+    embed.set_image(url=image_url)
+    embed.set_thumbnail(url=thumbnail_url)
+
+    return embed
+
+
+def error_embed(
+    title: str = None,
+    description: str = "",
+    image: str = None,
+    thumbnail: str = None,
+    footer_text: str = "Synth 2024 // All rights reserved",
+    author: Union[disnake.Member, disnake.User] = None,
+):
+    embed = custom_embed(
+        title=title,
+        description=description,
+        color=BasicColors.ERROR,
+        image=image,
+        thumbnail=thumbnail,
+        footer_text=footer_text,
+        author=author,
+    )
 
     return embed

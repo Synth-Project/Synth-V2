@@ -5,6 +5,7 @@ class StandartEmoji(Enum):
     ACTIVITY = "🕹️"
     ANNOUNCE = "📢"
     ALLOW = "✅"
+    DENY = "❌"
     BAN = "🔨"
     BOOST = "🎉"
     BOT = "🤖"

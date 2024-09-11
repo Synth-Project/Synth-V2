@@ -4,9 +4,10 @@ import os
 import disnake
 from disnake.ext import commands
 
-from core.database import init_database, close_database
-from core.logger.logger import logger
 from core.main.config.config import settings
+
+from core.database import init_database, close_database
+from core import logger
 
 
 class Bot(commands.AutoShardedInteractionBot):
@@ -22,7 +23,7 @@ class Bot(commands.AutoShardedInteractionBot):
         )
         self.debug = False
 
-    async def load_extensions(self: commands.Bot, cogs_paths: list[str] = None) -> None:
+    async def load_extensions(bot: commands.Bot, cogs_paths: list[str] = None) -> None:
         loaded = total = 0
 
         if not cogs_paths:
@@ -38,7 +39,7 @@ class Bot(commands.AutoShardedInteractionBot):
                 extension_name = f"{path.replace('/', '.')}.{file_name[:-3]}"
 
                 try:
-                    self.load_extension(extension_name)
+                    bot.load_extension(extension_name)
                     loaded += 1
                     logger.info(f"[+] Loaded cog: {extension_name}")
                 except (
@@ -62,16 +63,28 @@ class Bot(commands.AutoShardedInteractionBot):
 
     async def on_ready(self) -> None:
         logger.info(
-            f"[#] Invite link: https://discord.com/api/oauth2/authorize?client_id="
+            f"\nInvite link: https://discord.com/api/oauth2/authorize?client_id="
             f"{self.user.id}&permissions=980937982&scope=bot%20applications.commands"
         )
-        logger.info(f"[#] Connected to {self.user}")
+        logger.debug(f"Connected to {self.user}")
 
         await self.load_extensions()
         await self.wait_until_ready()
 
         await self.change_presence(
             activity=disnake.Activity(
-                name="Synth V2", type=disnake.ActivityType.custom, state=f"/help | v2.0"
+                type=disnake.ActivityType.custom,
+                name=f"/help | v1.0",
+                status=disnake.Status.idle,
             )
         )
+
+    def get_bot(self) -> "Bot":
+        """Returns the bot instance."""
+        return self
+
+    def get_avatar(self) -> str | None:
+        """Returns the URL of the bot's avatar if set, otherwise returns None."""
+        if self.user and self.user.display_avatar:
+            return self.user.display_avatar.url
+        return None
