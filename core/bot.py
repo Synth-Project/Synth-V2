@@ -23,7 +23,9 @@ class Bot(commands.AutoShardedInteractionBot):
         )
         self.debug = False
 
-    async def load_extensions(self, bot: commands.Bot, cogs_paths: list[str] = None) -> None:
+    async def load_extensions(
+        self, bot: commands.Bot, cogs_paths: list[str] = None
+    ) -> None:
         loaded = total = 0
 
         if not cogs_paths:
