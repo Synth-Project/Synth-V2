@@ -2,14 +2,13 @@ from datetime import timedelta
 from typing import cast, Union
 
 import disnake
-from disnake.ext import commands
 import wavelink
+from disnake.ext import commands
 
-from core.misc.color import BasicColors
+from core.misc.embed import CustomEmbed
+from core.misc.music.views.navigation import NavigationDropdown
+from core.misc.music.views.queue import QueueDropdown
 from core.misc.paginator import CreatePaginator
-from core.misc.embed import custom_embed, error_embed
-from core.misc.views.music.navigation import NavigationDropdown
-from core.misc.views.music.queue import QueueDropdown
 
 
 class NavigationPanel(disnake.ui.View):
@@ -34,7 +33,9 @@ class NavigationPanel(disnake.ui.View):
         self.history_exists: bool = history_exists
         self.queue_dropdown = QueueDropdown(bot=self.bot, player=self.player)
         self.navigation_dropdown = NavigationDropdown(
-            bot=self.bot, interaction=self.interaction
+            bot=self.bot,
+            interaction=self.interaction,
+            player=self.player,
         )
 
         self.queue_ = (
@@ -55,7 +56,7 @@ class NavigationPanel(disnake.ui.View):
 
         self.queue.disabled = self.player.paused or self.queue_.count < 1
         self.skip.disabled = self.player.paused or len(self.queue_) < 1
-        self.previous.disabled = self.player.paused or not self.history_exists
+        self.previous.disabled = self.player.paused or not self.history_exists or self.queue_.history.count < 1
         self.queue_dropdown.disabled = self.player.paused or self.queue_.count < 1
         self.navigation_dropdown.disabled = self.player.paused
 
@@ -82,11 +83,16 @@ class NavigationPanel(disnake.ui.View):
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        previous_track = player.queue.history.get()
-        skipped_track = await player.skip()
+        skipped_track = player.current if player.playing else self.queue_.history.get()
+        previous_track = self.queue_.history.get()
 
         self.queue_.put_at(0, previous_track)
         self.queue_.put_at(1, skipped_track)
+
+        if not player.playing:
+            await player.play(self.queue_.get(), add_history=False)
+        else:
+            await player.skip()
 
         await interaction.response.defer(ephemeral=True)
 
@@ -97,22 +103,14 @@ class NavigationPanel(disnake.ui.View):
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        try:
-            self.queue_.history.put_at(0, player.current)
-            await player.skip()
+        if player.current:
+            if self.queue_.history.count == 0 or player.current != self.queue_.history[0]:
+                self.queue_.history.put_at(0, player.current)
+        # self.queue_.history.put_at(0, player.current)
+        print(self.queue_.history)
+        await player.skip()
 
-            message = await interaction.channel.fetch_message(self.message_id)
-            await message.delete()
-
-            await interaction.response.defer(ephemeral=True)
-
-        except (
-            wavelink.InvalidClientException,
-            wavelink.InvalidNodeException,
-            disnake.Forbidden,
-            disnake.NotFound,
-        ):
-            pass
+        await interaction.response.defer(ephemeral=True)
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
@@ -148,13 +146,16 @@ class NavigationPanel(disnake.ui.View):
         queue_list = list(enumerate(self.queue_, start=1))
 
         embeds = [
-            custom_embed(
+            CustomEmbed(
                 title=f"{interaction.guild.name}'s Queue",
                 description="\n".join(
-                    f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title}"
-                    for _, music in queue_list[i : i + 10]
-                ),
-            )
+                    [
+                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // Requested by: "
+                        f"{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}"
+                        for _, music in queue_list[i: i + 10] if music
+                    ]
+                )
+            ).get_embed()
             for i in range(0, len(queue_list), 10)
         ]
 
@@ -209,13 +210,13 @@ class NavigationPanel(disnake.ui.View):
         ) or await interaction.guild.fetch_channel(voice_channel_id)
 
         if not (
-            interaction.author.voice
-            and interaction.author.voice.channel.id == voice_channel.id
+                interaction.author.voice
+                and interaction.author.voice.channel.id == voice_channel.id
         ):
-            embed = error_embed(
+            embed = CustomEmbed(
                 title="A misunderstanding happened",
                 description=f"<:crossmark:1282338837456224394> You must be in {voice_channel.mention} to use this command",
-            )
+            ).get_embed()
             embed.set_author(
                 name=interaction.user.display_name,
                 icon_url=interaction.user.display_avatar.url,

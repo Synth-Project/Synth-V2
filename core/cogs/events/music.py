@@ -5,8 +5,8 @@ from disnake.ext import commands
 
 from core import logger
 from core.misc.color import BasicColors
-from core.misc.embed import custom_embed
-from core.misc.views.music.panel import NavigationPanel
+from core.misc.embed import CustomEmbed
+from core.misc.music.views.panel import NavigationPanel
 
 
 class MusicEvent(commands.Cog):
@@ -29,13 +29,13 @@ class MusicEvent(commands.Cog):
         original = payload.original
         track = payload.track
 
-        if hasattr(payload.player, "first_play") and payload.player.first_play:
-            payload.player.first_play = False
-            return
+        # if hasattr(payload.player, "skipped") and payload.player.skipped:
+        #     payload.player.skipped = False
+        #     return
 
         if (
-            payload.player.queue.mode == wavelink.QueueMode.loop
-            and original != payload.player.current
+                payload.player.queue.mode == wavelink.QueueMode.loop
+                and original != payload.player.current
         ):
             await payload.player.play(payload.original, add_history=False)
 
@@ -43,12 +43,12 @@ class MusicEvent(commands.Cog):
         if requestor:
             requestor = await self.bot.get_or_fetch_user(requestor)
 
-        embed = custom_embed(
+        embed = CustomEmbed(
             author=requestor,
             title="Now playing",
             description=f"[{track.title}]({str(track.uri)})",
             footer_text=f"Volume: {payload.player.volume}% // Synth Music 2024",
-        )
+        ).get_embed()
         embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
         embed.add_field(
             name="Duration:",
@@ -62,12 +62,21 @@ class MusicEvent(commands.Cog):
             embed.set_footer(text="This track was looped // Synth Music 2024")
 
         embed.set_image(url=track.artwork if track.artwork else None)
-
-        message = await payload.player.interaction.followup.send(embed=embed)
-
         history_exists = payload.player.queue.history.count > 0
 
-        await message.edit(
+        if hasattr(payload.player, "first_play") and payload.player.first_play:
+            payload.player.first_play = False
+            # await payload.player.interaction.edit_original_response(embed=embed)
+            await payload.player.message.edit(embed=embed)  # type: ignore
+
+        # message = await payload.player.interaction.original_response()
+        # message = await payload.player.interaction.edit_original_response(
+        #     embed=embed,
+        #
+        # )
+        message = payload.player.message  # type: ignore
+
+        await payload.player.message.edit(  # type: ignore
             embed=embed,
             view=NavigationPanel(
                 self.bot,
@@ -89,17 +98,22 @@ class MusicEvent(commands.Cog):
         if not player.queue.is_empty:
             new_track = player.queue.get()
             await player.play(new_track, add_history=False)
+        else:
+            old_track = payload.original
+            player.queue.history.put_at(0, old_track)
+
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
         await player.disconnect()
-        embed = custom_embed(
+        embed = CustomEmbed(
             title="Disconnected from voice channel",
             color=BasicColors.SUCCESS,
             description="Disconnected from voice channel due to inactivity",
-        )
+        ).get_embed()
 
-        await player.interaction.followup.send(embed=embed)
+        await player.message.reply(embed=embed)  # type: ignore
+        # await player.interaction.followup.send(embed=embed)
 
 
 def setup(bot: commands.Bot) -> None:

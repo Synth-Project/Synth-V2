@@ -7,7 +7,7 @@ from disnake.ext import commands
 import wavelink
 
 from core.misc.color import BasicColors
-from core.misc.embed import custom_embed
+from core.misc.embed import CustomEmbed
 from core.misc.misc import download_track
 
 # ! Max file size (25MB)
@@ -66,10 +66,10 @@ class DownloadDropdown(disnake.ui.Select):
         player = cast(wavelink.Player, interaction.guild.voice_client)
 
         if not player or not player.current:
-            embed = custom_embed(
+            embed = CustomEmbed(
                 title="<:crossmark:1282338837456224394> There are no songs in the queue yet",
                 color=BasicColors.ERROR,
-            )
+            ).get_embed()
             return await interaction.response.edit_message(embed=embed, view=None)
 
         track = player.current

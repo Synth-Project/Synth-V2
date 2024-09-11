@@ -35,8 +35,8 @@ plugins:
     providers: # Custom providers for track loading. This is the default
       - "ytsearch:%QUERY%" # YouTube search provider
       - "ytsearch:\"%ISRC%\"" # YouTube search provider
-      - "spsearch:%QUERY%" # Spotify search provider
-      - "sprec:%QUERY%" # Spotify recommendation search provider 
+#      - "spsearch:%QUERY%" # Spotify search provider
+#      - "sprec:%QUERY%" # Spotify recommendation search provider
     sources:
       spotify: true # Enable Spotify source
       applemusic: false # Enable Apple Music source

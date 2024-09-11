@@ -1,6 +1,7 @@
 from datetime import timedelta
 
-import disnake, wavelink
+import disnake
+import wavelink
 from disnake.ext import commands
 
 
@@ -17,7 +18,7 @@ class QueueDropdown(disnake.ui.Select):
         self.items_per_page = 23
         self.page = 1
 
-        options = self._get_options() or [
+        self.options = self._get_options() or [
             disnake.SelectOption(
                 emoji="<:crossmark:1282338837456224394>",
                 label="Queue is empty",
@@ -28,7 +29,7 @@ class QueueDropdown(disnake.ui.Select):
             placeholder="Skip to a track",
             min_values=1,
             max_values=1,
-            options=options,
+            options=self.options,
             disabled=not bool(self.queue),
         )
 
@@ -53,8 +54,8 @@ class QueueDropdown(disnake.ui.Select):
         :return: list
         """
         start_idx, end_idx = (
-            self.page - 1
-        ) * self.items_per_page, self.page * self.items_per_page
+                                     self.page - 1
+                             ) * self.items_per_page, self.page * self.items_per_page
         options = []
 
         if self.page > 1:
@@ -62,17 +63,22 @@ class QueueDropdown(disnake.ui.Select):
                 disnake.SelectOption(emoji="◀️", label="Previous", value="previous")
             )
 
-        options += [
-            disnake.SelectOption(
-                emoji="<:youtube:1279826494847451199>",
-                label=track.title,
-                value=str(index),
-                description=str(timedelta(seconds=round(track.length / 1000))),
+        track: wavelink.Playable
+        for index, track in enumerate(self.queue[start_idx:end_idx], start=start_idx):
+            requested_by = (
+                self.bot.get_guild(self.player.guild.id).get_member(int(requested)).name
+                if (requested := track.extras.requested_by)
+                else "Unknown"
             )
-            for index, track in enumerate(
-                self.queue[start_idx:end_idx], start=start_idx
+
+            options.append(
+                disnake.SelectOption(
+                    emoji="<:youtube:1279826494847451199>",
+                    label=track.title,
+                    value=str(index),
+                    description=f"{timedelta(seconds=round(track.length / 1000))} // Requested by: {requested_by}",
+                )
             )
-        ]
 
         if end_idx < len(self.queue):
             options.append(disnake.SelectOption(emoji="▶️", label="Next", value="next"))

@@ -2,7 +2,7 @@ import disnake
 import wavelink
 from disnake.ext import commands
 
-from core.misc.embed import custom_embed
+from core.misc.embed import CustomEmbed
 
 
 class EffectsDropdown(disnake.ui.Select):
@@ -58,10 +58,10 @@ class EffectsDropdown(disnake.ui.Select):
         if selected_option == "reset":
             await self.reset_filters(interaction)
 
-            embed = custom_embed(
+            embed = CustomEmbed(
                 title="Adjust the track effects",
                 description="All filters have been disabled or set to default",
-            )
+            ).get_embed()
             await self.interaction.edit_original_response(embed=embed)
         else:
             await self.toggle_filter(selected_option, interaction)
@@ -91,10 +91,10 @@ class EffectsDropdown(disnake.ui.Select):
 
         await self.player.set_filters(self.filters)
 
-        embed = custom_embed(
+        embed = CustomEmbed(
             title="Adjust the track effects",
             description=f"**{status} filter:** `{selected_option.capitalize()}``.\n**Enabled filters:** {', '.join([key.capitalize() for key, val in self.selected_states.items() if val]) or 'None'}",
-        )
+        ).get_embed()
 
         await self.interaction.edit_original_response(embed=embed)
 
