@@ -34,8 +34,8 @@ class MusicEvent(commands.Cog):
         #     return
 
         if (
-                payload.player.queue.mode == wavelink.QueueMode.loop
-                and original != payload.player.current
+            payload.player.queue.mode == wavelink.QueueMode.loop
+            and original != payload.player.current
         ):
             await payload.player.play(payload.original, add_history=False)
 
@@ -101,7 +101,6 @@ class MusicEvent(commands.Cog):
         else:
             old_track = payload.original
             player.queue.history.put_at(0, old_track)
-
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:

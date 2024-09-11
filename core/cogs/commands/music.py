@@ -45,8 +45,9 @@ class Music(commands.Cog):
             )
             return await interaction.send(embed=error_embed, ephemeral=True)
 
-        player: wavelink.Player = interaction.guild.voice_client or await interaction.author.voice.channel.connect(
-            cls=wavelink.Player
+        player: wavelink.Player = (
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
 
         await interaction.response.send_message(

@@ -63,7 +63,9 @@ class MusicRepository(BaseRepository):
         if not await music_model.songs.filter(url=track["url"]).exists():
             if len(music_model.songs) >= 3:
                 await music_model.songs.remove(music_model.songs[0])
-            await music_model.songs.add(await Song.create(name=track["track"], url=track["url"]))
+            await music_model.songs.add(
+                await Song.create(name=track["track"], url=track["url"])
+            )
 
         result = await self.get_one(user_id=author_id)
         return await result.songs.filter(url=track["url"]).first()

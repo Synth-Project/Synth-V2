@@ -56,7 +56,11 @@ class NavigationPanel(disnake.ui.View):
 
         self.queue.disabled = self.player.paused or self.queue_.count < 1
         self.skip.disabled = self.player.paused or len(self.queue_) < 1
-        self.previous.disabled = self.player.paused or not self.history_exists or self.queue_.history.count < 1
+        self.previous.disabled = (
+            self.player.paused
+            or not self.history_exists
+            or self.queue_.history.count < 1
+        )
         self.queue_dropdown.disabled = self.player.paused or self.queue_.count < 1
         self.navigation_dropdown.disabled = self.player.paused
 
@@ -104,7 +108,10 @@ class NavigationPanel(disnake.ui.View):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         if player.current:
-            if self.queue_.history.count == 0 or player.current != self.queue_.history[0]:
+            if (
+                self.queue_.history.count == 0
+                or player.current != self.queue_.history[0]
+            ):
                 self.queue_.history.put_at(0, player.current)
         # self.queue_.history.put_at(0, player.current)
         print(self.queue_.history)
@@ -152,9 +159,10 @@ class NavigationPanel(disnake.ui.View):
                     [
                         f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // Requested by: "
                         f"{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}"
-                        for _, music in queue_list[i: i + 10] if music
+                        for _, music in queue_list[i : i + 10]
+                        if music
                     ]
-                )
+                ),
             ).get_embed()
             for i in range(0, len(queue_list), 10)
         ]
@@ -210,8 +218,8 @@ class NavigationPanel(disnake.ui.View):
         ) or await interaction.guild.fetch_channel(voice_channel_id)
 
         if not (
-                interaction.author.voice
-                and interaction.author.voice.channel.id == voice_channel.id
+            interaction.author.voice
+            and interaction.author.voice.channel.id == voice_channel.id
         ):
             embed = CustomEmbed(
                 title="A misunderstanding happened",

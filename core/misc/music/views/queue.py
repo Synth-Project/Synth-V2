@@ -54,8 +54,8 @@ class QueueDropdown(disnake.ui.Select):
         :return: list
         """
         start_idx, end_idx = (
-                                     self.page - 1
-                             ) * self.items_per_page, self.page * self.items_per_page
+            self.page - 1
+        ) * self.items_per_page, self.page * self.items_per_page
         options = []
 
         if self.page > 1:

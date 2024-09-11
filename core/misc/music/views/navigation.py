@@ -73,7 +73,7 @@ class NavigationDropdown(disnake.ui.Select):
                     label="Shuffle",
                     description="Shuffle the current queue",
                     value="shuffle",
-                )
+                ),
             )
 
         super().__init__(

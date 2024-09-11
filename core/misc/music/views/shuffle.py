@@ -98,8 +98,8 @@ class ShuffleView(disnake.ui.View):
             player.queue = self.original_queue.copy()
 
         if (
-                not player.auto_queue.is_empty
-                and player.autoplay == wavelink.AutoPlayMode.enabled
+            not player.auto_queue.is_empty
+            and player.autoplay == wavelink.AutoPlayMode.enabled
         ):
             player.auto_queue = self.original_queue.copy()
 
