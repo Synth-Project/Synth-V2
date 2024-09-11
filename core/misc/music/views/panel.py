@@ -113,8 +113,7 @@ class NavigationPanel(disnake.ui.View):
                 or player.current != self.queue_.history[0]
             ):
                 self.queue_.history.put_at(0, player.current)
-        # self.queue_.history.put_at(0, player.current)
-        print(self.queue_.history)
+
         await player.skip()
 
         await interaction.response.defer(ephemeral=True)

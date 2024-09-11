@@ -6,12 +6,6 @@ class MusicRepository(BaseRepository):
     def __init__(self) -> None:
         super().__init__()
 
-    # async def __aenter__(self: Self) -> Self:
-    #     return self
-
-    # async def __aexit__(self, exc_type, exc_value, exc_tb) -> None:
-    #     return None
-
     @staticmethod
     async def get_one(**kwargs) -> MusicModel | None:
         return await MusicModel.filter(**kwargs).first().prefetch_related("songs")
@@ -35,26 +29,6 @@ class MusicRepository(BaseRepository):
             return
 
         return await Song.filter(name=query).first()
-
-    # async def save_song(self, author_id: int, track: dict[str, str]):
-    #     result = await self.get_one(user_id=author_id)
-    #
-    #     if not result:
-    #         music_model = await MusicModel.create(user_id=author_id)
-    #         song = await Song.create(name=track["track"], url=track["url"])
-    #         await music_model.songs.add(song)
-    #
-    #     else:
-    #         if not await result.songs.filter(url=track["url"]).exists():
-    #             if len(result.songs) >= 3:
-    #                 await result.songs.remove(result.songs[0])
-    #
-    #             await result.songs.add(
-    #                 await Song.create(name=track["track"], url=track["url"])
-    #             )
-    #
-    #     result = await self.get_one(user_id=author_id)
-    #     return result.songs.filter(url=track["url"]).first()
 
     async def save_song(self, author_id: int, track: dict[str, str]):
         music_model, _ = await self.add_one(user_id=author_id)

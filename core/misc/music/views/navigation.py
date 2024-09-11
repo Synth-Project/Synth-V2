@@ -200,15 +200,6 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        if player.queue.is_empty and player.auto_queue.is_empty:
-            embed = CustomEmbed(
-                title="<:crossmark:1282338837456224394> No songs in the queue",
-                color=BasicColors.ERROR,
-            ).get_embed()
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        # TODO: Make the shuffle removed if not queue found
-
         if not hasattr(player, "previous_queue"):
             player.previous_queue = player.queue.copy()
         if not hasattr(player, "previous_auto_queue"):

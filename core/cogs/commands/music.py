@@ -111,23 +111,6 @@ class Music(commands.Cog):
         )
 
         await MusicRepository().save_song(interaction.author.id, track_info)
-        # result = await MusicModel.get_or_none(
-        #     user_id=interaction.author.id
-        # ).prefetch_related("songs")
-
-        # if not result:
-        #     music_model = await MusicModel.create(user_id=interaction.author.id)
-        #     song = await Song.create(name=track_info["track"], url=track_info["url"])
-        #     await music_model.songs.add(song)
-
-        # else:
-        #     if not await result.songs.filter(url=track_info["url"]).exists():
-        #         if len(result.songs) >= 3:
-        #             await result.songs.remove(result.songs[0])
-        #         await result.songs.add(
-        #             await Song.create(name=track_info["track"], url=track_info["url"])
-        #         )
-
         await MusicFunctions().play_track(
             self.bot, interaction, player, embed, track, volume
         )
@@ -160,7 +143,6 @@ class Music(commands.Cog):
 
         if not search_query:
             result = await MusicRepository().get_one(user_id=interaction.author.id)
-            # result = await MusicModel.filter(user_id=interaction.author.id).first()
 
             autocomplete_list = (
                 [

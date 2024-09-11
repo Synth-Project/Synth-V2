@@ -38,13 +38,11 @@ class MusicFunctions:
         if not player.playing:
             embed = await self.music_embed(track)
             message = await interaction.channel.send(content=None, embed=embed)
-            # await interaction.edit_original_response(content=f"Now playing: [{track.title}]({str(track.uri)})")
             await interaction.delete_original_response(delay=2)
 
             track = player.queue.get()
 
             setattr(player, "message", message)
-            setattr(player, "first_play", True)
             player.inactive_timeout = 300
 
             await player.play(track, add_history=False)
@@ -54,7 +52,6 @@ class MusicFunctions:
 
         else:
             await interaction.edit_original_response(content=None, embed=embed)
-            # await player.message.reply(embed=embed)  # type: ignore
 
         await player.message.edit(  # type: ignore
             view=NavigationPanel(

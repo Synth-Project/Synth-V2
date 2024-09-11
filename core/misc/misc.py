@@ -6,7 +6,7 @@ from wavelink import Playable
 from yt_dlp import YoutubeDL
 
 
-def download_track(track: Playable, output: BytesIO) -> None:
+def download_track(track: Playable, output: BytesIO) -> int:
     """
     Download a track.
     :param track: The track to download.

@@ -28,10 +28,7 @@ class MusicEvent(commands.Cog):
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
         original = payload.original
         track = payload.track
-
-        # if hasattr(payload.player, "skipped") and payload.player.skipped:
-        #     payload.player.skipped = False
-        #     return
+        message = payload.player.message  # type: ignore
 
         if (
             payload.player.queue.mode == wavelink.QueueMode.loop
@@ -64,19 +61,7 @@ class MusicEvent(commands.Cog):
         embed.set_image(url=track.artwork if track.artwork else None)
         history_exists = payload.player.queue.history.count > 0
 
-        if hasattr(payload.player, "first_play") and payload.player.first_play:
-            payload.player.first_play = False
-            # await payload.player.interaction.edit_original_response(embed=embed)
-            await payload.player.message.edit(embed=embed)  # type: ignore
-
-        # message = await payload.player.interaction.original_response()
-        # message = await payload.player.interaction.edit_original_response(
-        #     embed=embed,
-        #
-        # )
-        message = payload.player.message  # type: ignore
-
-        await payload.player.message.edit(  # type: ignore
+        await message.edit(  # type: ignore
             embed=embed,
             view=NavigationPanel(
                 self.bot,
@@ -112,7 +97,6 @@ class MusicEvent(commands.Cog):
         ).get_embed()
 
         await player.message.reply(embed=embed)  # type: ignore
-        # await player.interaction.followup.send(embed=embed)
 
 
 def setup(bot: commands.Bot) -> None:

@@ -23,7 +23,7 @@ class Bot(commands.AutoShardedInteractionBot):
         )
         self.debug = False
 
-    async def load_extensions(bot: commands.Bot, cogs_paths: list[str] = None) -> None:
+    async def load_extensions(self, bot: commands.Bot, cogs_paths: list[str] = None) -> None:
         loaded = total = 0
 
         if not cogs_paths:
@@ -55,10 +55,12 @@ class Bot(commands.AutoShardedInteractionBot):
 
         logger.info(f"[#] {loaded}/{total} cogs loaded")
 
-    async def on_connect(self) -> None:
+    @staticmethod
+    async def on_connect() -> None:
         await init_database()
 
-    async def on_disconnect(self) -> None:
+    @staticmethod
+    async def on_disconnect() -> None:
         await close_database()
 
     async def on_ready(self) -> None:
@@ -68,7 +70,7 @@ class Bot(commands.AutoShardedInteractionBot):
         )
         logger.debug(f"Connected to {self.user}")
 
-        await self.load_extensions()
+        await self.load_extensions(bot=self)
         await self.wait_until_ready()
 
         await self.change_presence(
