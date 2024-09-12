@@ -156,8 +156,8 @@ class NavigationPanel(disnake.ui.View):
                 title=f"{interaction.guild.name}'s Queue",
                 description="\n".join(
                     [
-                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // Requested by: "
-                        f"{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}"
+                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
+                        f"**{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}**"
                         for _, music in queue_list[i : i + 10]
                         if music
                     ]

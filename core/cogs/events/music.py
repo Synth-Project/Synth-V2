@@ -46,6 +46,7 @@ class MusicEvent(commands.Cog):
             description=f"[{track.title}]({str(track.uri)})",
             footer_text=f"Volume: {payload.player.volume}% // Synth Music 2024",
         ).get_embed()
+
         embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
         embed.add_field(
             name="Duration:",
@@ -90,10 +91,10 @@ class MusicEvent(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
         await player.disconnect()
+
         embed = CustomEmbed(
-            title="Disconnected from voice channel",
-            color=BasicColors.SUCCESS,
-            description="Disconnected from voice channel due to inactivity",
+            title="<:disconnect:1279835624257486868> Disconnected",
+            description=f"I've left the {player.channel.mention} due to inactivity.",  # TODO: Ping the "/player play" command
         ).get_embed()
 
         await player.message.reply(embed=embed)  # type: ignore

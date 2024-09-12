@@ -68,12 +68,18 @@ class MusicFunctions:
         player: wavelink.Player, interaction: disnake.ApplicationCommandInteraction
     ) -> None:
         embed = CustomEmbed(
-            author=player.message.author,  # type: ignore
-            title="Skipped",
-            description=f"Skipped [{player.current.title}]({str(player.current.uri)})",
+            author=interaction.user,  # type: ignore
+            title="Track skipped",
+            description=(
+                f"Skipped the [{player.current.title}]({str(player.current.uri)}).\n"
+                f"Now playing: [{player.queue[0].title}]({str(player.queue[0].uri)})"
+            ),
             color=BasicColors.SUCCESS,
         ).get_embed()
 
+        await interaction.response.send_message(
+            content=f"Skipped.",
+            ephemeral=True,
+        )  # TODO: В ідеалі нам тут нічого відповідати не треба, бо це калл, але я хз, башка не робить.
         await player.message.reply(embed=embed)  # type: ignore
         await player.skip()
-        await interaction.send(embed=embed, ephemeral=True)

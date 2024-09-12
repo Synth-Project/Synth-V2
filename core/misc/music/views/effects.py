@@ -24,17 +24,19 @@ class EffectsDropdown(disnake.ui.Select):
         player: wavelink.Player,
         interaction: disnake.Interaction,
     ) -> None:
+        self.bot: commands.Bot = bot
+        self.player: wavelink.Player = player
+        self.interaction: disnake.Interaction = interaction
+
+        self.filters: wavelink.Filters = player.filters
+
         super().__init__(
             placeholder="Choose an effect",
             min_values=1,
             max_values=1,
             options=list(self.generate_options()),
         )
-        self.bot: commands.Bot = bot
-        self.player: wavelink.Player = player
-        self.interaction: disnake.Interaction = interaction
-
-        self.filters: wavelink.Filters = player.filters
+    
         self.selected_states: dict = {option.value: False for option in self.options}
 
     def generate_options(self):
@@ -43,7 +45,6 @@ class EffectsDropdown(disnake.ui.Select):
             yield disnake.SelectOption(
                 emoji=self.negative_emoji,
                 label=label.capitalize(),
-                # description=f"The {label.capitalize()} filter to apply to the player",
                 value=label,
             )
         yield disnake.SelectOption(
@@ -60,7 +61,7 @@ class EffectsDropdown(disnake.ui.Select):
 
             embed = CustomEmbed(
                 title="Adjust the track effects",
-                description="All filters have been disabled or set to default",
+                description="All filters have been disabled", 
             ).get_embed()
             await self.interaction.edit_original_response(embed=embed)
         else:
@@ -84,16 +85,14 @@ class EffectsDropdown(disnake.ui.Select):
 
         if self.selected_states[selected_option]:
             filter_func(self.filters)
-            status = "Enabled"
         else:
             getattr(self.filters, selected_option).reset()
-            status = "Disabled"
 
         await self.player.set_filters(self.filters)
 
         embed = CustomEmbed(
-            title="Adjust the track effects",
-            description=f"**{status} filter:** `{selected_option.capitalize()}``.\n**Enabled filters:** {', '.join([key.capitalize() for key, val in self.selected_states.items() if val]) or 'None'}",
+            title="Track Filters",
+            description=f"", # TODO: Display the effects status
         ).get_embed()
 
         await self.interaction.edit_original_response(embed=embed)

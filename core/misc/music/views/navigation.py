@@ -58,6 +58,12 @@ class NavigationDropdown(disnake.ui.Select):
                 value="download",
             ),
             disnake.SelectOption(
+                emoji="<:download:1279837205241659554>",
+                label="Lyrics",
+                description="View the current song lyrics",
+                value="lyrics",
+            ),
+            disnake.SelectOption(
                 emoji="<:disconnect:1279835624257486868>",
                 label="Disconnect",
                 description="Disconnect from the voice channel",
@@ -240,9 +246,10 @@ class NavigationDropdown(disnake.ui.Select):
         Returns: None
         """
         embed = CustomEmbed(
-            title="<:microphone:1280556431690567835> Adjust the track effects",
-            description="**Filters enabled:** TODO",
+            title="<:microphone:1280556431690567835> Adjust the track filters",
+            description="", # TODO: Display the effects status
         ).get_embed()
+
         await interaction.response.send_message(
             embed=embed,
             view=disnake.ui.View().add_item(
@@ -273,6 +280,17 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
         await self._edit_view()
+
+    async def get_lyrics(self, interaction: disnake.Interaction) -> None:
+        """
+        Get the lyrics of the player
+
+        Parameters:
+        interaction: disnake.Interaction
+
+        Returns: None
+        """
+        await interaction.response.send_message("Not implemented yet", ephemeral=True)
 
     async def handle_disconnect(
         self, interaction: disnake.Interaction, player: wavelink.Player
@@ -313,6 +331,7 @@ class NavigationDropdown(disnake.ui.Select):
             "shuffle": lambda i: self.shuffle_queue(i, player),
             "effects": lambda i: self.handle_effects(i, player),
             "download": self.handle_download,
+            "lyrics": self.get_lyrics,
             "disconnect": lambda i: self.handle_disconnect(i, player),
         }
 
