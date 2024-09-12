@@ -4,6 +4,7 @@ import disnake
 from disnake.ext import commands
 from core.database.models.reminder import ReminderType
 from core.database.repositories.reminder import ReminderRepository
+from core.misc.embed import custom_embed
 from core.misc.emoji import StandartEmoji
 
 
@@ -60,15 +61,14 @@ class MainReminderView(disnake.ui.View):
                     else ReminderType.CHANNEL
                 ),
             )
-            await interaction.send(
-                "# Remind \n- Text: "
-                + self.text
-                + " \n- Time: "
-                + disnake.utils.format_dt(
+            embed = custom_embed("Reminder", "Reminder was created!")
+            embed.add_field(name="Text", value=self.text, inline=True)
+            embed.add_field(
+                name="Time",
+                value=disnake.utils.format_dt(
                     datetime.fromtimestamp(datetime.now().timestamp() + int(self.time)),
                     "R",
                 ),
-                ephemeral=True,
-                delete_after=15,
+                inline=True,
             )
-            await interaction.delete_original_response()
+            await interaction.edit_original_response(embed=embed, view=None)
