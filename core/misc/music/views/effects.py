@@ -36,7 +36,7 @@ class EffectsDropdown(disnake.ui.Select):
             max_values=1,
             options=list(self.generate_options()),
         )
-    
+
         self.selected_states: dict = {option.value: False for option in self.options}
 
     def generate_options(self):
@@ -61,7 +61,7 @@ class EffectsDropdown(disnake.ui.Select):
 
             embed = CustomEmbed(
                 title="Adjust the track effects",
-                description="All filters have been disabled", 
+                description="All filters have been disabled",
             ).get_embed()
             await self.interaction.edit_original_response(embed=embed)
         else:
@@ -92,7 +92,7 @@ class EffectsDropdown(disnake.ui.Select):
 
         embed = CustomEmbed(
             title="Track Filters",
-            description=f"", # TODO: Display the effects status
+            description=f"",  # TODO: Display the effects status
         ).get_embed()
 
         await self.interaction.edit_original_response(embed=embed)

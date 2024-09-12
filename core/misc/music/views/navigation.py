@@ -247,7 +247,7 @@ class NavigationDropdown(disnake.ui.Select):
         """
         embed = CustomEmbed(
             title="<:microphone:1280556431690567835> Adjust the track filters",
-            description="", # TODO: Display the effects status
+            description="",  # TODO: Display the effects status
         ).get_embed()
 
         await interaction.response.send_message(

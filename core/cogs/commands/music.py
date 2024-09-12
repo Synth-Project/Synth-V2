@@ -92,7 +92,7 @@ class Music(commands.Cog):
         else:
             track: wavelink.Playable = tracks[0]
             track.extras = {"requested_by": interaction.author.id}
-            
+
             await player.queue.put_wait(track)
 
             track_info = {
