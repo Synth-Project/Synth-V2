@@ -46,8 +46,8 @@ class Music(commands.Cog):
             return await interaction.send(embed=error_embed, ephemeral=True)
 
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+                interaction.guild.voice_client
+                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
 
         await interaction.response.send_message(
@@ -142,7 +142,7 @@ class Music(commands.Cog):
             )
 
         if not search_query:
-            result = await MusicRepository().get_one(user_id=interaction.author.id)
+            result, _ = await MusicRepository().add_one(id=interaction.author.id)
 
             autocomplete_list = (
                 [

@@ -1,4 +1,5 @@
-from core.database.models.music import MusicModel, Song
+from core.database.models.user import UserModel
+from core.database.models.music import Song
 from core.database.repositories.base import BaseRepository
 
 
@@ -7,39 +8,42 @@ class MusicRepository(BaseRepository):
         super().__init__()
 
     @staticmethod
-    async def get_one(**kwargs) -> MusicModel | None:
-        return await MusicModel.filter(**kwargs).first().prefetch_related("songs")
+    async def get_one(**kwargs) -> UserModel | None:
+        return await UserModel.filter(**kwargs).first().prefetch_related("songs")
 
     @staticmethod
-    async def get_all(**kwargs) -> list[MusicModel]:
-        return await MusicModel.filter(**kwargs).all().prefetch_related("songs")
+    async def get_all(**kwargs) -> list[UserModel]:
+        return await UserModel.filter(**kwargs).all().prefetch_related("songs")
 
     @staticmethod
-    async def add_one(**kwargs) -> tuple[MusicModel, bool]:
-        return await MusicModel.get_or_create(**kwargs)
+    async def add_one(**kwargs) -> tuple[UserModel, bool]:
+        model, is_created = await UserModel.get_or_create(**kwargs)
+        if is_created:
+            await model.fetch_related("songs")
+        return model, is_created
 
     @staticmethod
     async def remove_one(**kwargs):
-        return await MusicModel.filter(**kwargs).delete()
+        return await UserModel.filter(**kwargs).delete()
 
     async def find_song(self, author_id: int, query: str) -> Song | None:
-        user_track = await self.get_one(user_id=author_id)
+        user = await self.get_one(id=author_id)
 
-        if not user_track or not await user_track.songs.filter(name=query).exists():
+        if not user or not await user.songs.filter(name=query).exists():
             return
 
         return await Song.filter(name=query).first()
 
     async def save_song(self, author_id: int, track: dict[str, str]):
-        music_model, _ = await self.add_one(user_id=author_id)
-        await music_model.fetch_related("songs")
+        user_model, _ = await self.add_one(id=author_id)
+        await user_model.fetch_related("songs")
 
-        if not await music_model.songs.filter(url=track["url"]).exists():
-            if len(music_model.songs) >= 3:
-                await music_model.songs.remove(music_model.songs[0])
-            await music_model.songs.add(
+        if not await user_model.songs.filter(url=track["url"]).exists():
+            if len(user_model.songs) >= 3:
+                await user_model.songs.remove(user_model.songs[0])
+            await user_model.songs.add(
                 await Song.create(name=track["track"], url=track["url"])
             )
 
-        result = await self.get_one(user_id=author_id)
+        result = await self.get_one(id=author_id)
         return await result.songs.filter(url=track["url"]).first()
