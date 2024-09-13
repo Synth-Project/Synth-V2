@@ -16,9 +16,9 @@ class CustomEmbed:
         color: Union[
             disnake.Colour,
             int,
-            BasicColors.SUCCESS,
-            BasicColors.ERROR,
-            BasicColors.DEFAULT,
+            BasicColors.SUCCESS,  # type: ignore
+            BasicColors.ERROR,  # type: ignore
+            BasicColors.DEFAULT,  # type: ignore
         ] = BasicColors.DEFAULT,
         image: str = None,
         thumbnail: str = None,
