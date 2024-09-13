@@ -13,7 +13,7 @@ class CustomEmbed:
         embed_type: Literal["default", "error"] = "default",
         title: str = "",
         description: str = "",
-        color: Union[disnake.Colour, int, BasicColors] = BasicColors.DEFAULT,
+        color: Union[disnake.Colour, int, BasicColors.SUCCESS, BasicColors.ERROR, BasicColors.DEFAULT] = BasicColors.DEFAULT,
         image: str = None,
         thumbnail: str = None,
         footer_text: str = "Synth 2024 // All rights reserved",
@@ -78,6 +78,7 @@ class CustomEmbed:
     ):
         return cls(
             embed_type="error",
+            color=BasicColors.ERROR,
             title=title,
             description=description,
             image=image,

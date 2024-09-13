@@ -83,3 +83,10 @@ class MusicFunctions:
         )  # TODO: В ідеалі нам тут нічого відповідати не треба, бо це калл, але я хз, башка не робить.
         await player.message.reply(embed=embed)  # type: ignore
         await player.skip()
+
+
+def hello() -> str:
+    print("test")
+    print("well")
+    print("Simple texttt")
+    return "wd2334"

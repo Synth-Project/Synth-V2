@@ -5,6 +5,7 @@ import wavelink
 from disnake.ext import commands
 
 from core.database.repositories.music import MusicRepository
+from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
 from core.misc.misc import shorten_text
 from core.misc.music.functions import MusicFunctions
@@ -101,9 +102,10 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed = CustomEmbed(
-                title=f"Added track **{track.title}** to the queue"
-            ).get_embed()
+            embed = CustomEmbed(color=BasicColors.SUCCESS, title=f"Added track **{track.title}** to the queue").get_embed()
+            # embed = CustomEmbed(
+            #     title=f"Added track **{track.title}** to the queue",
+            # ).get_embed()
 
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,

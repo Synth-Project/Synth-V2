@@ -45,10 +45,10 @@ class Bot(commands.AutoShardedInteractionBot):
                     loaded += 1
                     logger.info(f"[+] Loaded cog: {extension_name}")
                 except (
-                    commands.ExtensionNotFound,
-                    commands.NoEntryPointError,
-                    commands.ExtensionFailed,
-                    commands.ExtensionError,
+                        commands.ExtensionNotFound,
+                        commands.NoEntryPointError,
+                        commands.ExtensionFailed,
+                        commands.ExtensionError,
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")
                     import traceback
@@ -57,12 +57,10 @@ class Bot(commands.AutoShardedInteractionBot):
 
         logger.info(f"[#] {loaded}/{total} cogs loaded")
 
-    @staticmethod
-    async def on_connect() -> None:
+    async def on_connect(self) -> None:
         await init_database()
 
-    @staticmethod
-    async def on_disconnect() -> None:
+    async def on_disconnect(self) -> None:
         await close_database()
 
     async def on_ready(self) -> None:
