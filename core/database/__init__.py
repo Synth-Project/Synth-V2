@@ -14,6 +14,5 @@ async def init_database():
     settings.DEBUG and logger.info("# Database initialized")
 
 
-
 async def close_database():
     await Tortoise.close_connections()
