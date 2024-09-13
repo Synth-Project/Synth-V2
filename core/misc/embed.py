@@ -6,6 +6,8 @@ from disnake import Embed
 from core.main.main import bot
 from core.misc.color import BasicColors
 
+footer_text = "Synth 2024 // All rights reserved"
+
 
 class CustomEmbed:
     def __init__(
@@ -22,7 +24,7 @@ class CustomEmbed:
         ] = BasicColors.DEFAULT,
         image: str = None,
         thumbnail: str = None,
-        footer_text: str = "Synth 2024 // All rights reserved",
+        footer_text: str = footer_text,
         author: Union[disnake.Member, disnake.User] = None,
     ):
         self._embed = self._build_embed(
@@ -79,7 +81,7 @@ class CustomEmbed:
         description: str = "",
         image: str = None,
         thumbnail: str = None,
-        footer_text: str = "Synth 2024 // All rights reserved",
+        footer_text: str = footer_text,
         author: Union[disnake.Member, disnake.User] = None,
     ):
         return cls(

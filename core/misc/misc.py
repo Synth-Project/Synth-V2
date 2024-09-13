@@ -27,15 +27,26 @@ def download_track(track: Playable, output: BytesIO) -> int:
         return output.seek(0)
 
 
-def create_ping_command_string(command_name: str, guild: disnake.Guild) -> str:
+def create_ping_command_string(guild: disnake.Guild, command_name: str) -> str | None:
     """
-    Create a string to ping a command in a message.
-    :param command_name: The name of the command.
-    :param guild: The guild to get the command from.
-    :return: A string to ping the command.
+    Create a string in the format of a mention of a command
+    that can be used to ping the command.
+
+    :param guild: The guild that the command is in.
+    :type guild: disnake.Guild
+    :param command_name: The name of the command to ping.
+    :type command_name: str
+    :return: The string in the format of a mention of the command.
+    :rtype: str | None
     """
-    command = guild.get_command_named(command_name)
-    return "</{}:{}:>".format(command.name, command.id)
+    command_parts = command_name.split()
+    command = guild.get_command_named(command_parts[0])
+    if not command:
+        return None
+
+    command_name = " ".join(command_parts) if len(command_parts) > 1 else command_name
+
+    return f"</{command_name}:{command.id}>"
 
 
 def shorten_text(text: str, max_length: int = 75) -> str:

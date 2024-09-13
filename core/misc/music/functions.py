@@ -36,6 +36,8 @@ class MusicFunctions:
         volume: int,
     ) -> None:
         if not player.playing:
+            if not player.current:
+                await player.set_volume(min(100, max(1, volume)))
             embed = await self.music_embed(track)
             message = await interaction.channel.send(content=None, embed=embed)
             await interaction.delete_original_response(delay=2)
@@ -46,9 +48,6 @@ class MusicFunctions:
             player.inactive_timeout = 300
 
             await player.play(track, add_history=False)
-
-            if not player.current:
-                await player.set_volume(min(100, max(1, volume)))
 
         else:
             await interaction.edit_original_response(content=None, embed=embed)

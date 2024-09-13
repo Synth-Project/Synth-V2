@@ -1,11 +1,13 @@
 from datetime import timedelta
 
+import disnake
 import wavelink
 from disnake.ext import commands
 
 from core import logger
 from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
+from core.misc.misc import create_ping_command_string
 from core.misc.music.views.panel import NavigationPanel
 
 
@@ -94,10 +96,11 @@ class MusicEvent(commands.Cog):
 
         embed = CustomEmbed(
             title="<:disconnect:1279835624257486868> Disconnected",
-            description=f"I've left the {player.channel.mention} due to inactivity.",  # TODO: Ping the "/player play" command
+            description=f"I've left the {player.channel.mention} due to inactivity. \n- If you will need me again, use the {create_ping_command_string(player.guild, "player play")} command.",
         ).get_embed()
 
         await player.message.reply(embed=embed)  # type: ignore
+        await player.message.delete()
 
 
 def setup(bot: commands.Bot) -> None:

@@ -49,6 +49,7 @@ class Bot(commands.AutoShardedInteractionBot):
                     commands.NoEntryPointError,
                     commands.ExtensionFailed,
                     commands.ExtensionError,
+                    commands.ExtensionAlreadyLoaded,
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")
                     import traceback

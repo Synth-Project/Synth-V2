@@ -26,30 +26,31 @@ class Music(commands.Cog):
         interaction: disnake.ApplicationCommandInteraction,
         *,
         query: str,
-        volume: int = commands.Param(default=100, max_length=3, min_length=1),
+        volume: int = commands.Param(default=75, max_length=3, min_length=1),
     ) -> None:
         """
         Search and play music from nearly any platform
 
         Parameters:
             query (str): The query to search for
-            volume (int): The volume to set the player to (default is 100)
+            volume (int): The volume to set the player to (default is 75)
 
         Returns:
             None
         """
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
 
         if query.startswith("❌"):
-            error_embed.title = (
-                "Query is not provided. Please enter a query and re-invoke the command."
-            )
-            return await interaction.send(embed=error_embed, ephemeral=True)
+            query = query.replace("❌ | ", "")
+            error_embed.title = query
+            await interaction.send(embed=error_embed, ephemeral=True)
+            return
 
         player: wavelink.Player = (
             interaction.guild.voice_client
             or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
+        await interaction.me.edit(deafen=True)
 
         await interaction.response.send_message(
             "<a:loading:1281259173639884882> Searching for tracks...",
@@ -83,7 +84,8 @@ class Music(commands.Cog):
             track_info = {"track": f"{tracks.name} — {added} songs", "url": query}
 
             embed = CustomEmbed(
-                title=f"Added playlist **{tracks.name}** ({added} songs) to the queue"
+                title=f"Added playlist **{tracks.name}** ({added} songs) to the queue",
+                author=interaction.author,
             ).get_embed()
 
             track: wavelink.Playable = (
@@ -103,12 +105,10 @@ class Music(commands.Cog):
             }
 
             embed = CustomEmbed(
-                color=BasicColors.SUCCESS,
                 title=f"Added track **{track.title}** to the queue",
+                author=interaction.author,
+                color=BasicColors.SUCCESS,
             ).get_embed()
-            # embed = CustomEmbed(
-            #     title=f"Added track **{track.title}** to the queue",
-            # ).get_embed()
 
         embed.set_footer(
             icon_url=interaction.bot.user.display_avatar.url,
@@ -168,7 +168,7 @@ class Music(commands.Cog):
         ]
 
         if not autocomplete_options:
-            autocomplete_options = ["❌ | No results found"]
+            autocomplete_options = ["❌ | Could not find any tracks with that query"]
 
         await interaction.response.autocomplete(choices=autocomplete_options)
 

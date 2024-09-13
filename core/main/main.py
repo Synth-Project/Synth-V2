@@ -24,7 +24,9 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             part in event.src_path for part in ["__pycache__", ".pyc"]
         ):
             settings.DEBUG and print(f"Changed file: {event.src_path}")
-        asyncio.run_coroutine_threadsafe(self._reload_module(event.src_path), self.loop)
+            asyncio.run_coroutine_threadsafe(
+                self._reload_module(event.src_path), self.loop
+            )
 
     async def _reload_module(self, file_path: str):
         try:
@@ -33,12 +35,13 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             )
             importlib.invalidate_caches()
             self._reload_core_modules()
-            from core.database import init_database
-
-            await init_database()
             settings.DEBUG and print(f"Reloaded: {module_name}")
         except BaseException as error:
             settings.DEBUG and print(f"Error reloading module: {error}")
+
+        from core.database import init_database
+
+        await init_database()
 
     def _reload_core_modules(self):
         for name, module in list(sys.modules.items()):

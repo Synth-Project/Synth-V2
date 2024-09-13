@@ -12,14 +12,10 @@ class Utilities(commands.Cog):
         self.bot = bot
 
     @commands.slash_command()
-    async def hello(self, ineteraction: disnake.ApplicationCommandInteraction):
-        for command in self.bot.slash_commands:
-            if command.name == "player":
-                print(
-                    command.children
-                )  # {'play': <disnake.ext.commands.slash_core.SubCommand object at 0x0000011DF4B31650>, 'skip': <disnake.ext.commands.slash_core.SubCommand object at 0x0000011DF5DB21D0>}
-                for child in command.children:
-                    print(f"{child}")  # play, skip
+    async def hello(self, interaction: disnake.ApplicationCommandInteraction):
+        await interaction.send(
+            content=create_ping_command_string(interaction.guild, "player play")
+        )
 
 
 def setup(bot: commands.Bot) -> None:
