@@ -373,13 +373,13 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             file_path = self.event.src_path
             # Получаем имя модуля
             relative_path = os.path.relpath(file_path, self.base_path)
-            module_name = relative_path.replace(os.path.sep, '.').replace('.py', '')
+            module_name = relative_path.replace(os.path.sep, ".").replace(".py", "")
 
-            if module_name.startswith('.'):
+            if module_name.startswith("."):
                 module_name = module_name[1:]
 
             # Полное имя модуля
-            module_name = f'core.{module_name}'
+            module_name = f"core.{module_name}"
             print(f"Reloading module: {module_name}")
 
             importlib.invalidate_caches()
@@ -389,6 +389,7 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
 
             # re-initialize database
             from core.database import init_database
+
             await init_database()
             print(f"Reloaded all modules")
 
@@ -398,7 +399,7 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
     def reload_all_modules(self):
         # Перезагружаем все модули в sys.modules
         for module_name in list(sys.modules.keys()):
-            if module_name.startswith('core.'):
+            if module_name.startswith("core."):
                 try:
                     module = sys.modules[module_name]
                     importlib.reload(module)
@@ -433,8 +434,13 @@ async def start_watching(ev_loop: asyncio.AbstractEventLoop, paths: list[str]):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
-    loop.create_task(start_watching(loop, [
-        os.path.join(os.getcwd(), 'core'),
-    ]))
+    loop.create_task(
+        start_watching(
+            loop,
+            [
+                os.path.join(os.getcwd(), "core"),
+            ],
+        )
+    )
 
     loop.run_until_complete(bot.run(settings.BOT_TOKEN))

@@ -102,7 +102,10 @@ class Music(commands.Cog):
                 "source": track.source,
             }
 
-            embed = CustomEmbed(color=BasicColors.SUCCESS, title=f"Added track **{track.title}** to the queue").get_embed()
+            embed = CustomEmbed(
+                color=BasicColors.SUCCESS,
+                title=f"Added track **{track.title}** to the queue",
+            ).get_embed()
             # embed = CustomEmbed(
             #     title=f"Added track **{track.title}** to the queue",
             # ).get_embed()
