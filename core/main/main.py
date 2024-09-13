@@ -20,8 +20,10 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
         self.base_path = base_path
 
     def on_modified(self, event):
-        if event.src_path.endswith(".py") and settings.DEBUG:
-            print(f"Changed file: {event.src_path}")
+        if event.src_path.endswith(".py") and not any(
+            part in event.src_path for part in ["__pycache__", ".pyc"]
+        ):
+            settings.DEBUG and print(f"Changed file: {event.src_path}")
         asyncio.run_coroutine_threadsafe(self._reload_module(event.src_path), self.loop)
 
     async def _reload_module(self, file_path: str):
