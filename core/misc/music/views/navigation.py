@@ -246,15 +246,18 @@ class NavigationDropdown(disnake.ui.Select):
         """
 
         description = "\n".join(
-            f"{EffectsDropdown.positive_emoji
-            if player.filters().get(effect) else EffectsDropdown.negative_emoji} {effect.capitalize()}" for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]  # type: ignore
+            f"{EffectsDropdown.positive_emoji if player.filters().get(effect) else EffectsDropdown.negative_emoji} {effect.capitalize()}"  # type: ignore
+            for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
         )
 
         embed = CustomEmbed(
             title="<:microphone:1280556431690567835> Adjust the track filters",
             description=description,
         ).get_embed()
-        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
+        embed.set_author(
+            name=interaction.user.display_name,
+            icon_url=interaction.user.display_avatar.url,
+        )
 
         await interaction.response.send_message(
             embed=embed,
@@ -289,8 +292,11 @@ class NavigationDropdown(disnake.ui.Select):
 
     @staticmethod
     async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
-        result = await node.send(method="GET", path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics")
-        lyrics = [line['line'] for line in result['lines']]
+        result = await node.send(
+            method="GET",
+            path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics",
+        )
+        lyrics = [line["line"] for line in result["lines"]]
         return "\n".join(lyrics)
 
     async def get_lyrics(self, interaction: disnake.Interaction) -> None:

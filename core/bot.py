@@ -45,10 +45,10 @@ class Bot(commands.AutoShardedInteractionBot):
                     loaded += 1
                     logger.info(f"[+] Loaded cog: {extension_name}")
                 except (
-                        commands.ExtensionNotFound,
-                        commands.NoEntryPointError,
-                        commands.ExtensionFailed,
-                        commands.ExtensionError,
+                    commands.ExtensionNotFound,
+                    commands.NoEntryPointError,
+                    commands.ExtensionFailed,
+                    commands.ExtensionError,
                     commands.ExtensionAlreadyLoaded,
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")

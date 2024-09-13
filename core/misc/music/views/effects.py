@@ -62,14 +62,23 @@ class EffectsDropdown(disnake.ui.Select):
             description = "\n".join(
                 f"{EffectsDropdown.positive_emoji if self.player.filters().get(effect) else EffectsDropdown.negative_emoji} {effect.capitalize()}"
                 # type: ignore
-                for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
+                for effect in [
+                    "timescale",
+                    "rotation",
+                    "tremolo",
+                    "vibrato",
+                    "equalizer",
+                ]
             )
             embed = CustomEmbed(
                 title="Adjust the track effects",
                 description=description,
             ).get_embed()
 
-            embed.set_author(name=self.interaction.user.display_name, icon_url=self.interaction.user.display_avatar.url)
+            embed.set_author(
+                name=self.interaction.user.display_name,
+                icon_url=self.interaction.user.display_avatar.url,
+            )
 
             await self.interaction.edit_original_response(embed=embed)
         else:
@@ -104,7 +113,10 @@ class EffectsDropdown(disnake.ui.Select):
             description=description,
         ).get_embed()
 
-        embed.set_author(name=self.interaction.user.display_name, icon_url=self.interaction.user.display_avatar.url)
+        embed.set_author(
+            name=self.interaction.user.display_name,
+            icon_url=self.interaction.user.display_avatar.url,
+        )
 
         await self.interaction.edit_original_response(embed=embed)
 

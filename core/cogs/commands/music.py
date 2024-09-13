@@ -47,8 +47,8 @@ class Music(commands.Cog):
             return
 
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         await interaction.me.edit(deafen=True)
 
@@ -67,7 +67,9 @@ class Music(commands.Cog):
                     )
                 ).url
 
-        tracks: wavelink.Search = await wavelink.Playable.search(query, source="spsearch")
+        tracks: wavelink.Search = await wavelink.Playable.search(
+            query, source="spsearch"
+        )
 
         if not tracks:
             error_embed.title = (
