@@ -247,9 +247,7 @@ class NavigationDropdown(disnake.ui.Select):
 
         description = "\n".join(
             f"{EffectsDropdown.positive_emoji
-            if player.filters().get(effect)  # type: ignore
-            else EffectsDropdown.negative_emoji} {effect.capitalize()}"
-            for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
+            if player.filters().get(effect) else EffectsDropdown.negative_emoji} {effect.capitalize()}" for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]  # type: ignore
         )
 
         embed = CustomEmbed(

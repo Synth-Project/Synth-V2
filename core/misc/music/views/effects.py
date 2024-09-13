@@ -96,9 +96,7 @@ class EffectsDropdown(disnake.ui.Select):
         await self.player.set_filters(self.filters)
 
         description = "\n".join(
-            f"{EffectsDropdown.positive_emoji
-            if self.player.filters().get(effect)  # type: ignore
-            else EffectsDropdown.negative_emoji} {effect.capitalize()}"
+            f"{EffectsDropdown.positive_emoji if self.player.filters().get(effect) else EffectsDropdown.negative_emoji} {effect.capitalize()}"  # type: ignore
             for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
         )
         embed = CustomEmbed(
