@@ -47,12 +47,12 @@ class Music(commands.Cog):
             return
 
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+                interaction.guild.voice_client
+                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         await interaction.me.edit(deafen=True)
 
-        await interaction.response.send_message(
+        await interaction.send(
             "<a:loading:1281259173639884882> Searching for tracks...",
             ephemeral=True,
         )
@@ -67,7 +67,7 @@ class Music(commands.Cog):
                     )
                 ).url
 
-        tracks: wavelink.Search = await wavelink.Playable.search(query)
+        tracks: wavelink.Search = await wavelink.Playable.search(query, source="spsearch")
 
         if not tracks:
             error_embed.title = (
@@ -154,13 +154,13 @@ class Music(commands.Cog):
                     f"History: {shorten_text(song.name)}"
                     for song in (await result.songs.all())
                 ]
-                if result
+                if result and await result.songs.all().count() > 0
                 else ["❌ | Try to add a song for the first time"]
             )
 
             return await interaction.response.autocomplete(choices=autocomplete_list)
 
-        search_results = await wavelink.Playable.search(search_query)
+        search_results = await wavelink.Playable.search(search_query, source="spsearch")
         autocomplete_options = [
             f"Found: {shorten_text(f'{track.title} — {track.author}')}"
             for index, track in enumerate(search_results)

@@ -21,7 +21,7 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path.endswith(".py") and not any(
-            part in event.src_path for part in ["__pycache__", ".pyc"]
+                part in event.src_path for part in ["__pycache__", ".pyc"]
         ):
             settings.DEBUG and print(f"Changed file: {event.src_path}")
             asyncio.run_coroutine_threadsafe(
@@ -43,9 +43,10 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
 
         await init_database()
 
-    def _reload_core_modules(self):
+    @staticmethod
+    def _reload_core_modules():
         for name, module in list(sys.modules.items()):
-            if name.startswith("core."):
+            if name.startswith("core.") and not "__pycache__" in name:
                 try:
                     importlib.reload(module)
                     settings.DEBUG and print(f"Reloaded: {name}")
@@ -72,5 +73,6 @@ async def start_watching(loop: asyncio.AbstractEventLoop, path: str):
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.create_task(start_watching(loop, os.path.join(os.getcwd(), "core")))
+    # Watchdogs doesn't work correctly now
+    # loop.create_task(start_watching(loop, os.path.join(os.getcwd(), "core")))
     loop.run_until_complete(bot.run(settings.BOT_TOKEN))

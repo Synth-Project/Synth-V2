@@ -51,7 +51,6 @@ class NavigationPanel(disnake.ui.View):
         self._setup_hooks()
 
     def _setup_hooks(self) -> None:
-        print("watchdog works!!!")
         self.add_item(self.navigation_dropdown)
         self.add_item(self.queue_dropdown)
 

@@ -1,12 +1,11 @@
 from typing import cast, Union, Optional
 
 import disnake
-from disnake.ext import commands
 import wavelink
+from disnake.ext import commands
 
 from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
-
 from core.misc.music.views.download import DownloadDropdown
 from core.misc.music.views.effects import EffectsDropdown
 from core.misc.music.views.shuffle import ShuffleView
@@ -245,10 +244,19 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
+
+        description = "\n".join(
+            f"{EffectsDropdown.positive_emoji
+            if player.filters().get(effect)  # type: ignore
+            else EffectsDropdown.negative_emoji} {effect.capitalize()}"
+            for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
+        )
+
         embed = CustomEmbed(
             title="<:microphone:1280556431690567835> Adjust the track filters",
-            description="",  # TODO: Display the effects status
+            description=description,
         ).get_embed()
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url)
 
         await interaction.response.send_message(
             embed=embed,
@@ -281,6 +289,12 @@ class NavigationDropdown(disnake.ui.Select):
         )
         await self._edit_view()
 
+    @staticmethod
+    async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
+        result = await node.send(method="GET", path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics")
+        lyrics = [line['line'] for line in result['lines']]
+        return "\n".join(lyrics)
+
     async def get_lyrics(self, interaction: disnake.Interaction) -> None:
         """
         Get the lyrics of the player
@@ -290,7 +304,10 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        await interaction.response.send_message("Not implemented yet", ephemeral=True)
+
+        player = cast(wavelink.Player, interaction.guild.voice_client)
+        lyrics = await self._get_lyrics(player.node, player.guild.id)
+        await interaction.response.send_message(lyrics, ephemeral=True)
 
     async def handle_disconnect(
         self, interaction: disnake.Interaction, player: wavelink.Player

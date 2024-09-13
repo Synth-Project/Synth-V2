@@ -31,7 +31,7 @@ class EffectsDropdown(disnake.ui.Select):
         self.filters: wavelink.Filters = player.filters
 
         super().__init__(
-            placeholder="Choose an effect",
+            placeholder="Adjust effects",
             min_values=1,
             max_values=1,
             options=list(self.generate_options()),
@@ -43,7 +43,7 @@ class EffectsDropdown(disnake.ui.Select):
         filter_options = list(self.FILTERS.keys())
         for label in filter_options:
             yield disnake.SelectOption(
-                emoji=self.negative_emoji,
+                emoji=self.negative_emoji if not self.filters().get(label) else self.positive_emoji,  # type: ignore
                 label=label.capitalize(),
                 value=label,
             )
@@ -59,10 +59,19 @@ class EffectsDropdown(disnake.ui.Select):
         if selected_option == "reset":
             await self.reset_filters(interaction)
 
+            description = "\n".join(
+                f"{EffectsDropdown.positive_emoji
+                if self.player.filters().get(effect)  # type: ignore
+                else EffectsDropdown.negative_emoji} {effect.capitalize()}"
+                for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
+            )
             embed = CustomEmbed(
                 title="Adjust the track effects",
-                description="All filters have been disabled",
+                description=description,
             ).get_embed()
+
+            embed.set_author(name=self.interaction.user.display_name, icon_url=self.interaction.user.display_avatar.url)
+
             await self.interaction.edit_original_response(embed=embed)
         else:
             await self.toggle_filter(selected_option, interaction)
@@ -77,23 +86,28 @@ class EffectsDropdown(disnake.ui.Select):
     async def toggle_filter(
         self, selected_option: str, interaction: disnake.Interaction
     ) -> None:
-        self.selected_states[selected_option] = not self.selected_states[
-            selected_option
-        ]
-
-        filter_func = self.FILTERS[selected_option]
-
-        if self.selected_states[selected_option]:
-            filter_func(self.filters)
-        else:
+        if self.filters().get(selected_option):  # type: ignore
             getattr(self.filters, selected_option).reset()
+            self.selected_states[selected_option] = False
+        else:
+            filter_func = self.FILTERS[selected_option]
+            filter_func(self.filters)
+            self.selected_states[selected_option] = True
 
         await self.player.set_filters(self.filters)
 
+        description = "\n".join(
+            f"{EffectsDropdown.positive_emoji
+            if self.player.filters().get(effect)  # type: ignore
+            else EffectsDropdown.negative_emoji} {effect.capitalize()}"
+            for effect in ["timescale", "rotation", "tremolo", "vibrato", "equalizer"]
+        )
         embed = CustomEmbed(
             title="Track Filters",
-            description=f"",  # TODO: Display the effects status
+            description=description,
         ).get_embed()
+
+        embed.set_author(name=self.interaction.user.display_name, icon_url=self.interaction.user.display_avatar.url)
 
         await self.interaction.edit_original_response(embed=embed)
 

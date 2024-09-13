@@ -54,8 +54,8 @@ class QueueDropdown(disnake.ui.Select):
         :return: list
         """
         start_idx, end_idx = (
-            self.page - 1
-        ) * self.items_per_page, self.page * self.items_per_page
+                                     self.page - 1
+                             ) * self.items_per_page, self.page * self.items_per_page
         options = []
 
         if self.page > 1:
@@ -66,9 +66,9 @@ class QueueDropdown(disnake.ui.Select):
         track: wavelink.Playable
         for index, track in enumerate(self.queue[start_idx:end_idx], start=start_idx):
             requested_by = (
-                self.bot.get_guild(self.player.guild.id).get_member(int(requested)).name
-                if (requested := track.extras.requested_by)
-                else "Unknown"
+                self.bot.get_guild(self.player.guild.id).get_member(int(track.extras.requested_by)).name
+                if hasattr(track.extras, "requested_by")
+                else "Auto recommended"
             )
 
             options.append(

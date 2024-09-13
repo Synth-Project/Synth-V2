@@ -1,8 +1,6 @@
 import disnake
 from disnake.ext import commands
 
-from core.misc.color import BasicColors
-
 from core.misc.misc import create_ping_command_string
 
 
