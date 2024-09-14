@@ -15,7 +15,7 @@ class BirthdayRepository(BaseRepository):
     @staticmethod
     async def get_one(**kwargs) -> UserModel | None:
         return await UserModel.filter(**kwargs).first().prefetch_related("birthday")
-    
+
     @staticmethod
     async def get_all(**kwargs) -> list[UserModel]:
         return await UserModel.filter(**kwargs).all().prefetch_related("birthday")

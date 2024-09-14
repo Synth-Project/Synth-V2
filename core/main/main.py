@@ -16,7 +16,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class AsyncFileChangeHandler(FileSystemEventHandler):
-    def __init__(self, loop: asyncio.AbstractEventLoop, base_path: str, debounce_time: float = 1.0):
+    def __init__(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        base_path: str,
+        debounce_time: float = 1.0,
+    ):
         self.loop = loop
         self.base_path = base_path
         self.debounce_time = debounce_time
@@ -34,7 +39,7 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
                 asyncio.run_coroutine_threadsafe(
                     self._reload_module(event.src_path), self.loop
                 )
-  
+
     async def _reload_module(self, file_path: str):
         try:
             module_name = f"core.{os.path.relpath(file_path, self.base_path).replace(os.path.sep, '.')}".rstrip(
@@ -47,7 +52,8 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             settings.DEBUG and print(f"Error reloading module: {error}")
 
         from core.database import init_database, close_database
-        await close_database() 
+
+        await close_database()
 
         await init_database()
 

@@ -374,7 +374,7 @@ class Utilities(commands.Cog):
             embed=embeds[0],
             view=CreatePaginator(embeds, inter.author.id, 120),
             ephemeral=True,
-        ) 
+        )
 
     @commands.slash_command(name="birthday", description="Show your birthday status")
     async def birthday(self, inter: disnake.MessageCommandInteraction):
@@ -384,7 +384,9 @@ class Utilities(commands.Cog):
                 author_id=inter.author.id, day=9, month=11
             )
         print(result.birthday.day)
-        await inter.send(f"Your birthday is on **{result.birthday.day}/{result.birthday.month}**")
+        await inter.send(
+            f"Your birthday is on **{result.birthday.day}/{result.birthday.month}**"
+        )
 
     def check_if_user_is_developer(self, user_id: int) -> bool:
         return user_id in self.bot.owner_ids
