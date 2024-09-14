@@ -14,7 +14,8 @@ def logging_setup():
         colorize=True,
         format=format_debug,
         level="DEBUG",
-        filter=lambda record: record["level"].name == "DEBUG" and record["extra"].get("source") is not None,
+        filter=lambda record: record["level"].name == "DEBUG"
+        and record["extra"].get("source") is not None,
     )
 
     logger.add(
@@ -22,7 +23,8 @@ def logging_setup():
         colorize=True,
         format=format_info,
         level="INFO",
-        filter=lambda record: record["level"].name == "INFO" and record["extra"].get("source") is not None,
+        filter=lambda record: record["level"].name == "INFO"
+        and record["extra"].get("source") is not None,
     )
     logger.add(sys.stdout, colorize=True, format=format_error, level="ERROR")
 

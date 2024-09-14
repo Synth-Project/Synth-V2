@@ -28,11 +28,11 @@ class FunCommands(commands.Cog):
     ) -> None:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    f"https://www.reddit.com/r/{subreddit}.json?limit=100",
-                    headers={
-                        "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-                    },
+                f"https://www.reddit.com/r/{subreddit}.json?limit=100",
+                headers={
+                    "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+                },
             ) as response:
                 if response.status != 200:
                     logger.info(f"An error occurred while getting data for {subreddit}")
@@ -43,9 +43,9 @@ class FunCommands(commands.Cog):
 
                 for post in posts:
                     if (
-                            (post := post["data"]["url"])
-                            and post.endswith(media_type)
-                            and post not in self.cache[subreddit]
+                        (post := post["data"]["url"])
+                        and post.endswith(media_type)
+                        and post not in self.cache[subreddit]
                     ):
                         self.cache[subreddit].append(post)
 

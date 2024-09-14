@@ -28,15 +28,15 @@ class Bot(commands.AutoShardedInteractionBot):
         self, bot: commands.Bot, cogs_paths: list[str] = None
     ) -> None:
         stats = {
-            'commands': {'loaded': [], 'total': 0},
-            'events': {'loaded': [], 'total': 0}
+            "commands": {"loaded": [], "total": 0},
+            "events": {"loaded": [], "total": 0},
         }
 
         if not cogs_paths:
             cogs_paths = ["core/cogs/commands", "core/cogs/events"]
 
         for path in cogs_paths:
-            category = 'commands' if 'commands' in path else 'events'
+            category = "commands" if "commands" in path else "events"
             for file_path in glob.glob(os.path.join(path, "*.py")):
                 file_name = os.path.basename(file_path)
 
@@ -47,26 +47,31 @@ class Bot(commands.AutoShardedInteractionBot):
 
                 try:
                     bot.load_extension(extension_name)
-                    stats[category]['loaded'].append(extension_name)
-                    stats[category]['total'] += 1
+                    stats[category]["loaded"].append(extension_name)
+                    stats[category]["total"] += 1
                 except (
-                        commands.ExtensionNotFound,
-                        commands.NoEntryPointError,
-                        commands.ExtensionFailed,
-                        commands.ExtensionError,
-                        commands.ExtensionAlreadyLoaded,
+                    commands.ExtensionNotFound,
+                    commands.NoEntryPointError,
+                    commands.ExtensionFailed,
+                    commands.ExtensionError,
+                    commands.ExtensionAlreadyLoaded,
                 ) as e:
                     logger.error(f"[-] Error loading cog: {extension_name}")
                     import traceback
+
                     traceback.print_exception(type(e), e, e.__traceback__)
 
-        for category in ['commands', 'events']:
-            if stats[category]['loaded']:
-                names = ', '.join([name.split('.')[-1] for name in stats[category]['loaded']])
-                self.logger.info(f"[%] Loaded {category}: {names} ({len(stats[category]['loaded'])}/{stats[category]['total']})")
+        for category in ["commands", "events"]:
+            if stats[category]["loaded"]:
+                names = ", ".join(
+                    [name.split(".")[-1] for name in stats[category]["loaded"]]
+                )
+                self.logger.info(
+                    f"[%] Loaded {category}: {names} ({len(stats[category]['loaded'])}/{stats[category]['total']})"
+                )
 
-        total_loaded = len(stats['commands']['loaded']) + len(stats['events']['loaded'])
-        total_all = stats['commands']['total'] + stats['events']['total']
+        total_loaded = len(stats["commands"]["loaded"]) + len(stats["events"]["loaded"])
+        total_all = stats["commands"]["total"] + stats["events"]["total"]
         self.logger.info(f"[%] {total_loaded}/{total_all} cogs loaded")
 
     @staticmethod
