@@ -8,6 +8,7 @@ from disnake.ext import commands, tasks
 from memory_profiler import memory_usage
 
 from core.database.models.reminder import Remind, ReminderType
+from core.database.repositories.birthday import BirthdayRepository
 from core.database.repositories.reminder import ReminderRepository
 from core.misc.embed import CreatePaginator, custom_embed
 from core.misc.emoji import StandartEmoji
@@ -345,7 +346,7 @@ class Utilities(commands.Cog):
 
         await inter.response.autocomplete(choices=options)
 
-    @reminder.sub_command()
+    @reminder.sub_command(description="List of all your reminders")
     async def list(self, inter: disnake.MessageCommandInteraction):
         result = await ReminderRepository().get_all_reminds()
         if not result:
@@ -373,7 +374,17 @@ class Utilities(commands.Cog):
             embed=embeds[0],
             view=CreatePaginator(embeds, inter.author.id, 120),
             ephemeral=True,
-        )
+        ) 
+
+    @commands.slash_command(name="birthday", description="Show your birthday status")
+    async def birthday(self, inter: disnake.MessageCommandInteraction):
+        result = await BirthdayRepository().get_one(id=inter.author.id)
+        if not result:
+            result = await BirthdayRepository().save_birthday(
+                author_id=inter.author.id, day=9, month=11
+            )
+        print(result.birthday.day)
+        await inter.send(f"Your birthday is on **{result.birthday.day}/{result.birthday.month}**")
 
     def check_if_user_is_developer(self, user_id: int) -> bool:
         return user_id in self.bot.owner_ids
