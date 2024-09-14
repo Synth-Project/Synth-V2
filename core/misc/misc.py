@@ -27,7 +27,7 @@ def download_track(track: Playable, output: BytesIO) -> int:
         return output.seek(0)
 
 
-def create_ping_command_string(guild: disnake.Guild, command_name: str) -> str | None:
+def mention_slash(guild: disnake.Guild, command_name: str) -> str | None:
     """
     Create a string in the format of a mention of a command
     that can be used to ping the command.

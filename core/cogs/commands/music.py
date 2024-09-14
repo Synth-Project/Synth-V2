@@ -126,23 +126,6 @@ class Music(commands.Cog):
     async def play_autocomplete(
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
-        """Autocomplete for the music play command
-
-        If the user is not in a voice channel, returns a single option
-        that tells the user to join a voice channel first.
-
-        If the search query is empty, returns a list of all the songs the
-        user has played before.
-
-        Otherwise, searches for the given query and returns up to 25
-        results.
-
-        :param interaction: The interaction that triggered this autocomplete
-        :type interaction: disnake.ApplicationCommandInteraction
-        :param search_query: The search query given by the user
-        :type search_query: str
-        """
-
         if not interaction.author.voice:
             return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
@@ -175,16 +158,74 @@ class Music(commands.Cog):
         await interaction.response.autocomplete(choices=autocomplete_options)
 
     @player.sub_command(name="skip", description="Skip the current track")
-    async def skip(self, interaction: disnake.ApplicationCommandInteraction):
-        """
-        Skip the current track
-
-        :param interaction: The interaction that triggered this command
-        :type interaction: disnake.ApplicationCommandInteraction
-        """
-
+    async def skip(
+        self, interaction: disnake.ApplicationCommandInteraction, track: str = None
+    ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        if not player:
+            return await interaction.response.send_message(
+                "❌ | No active player found!", ephemeral=True
+            )
+
+        if track:
+            for index, song in enumerate(player.queue):
+                if track.lower() in f"{song.author} - {song.title}".lower():
+                    track = player.queue[index]
+                    player.queue.put_at(0, track)
+                    break
+            else:
+                return await interaction.response.send_message(
+                    "❌ | The specified track was not found in the queue!",
+                    ephemeral=True,
+                )
+
         await MusicFunctions().skip_track(player, interaction)
+
+    @skip.autocomplete("track")
+    async def skip_autocomplete(
+        self, interaction: disnake.ApplicationCommandInteraction, search_query: str
+    ):
+        player: wavelink.Player = (
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+        )
+        queue_ = (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else player.queue
+            )
+        )
+
+        if not interaction.author.voice:
+            return await interaction.response.autocomplete(
+                choices=["❌ | You are not in a voice channel"]
+            )
+
+        if not search_query:
+            autocomplete_list = (
+                [shorten_text(f"{song.author} - {song.title}") for song in queue_[:25]]
+                if len(queue_) > 0
+                else ["❌ | There are no songs in the queue"]
+            )
+            return await interaction.response.autocomplete(choices=autocomplete_list)
+
+        matching_songs = [
+            shorten_text(f"{song.author} - {song.title}")
+            for song in queue_
+            if search_query.lower() in song.title.lower()
+        ]
+
+        autocomplete_list = (
+            matching_songs[:25]
+            if matching_songs
+            else ["❌ | No song with that name in the queue"]
+        )
+
+        await interaction.response.autocomplete(choices=autocomplete_list)
 
 
 def setup(bot: commands.Bot) -> None:

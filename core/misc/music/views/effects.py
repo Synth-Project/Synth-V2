@@ -11,7 +11,6 @@ class EffectsDropdown(disnake.ui.Select):
     reset_emoji = disnake.PartialEmoji(name="reset", id=1282736680201355314)
 
     FILTERS = {
-        "equalizer": lambda f: f.equalizer,
         "timescale": lambda f: f.timescale.set(pitch=1.2, speed=1.1, rate=1),
         "tremolo": lambda f: f.tremolo.set(depth=0.5, frequency=2.0),
         "vibrato": lambda f: f.vibrato.set(depth=0.5, frequency=2.0),
@@ -128,6 +127,9 @@ class EffectsDropdown(disnake.ui.Select):
         self, selected_option: str = None, reset: bool = False
     ) -> None:
         for option in self.options:
+            if reset and option.value == "reset":
+                continue
+
             if reset or option.value == selected_option:
                 option.emoji = (
                     self.positive_emoji

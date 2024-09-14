@@ -75,7 +75,7 @@ class QueueDropdown(disnake.ui.Select):
 
             options.append(
                 disnake.SelectOption(
-                    emoji="<:youtube:1279826494847451199>",
+                    emoji="<:spotify:1284447177082408990>",
                     label=track.title,
                     value=str(index),
                     description=f"{timedelta(seconds=round(track.length / 1000))} // Requested by: {requested_by}",

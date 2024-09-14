@@ -1,7 +1,7 @@
 import disnake
 from disnake.ext import commands
 
-from core.misc.misc import create_ping_command_string
+from core.misc.misc import mention_slash
 
 
 class Utilities(commands.Cog):
@@ -12,7 +12,7 @@ class Utilities(commands.Cog):
     @commands.slash_command()
     async def hello(self, interaction: disnake.ApplicationCommandInteraction):
         await interaction.send(
-            content=create_ping_command_string(interaction.guild, "player play")
+            content=mention_slash(interaction.guild, "player play")
         )
 
 

@@ -45,7 +45,7 @@ class NavigationDropdown(disnake.ui.Select):
                 value="volume",
             ),
             disnake.SelectOption(
-                emoji="<:microphone:1280556431690567835>",
+                emoji="<:filter:1284445407337779251>",
                 label="Effects",
                 description="Apply effects to your music",
                 value="effects",
@@ -57,7 +57,7 @@ class NavigationDropdown(disnake.ui.Select):
                 value="download",
             ),
             disnake.SelectOption(
-                emoji="<:download:1279837205241659554>",
+                emoji="<:microphone:1280556431690567835>",
                 label="Lyrics",
                 description="View the current song lyrics",
                 value="lyrics",
@@ -251,7 +251,7 @@ class NavigationDropdown(disnake.ui.Select):
         )
 
         embed = CustomEmbed(
-            title="<:microphone:1280556431690567835> Adjust the track filters",
+            title="<:filter:1284445407337779251> Adjust the track filters",
             description=description,
         ).get_embed()
         embed.set_author(
@@ -292,12 +292,15 @@ class NavigationDropdown(disnake.ui.Select):
 
     @staticmethod
     async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
-        result = await node.send(
-            method="GET",
-            path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics",
-        )
-        lyrics = [line["line"] for line in result["lines"]]
-        return "\n".join(lyrics)
+        try:
+            result = await node.send(
+                method="GET",
+                path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics",
+            )
+            lyrics = [line["line"] for line in result["lines"]]
+            return "\n".join(lyrics)
+        except BaseException:
+            return None
 
     async def get_lyrics(self, interaction: disnake.Interaction) -> None:
         """
@@ -311,7 +314,23 @@ class NavigationDropdown(disnake.ui.Select):
 
         player = cast(wavelink.Player, interaction.guild.voice_client)
         lyrics = await self._get_lyrics(player.node, player.guild.id)
-        await interaction.response.send_message(lyrics, ephemeral=True)
+
+        if lyrics:
+            embed = CustomEmbed(
+                author=interaction.user,
+                title=f"Lyrics for {player.current.title}",
+                description=f"```{lyrics}```",
+            ).get_embed()
+
+        else:
+            embed = CustomEmbed(
+                embed_type="error",
+                author=interaction.user,
+                title=f"<:crossmark:1282338837456224394> Could not find lyrics for {player.current.title}",
+            ).get_embed()
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await self._edit_view()
 
     async def handle_disconnect(
         self, interaction: disnake.Interaction, player: wavelink.Player

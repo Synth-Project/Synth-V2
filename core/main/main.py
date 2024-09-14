@@ -73,6 +73,7 @@ async def start_watching(loop: asyncio.AbstractEventLoop, path: str):
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    # Watchdogs doesn't work correctly now
+
+    #! Watchdogs doesn't work correctly now
     # loop.create_task(start_watching(loop, os.path.join(os.getcwd(), "core")))
     loop.run_until_complete(bot.run(settings.BOT_TOKEN))
