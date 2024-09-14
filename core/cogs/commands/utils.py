@@ -11,9 +11,7 @@ class Utilities(commands.Cog):
 
     @commands.slash_command()
     async def hello(self, interaction: disnake.ApplicationCommandInteraction):
-        await interaction.send(
-            content=mention_slash(interaction.guild, "player play")
-        )
+        await interaction.send(content=mention_slash(interaction.guild, "player play"))
 
 
 def setup(bot: commands.Bot) -> None:
