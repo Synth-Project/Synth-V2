@@ -21,29 +21,34 @@ class Bot(commands.AutoShardedInteractionBot):
             owner_ids=settings.OWNERS,
             test_guilds=settings.TEST_GUILDS,
         )
-        self.debug = False
+        self.debug = settings.DEBUG
+        self.logger = logger.bind(source=self.__class__.__module__)
 
     async def load_extensions(
         self, bot: commands.Bot, cogs_paths: list[str] = None
     ) -> None:
-        loaded = total = 0
+        stats = {
+            "commands": {"loaded": [], "total": 0},
+            "events": {"loaded": [], "total": 0},
+        }
 
         if not cogs_paths:
             cogs_paths = ["core/cogs/commands", "core/cogs/events"]
 
         for path in cogs_paths:
+            category = "commands" if "commands" in path else "events"
             for file_path in glob.glob(os.path.join(path, "*.py")):
                 file_name = os.path.basename(file_path)
+
                 if file_name == "__init__.py":
                     continue
 
-                total += 1
                 extension_name = f"{path.replace('/', '.')}.{file_name[:-3]}"
 
                 try:
                     bot.load_extension(extension_name)
-                    loaded += 1
-                    logger.info(f"[+] Loaded cog: {extension_name}")
+                    stats[category]["loaded"].append(extension_name)
+                    stats[category]["total"] += 1
                 except (
                     commands.ExtensionNotFound,
                     commands.NoEntryPointError,
@@ -56,7 +61,18 @@ class Bot(commands.AutoShardedInteractionBot):
 
                     traceback.print_exception(type(e), e, e.__traceback__)
 
-        logger.info(f"[#] {loaded}/{total} cogs loaded")
+        for category in ["commands", "events"]:
+            if stats[category]["loaded"]:
+                names = ", ".join(
+                    [name.split(".")[-1] for name in stats[category]["loaded"]]
+                )
+                self.logger.info(
+                    f"[%] Loaded {category}: {names} ({len(stats[category]['loaded'])}/{stats[category]['total']})"
+                )
+
+        total_loaded = len(stats["commands"]["loaded"]) + len(stats["events"]["loaded"])
+        total_all = stats["commands"]["total"] + stats["events"]["total"]
+        self.logger.info(f"[%] {total_loaded}/{total_all} cogs loaded")
 
     @staticmethod
     async def on_connect() -> None:
