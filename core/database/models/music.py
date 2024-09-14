@@ -2,8 +2,8 @@ from tortoise import fields, Model
 
 
 class Song(Model):
-    name = fields.CharField(max_length=100)
-    url = fields.CharField(max_length=256)
+    name = fields.CharField(max_length=256)
+    url = fields.CharField(max_length=512)
 
     class Meta:
         table = "songs"

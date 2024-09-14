@@ -13,9 +13,8 @@ from core import logger
 class Bot(commands.AutoShardedInteractionBot):
     """The base class of Synth bot."""
 
-    def __init__(self: "Bot") -> None:
+    def __init__(self) -> None:
         super(Bot, self).__init__(
-            # help_command=CustomHelpCommand(),
             intents=disnake.Intents.all(),
             reload=True,
             owner_ids=settings.OWNERS,
@@ -30,13 +29,22 @@ class Bot(commands.AutoShardedInteractionBot):
         stats = {
             "commands": {"loaded": [], "total": 0},
             "events": {"loaded": [], "total": 0},
+            "autocomplete": {"loaded": [], "total": 0},
         }
 
         if not cogs_paths:
-            cogs_paths = ["core/cogs/commands", "core/cogs/events"]
+            cogs_paths = [
+                "core/cogs/commands",
+                "core/cogs/events",
+                "core/cogs/autocomplete",
+            ]
 
         for path in cogs_paths:
-            category = "commands" if "commands" in path else "events"
+            category = (
+                "commands"
+                if "commands" in path
+                else "events" if "events" in path else "autocomplete"
+            )
             for file_path in glob.glob(os.path.join(path, "*.py")):
                 file_name = os.path.basename(file_path)
 
@@ -61,7 +69,7 @@ class Bot(commands.AutoShardedInteractionBot):
 
                     traceback.print_exception(type(e), e, e.__traceback__)
 
-        for category in ["commands", "events"]:
+        for category in ["commands", "events", "autocomplete"]:
             if stats[category]["loaded"]:
                 names = ", ".join(
                     [name.split(".")[-1] for name in stats[category]["loaded"]]
@@ -100,12 +108,6 @@ class Bot(commands.AutoShardedInteractionBot):
             )
         )
 
-    def get_bot(self) -> "Bot":
-        """Returns the bot instance."""
-        return self
-
-    def get_avatar(self) -> str | None:
-        """Returns the URL of the bot's avatar if set, otherwise returns None."""
-        if self.user and self.user.display_avatar:
-            return self.user.display_avatar.url
-        return None
+    def get_avatar(self) -> str:
+        """Returns the URL of the bot's avatar"""
+        return "https://cdn.discordapp.com/avatars/1168226895758901408/8cc117b5f9a539896875e7a0b837c2ed.webp?size=1024&format=webp&width=0&height=256"
