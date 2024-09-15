@@ -33,8 +33,8 @@ class MusicEvent(commands.Cog):
         message = payload.player.message  # type: ignore
 
         if (
-                payload.player.queue.mode == wavelink.QueueMode.loop
-                and original != payload.player.current
+            payload.player.queue.mode == wavelink.QueueMode.loop
+            and original != payload.player.current
         ):
             await payload.player.play(payload.original, add_history=False)
 

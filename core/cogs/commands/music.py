@@ -42,8 +42,8 @@ class Music(commands.Cog):
             return
 
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         await interaction.me.edit(deafen=True)
 
@@ -193,7 +193,6 @@ class Music(commands.Cog):
 
         await self.functions.skip_track(player, interaction, True)
 
-
     @player.sub_command(name="volume", description="Set a new volume")
     async def volume(
         self, interaction: disnake.ApplicationCommandInteraction, volume: int
@@ -236,7 +235,7 @@ class Music(commands.Cog):
                     [
                         f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
                         f"**{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}**"
-                        for _, music in queue_list[i: i + 10]
+                        for _, music in queue_list[i : i + 10]
                         if music
                     ]
                 ),

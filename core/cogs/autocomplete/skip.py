@@ -16,8 +16,8 @@ class SkipAutocomplete(commands.Cog):
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         queue_ = (
             player.queue

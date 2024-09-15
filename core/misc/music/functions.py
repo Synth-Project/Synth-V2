@@ -66,8 +66,9 @@ class MusicFunctions:
 
     @staticmethod
     async def skip_track(
-        player: wavelink.Player, interaction: disnake.ApplicationCommandInteraction,
-        previous: bool = False
+        player: wavelink.Player,
+        interaction: disnake.ApplicationCommandInteraction,
+        previous: bool = False,
     ) -> None:
         embed = CustomEmbed(
             author=interaction.user,  # type: ignore

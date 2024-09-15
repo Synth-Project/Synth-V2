@@ -16,8 +16,8 @@ class PreviousAutocomplete(commands.Cog):
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         queue_ = (
             player.queue
@@ -36,7 +36,10 @@ class PreviousAutocomplete(commands.Cog):
 
         if not search_query:
             autocomplete_list = (
-                [shorten_text(f"{song.author} - {song.title}") for song in queue_.history[:25]]
+                [
+                    shorten_text(f"{song.author} - {song.title}")
+                    for song in queue_.history[:25]
+                ]
                 if len(queue_.history) > 0
                 else ["❌ | There are no songs has been played before"]
             )
