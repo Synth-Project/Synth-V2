@@ -1,3 +1,4 @@
+from typing import cast
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -6,9 +7,13 @@ from disnake.ext.commands import Bot
 import wavelink
 
 from core.main.main import bot
+
+from core.misc.paginator import CreatePaginator
 from core.misc.embed import CustomEmbed
 from core.misc.color import BasicColors
+
 from core.misc.music.views.panel import NavigationPanel
+from core.misc.music.views.shuffle import ShuffleView
 
 
 @dataclass
@@ -105,3 +110,157 @@ class MusicFunctions:
         )
         await player.message.edit(embed=embed)  # type: ignore
         await player.set_volume(min(100, max(1, volume)))
+
+    @staticmethod
+    async def check_error_volume(
+        interaction: disnake.Interaction, volume: int
+    ) -> disnake.Embed:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        if player.volume == volume:
+            embed = CustomEmbed.error_embed(
+                author=interaction.user,
+                title=f"<:crossmark:1282338837456224394> Cannot set the same volume ({volume}%)",
+            ).get_embed()
+
+        else:
+            embed = CustomEmbed(
+                author=interaction.user,
+                title=f"<:checkmark:1282338829486788670> Set volume to {volume}",
+            ).get_embed()
+
+            await MusicFunctions.set_volume(player, volume)
+
+        return embed
+
+    @staticmethod
+    async def disconnect(interaction: disnake.ApplicationCommandInteraction) -> None:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        if not player:
+            return await interaction.response.send_message(
+                embed=CustomEmbed.error_embed(
+                    author=interaction.user,
+                    title="<:crossmark:1282338837456224394> | I am not in a voice channel",
+                ).get_embed(),
+                ephemeral=True,
+            )
+
+        await player.disconnect()
+        await player.message.edit(
+            embed=CustomEmbed.error_embed(
+                author=interaction.user,
+                title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
+            ).get_embed(),
+            ephemeral=True,
+            view=None,
+        )
+        await interaction.delete_original_response()
+
+    @staticmethod
+    async def check_for_error(
+        interaction: disnake.ApplicationCommandInteraction, query: str = None
+    ) -> None:
+        player: wavelink.Player = (
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+        )
+
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+        if query and query.startswith("❌"):
+            error_embed.title = query
+            return await interaction.send(embed=error_embed, ephemeral=True)
+
+        elif not player:
+            error_embed.title = (
+                "<:crossmark:1282338837456224394> | You are not in a voice channel"
+            )
+            return await interaction.send(embed=error_embed, ephemeral=True)
+
+        elif not player.queue.is_empty and not player.auto_queue.is_empty:
+            error_embed.title = "<:crossmark:1282338837456224394> | Your queue is empty"
+            return await interaction.send(embed=error_embed, ephemeral=True)
+
+    @staticmethod
+    async def display_queue(interaction: disnake.ApplicationCommandInteraction) -> None:
+        await interaction.response.defer(ephemeral=True)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        await MusicFunctions.check_for_error(interaction)
+
+        queue_ = (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else player.queue
+            )
+        )
+        queue_list = list(enumerate(queue_, start=1))
+
+        """
+        requested_by = (
+                (
+                    await (
+                        await self.bot.fetch_guild(self.player.guild.id)
+                    ).fetch_member(int(track.extras.requested_by))
+                ).name
+                if hasattr(track.extras, "requested_by")
+                else "Auto recommended"
+            )
+            """
+
+        guild = interaction.guild
+
+        embeds = [
+            CustomEmbed(
+                title=f"{interaction.guild.name}'s Queue",
+                description="\n".join(
+                    [
+                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
+                        f"`{(await guild.get_or_fetch_member(int(music.extras.requested_by))) if hasattr(music.extras, 'requested_by') else 'Unknown'}`"
+                        for _, music in queue_list[i : i + 10]
+                        if music
+                    ]
+                ),
+            ).get_embed()
+            for i in range(0, len(queue_list), 10)
+        ]
+
+        paginator = CreatePaginator(embeds=embeds, author_id=interaction.author.id)
+        await interaction.send(embed=embeds[0], view=paginator, ephemeral=True)
+
+    @staticmethod
+    async def shuffle_queue(interaction: disnake.ApplicationCommandInteraction):
+        await interaction.response.defer(ephemeral=True)
+
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        await MusicFunctions.check_for_error(interaction)
+
+        if not hasattr(player, "previous_queue"):
+            player.previous_queue = player.queue.copy()
+
+        if not hasattr(player, "previous_auto_queue"):
+            player.previous_auto_queue = player.auto_queue.copy()
+
+        (player.auto_queue if player.queue.is_empty else player.queue).shuffle()
+        next_song = (
+            player.queue[0] if not player.queue.is_empty else player.auto_queue[0]
+        )
+
+        embed = CustomEmbed(
+            title="<:shuffle:1279835431315308605> Shuffled the queue",
+            description=f"Current song: **{player.current.title}**\nNext song: **{next_song.title}**",
+            color=BasicColors.SUCCESS,
+        ).get_embed()
+
+        await interaction.send(
+            embed=embed,
+            ephemeral=True,
+            view=ShuffleView(
+                bot, interaction, player.previous_queue, player.previous_auto_queue
+            ),
+        )

@@ -26,7 +26,7 @@ class QueueDropdown(disnake.ui.Select):
             )
         ]
         super().__init__(
-            placeholder="Skip to a track",
+            placeholder="Play a specific track",
             min_values=1,
             max_values=1,
             options=self.options,

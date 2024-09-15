@@ -1,10 +1,10 @@
 from typing import Optional, cast
+import importlib
 
 import disnake
 import wavelink
 from disnake.ext import commands
 
-from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
 
 
@@ -15,7 +15,7 @@ class ShuffleView(disnake.ui.View):
         interaction: disnake.Interaction,
         original_queue: wavelink.Queue,
         original_auto_queue: wavelink.Queue,
-    ):
+    ) -> None:
         super().__init__(timeout=180)
 
         self.bot = bot
@@ -23,6 +23,12 @@ class ShuffleView(disnake.ui.View):
         self.queue = original_queue
         self.auto_queue = original_auto_queue
         self.original_queue = self.queue if not self.queue.is_empty else self.auto_queue
+
+        self.cancel.disabled = True if self.original_queue.is_empty else False
+
+        self.functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
+        )
 
     @staticmethod
     def get_next_song(player: wavelink.Player) -> Optional[wavelink.Playable]:
@@ -60,22 +66,28 @@ class ShuffleView(disnake.ui.View):
         await interaction.response.defer()
         await interaction.edit_original_response(embed=embed, view=view)
 
-    @disnake.ui.button(label="Re-shuffle", style=disnake.ButtonStyle.green)
+    @disnake.ui.button(label="Reshuffle", style=disnake.ButtonStyle.green)
     async def shuffle(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
+        """
+        Re-shuffle the queue
+
+        Parameters:
+        interaction: disnake.Interaction
+            The interaction to send the modal to
+
+        Returns: None
+        """
+        self.shuffle.disabled = False
+        await self.functions.shuffle_queue(interaction)
+
+    @disnake.ui.button(label="Queue", style=disnake.ButtonStyle.blurple)
+    async def queue(
+        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
-
-        (player.auto_queue if player.queue.is_empty else player.queue).shuffle()
-
-        track = player.current
-        next_song = self.get_next_song(player)
-        embed = CustomEmbed(
-            title="<:shuffle:1279835431315308605>  Shuffled the queue",
-            description=f"Current song: **{track.title}**\nNext song: **{next_song.title if next_song else 'None'}**",
-            color=BasicColors.SUCCESS,
-        ).get_embed()
-        await self.send_response(interaction, embed, view=self)
+        await self.functions.display_queue(interaction)
 
     @disnake.ui.button(label="Cancel", style=disnake.ButtonStyle.red)
     async def cancel(
@@ -107,9 +119,8 @@ class ShuffleView(disnake.ui.View):
         next_song = self.get_next_song(player)
 
         embed = CustomEmbed(
+            author=interaction.user,
             title="Queue restored to original",
             description=f"Current song: **{track.title}**\nNext song: **{next_song.title if next_song else 'None'}**",
         ).get_embed()
         await self.send_response(interaction, embed, view=None)
-
-    # TODO: Cancel and Re-Shuffle should not be even available if no queue found and autoplay is disabled, so we need to delete the " if not hasattr(player, "previous_queue") or not hasattr(player, "previous_auto_queue"):"

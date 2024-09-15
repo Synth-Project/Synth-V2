@@ -1,5 +1,5 @@
-from datetime import timedelta
 from typing import cast, Union
+import importlib
 
 import disnake
 import wavelink
@@ -8,7 +8,6 @@ from disnake.ext import commands
 from core.misc.embed import CustomEmbed
 from core.misc.music.views.navigation import NavigationDropdown
 from core.misc.music.views.queue import QueueDropdown
-from core.misc.paginator import CreatePaginator
 
 
 class NavigationPanel(disnake.ui.View):
@@ -149,27 +148,10 @@ class NavigationPanel(disnake.ui.View):
     async def queue(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        queue_list = list(enumerate(self.queue_, start=1))
-
-        embeds = [
-            CustomEmbed(
-                title=f"{interaction.guild.name}'s Queue",
-                description="\n".join(
-                    [
-                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
-                        f"**{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}**"
-                        for _, music in queue_list[i : i + 10]
-                        if music
-                    ]
-                ),
-            ).get_embed()
-            for i in range(0, len(queue_list), 10)
-        ]
-
-        paginator = CreatePaginator(embeds=embeds, author_id=interaction.author.id)
-        await interaction.response.send_message(
-            embed=embeds[0], view=paginator, ephemeral=True
+        functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
         )
+        await functions.display_queue(interaction)
 
     @disnake.ui.button(label="Autoplay", style=disnake.ButtonStyle.green, row=1)
     async def autoplay(

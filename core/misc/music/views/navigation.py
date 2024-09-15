@@ -1,6 +1,7 @@
 from typing import cast, Union, Optional
 
 import disnake
+import importlib
 import wavelink
 from disnake.ext import commands
 
@@ -26,6 +27,9 @@ class NavigationDropdown(disnake.ui.Select):
         self.interaction: disnake.Interaction = interaction
         self.bot = bot
         self.player = player
+        self.functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
+        )
 
         self.queue_ = (
             player.queue
@@ -126,6 +130,30 @@ class NavigationDropdown(disnake.ui.Select):
                 else await self.player.message.edit(view=self.view)  # type: ignore
             )
 
+    @staticmethod
+    async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
+        """
+        Get the lyrics of the player
+
+        Parameters:
+        node: wavelink.Node
+            The node to send the request to
+        guild_id: int
+            The guild id to send the request to
+
+        Returns: str
+            The lyrics of the player
+        """
+        try:
+            result = await node.send(
+                method="GET",
+                path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics",
+            )
+            lyrics = [line["line"] for line in result["lines"]]
+            return "\n".join(lyrics)
+        except BaseException:
+            return None
+
     async def _send_modal(
         self, interaction: disnake.Interaction, title: str, custom_id: str, label: str
     ) -> disnake.ModalInteraction:
@@ -179,11 +207,10 @@ class NavigationDropdown(disnake.ui.Select):
         new_volume = int(response_modal.text_values.get("input_value", "0"))
         volume = min(100, max(1, new_volume))
 
-        await player.set_volume(volume)
+        embed = await self.functions.check_error_volume(interaction, volume)
+
         await response_modal.send(
-            embed=CustomEmbed(
-                title=f"<:checkmark:1282338829486788670> Set volume to {volume}"
-            ).get_embed(),
+            embed=embed,
             ephemeral=True,
         )
 
@@ -290,19 +317,7 @@ class NavigationDropdown(disnake.ui.Select):
         )
         await self._edit_view()
 
-    @staticmethod
-    async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
-        try:
-            result = await node.send(
-                method="GET",
-                path=f"v4/sessions/{node.session_id}/players/{guild_id}/lyrics",
-            )
-            lyrics = [line["line"] for line in result["lines"]]
-            return "\n".join(lyrics)
-        except BaseException:
-            return None
-
-    async def get_lyrics(self, interaction: disnake.Interaction) -> None:
+    async def handle_lyrics(self, interaction: disnake.Interaction) -> None:
         """
         Get the lyrics of the player
 
@@ -315,19 +330,16 @@ class NavigationDropdown(disnake.ui.Select):
         player = cast(wavelink.Player, interaction.guild.voice_client)
         lyrics = await self._get_lyrics(player.node, player.guild.id)
 
-        if lyrics:
-            embed = CustomEmbed(
-                author=interaction.user,
-                title=f"Lyrics for {player.current.title}",
-                description=f"```{lyrics}```",
-            ).get_embed()
-
-        else:
-            embed = CustomEmbed(
-                embed_type="error",
-                author=interaction.user,
-                title=f"<:crossmark:1282338837456224394> Could not find lyrics for {player.current.title}",
-            ).get_embed()
+        embed = CustomEmbed(
+            author=interaction.user,
+            title=(
+                f"Lyrics for {player.current.title}"
+                if lyrics
+                else f"<:crossmark:1282338837456224394> Could not find lyrics for {player.current.title}"
+            ),
+            description=f"```{lyrics}```" if lyrics else None,
+            embed_type="default" if lyrics else "error",
+        ).get_embed()
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
         await self._edit_view()
@@ -346,13 +358,7 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        await player.disconnect()
-        embed = CustomEmbed(
-            author=interaction.user,
-            title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
-            color=BasicColors.ERROR,
-        ).get_embed()
-        await self._edit_view(embed=embed, clear_view=True)
+        await self.functions.disconnect(interaction)
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         """
@@ -371,7 +377,7 @@ class NavigationDropdown(disnake.ui.Select):
             "shuffle": lambda i: self.shuffle_queue(i, player),
             "effects": lambda i: self.handle_effects(i, player),
             "download": self.handle_download,
-            "lyrics": self.get_lyrics,
+            "lyrics": self.handle_lyrics,
             "disconnect": lambda i: self.handle_disconnect(i, player),
         }
 
