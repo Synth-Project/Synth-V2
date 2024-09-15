@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, Union
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -11,6 +11,7 @@ from core.main.main import bot
 from core.misc.paginator import CreatePaginator
 from core.misc.embed import CustomEmbed
 from core.misc.color import BasicColors
+from core.misc.errors.music import MusicError
 
 from core.misc.music.views.panel import NavigationPanel
 from core.misc.music.views.shuffle import ShuffleView
@@ -19,8 +20,22 @@ from core.misc.music.views.shuffle import ShuffleView
 @dataclass
 class MusicFunctions:
     @staticmethod
-    async def music_embed(track: wavelink.Playable) -> disnake.Embed:
-        embed = CustomEmbed(title=track.title, image=track.artwork).get_embed()
+    async def music_embed(
+        interaction: Union[disnake.ApplicationCommandInteraction, disnake.Message],
+        track: wavelink.Playable,
+    ) -> disnake.Embed:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        track = track or player.current
+
+        requested = (
+            await interaction.guild.get_or_fetch_member(int(track.extras.requested_by))
+            if track.extras.requested_by
+            else None
+        )
+
+        embed = CustomEmbed(
+            author=requested, title="Now playing", image=track.artwork
+        ).get_embed()
         embed.url = str(track.uri)
 
         embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
@@ -30,22 +45,71 @@ class MusicFunctions:
             inline=True,
         )
 
+        footer = f"{'Paused //' if player.paused else ''} Volume: {player.volume}% // "
+        if track.recommended:
+            footer += "Auto recommended // "
+        elif player.queue.mode == wavelink.QueueMode.loop:
+            footer += "This track was looped // "
+
+        footer += "Synth Music 2024"
+
+        embed.set_footer(text=footer, icon_url=bot.get_avatar())
+
         return embed
 
+    @staticmethod
+    async def nowplaying(
+        interaction: disnake.ApplicationCommandInteraction,
+        track: wavelink.Playable = None,
+    ) -> disnake.Embed:
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        track = track or player.current
+
+        requested = (
+            await interaction.guild.get_or_fetch_member(int(track.extras.requested_by))
+            if track.extras.requested_by
+            else None
+        )
+
+        embed = CustomEmbed(
+            author=requested, title="Now playing", image=track.artwork
+        ).get_embed()
+        embed.url = str(track.uri)
+
+        embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
+        embed.add_field(
+            name="Duration:",
+            value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
+            inline=True,
+        )
+        embed.add_field(name="Album:", value=f"`{track.album.name}`", inline=True)
+        embed.add_field(name="Requested by:", value=requested.mention, inline=True)
+
+        footer = f"Volume: {player.volume}% // "
+        if track.recommended:
+            footer += "Auto recommended // "
+        elif player.queue.mode == wavelink.QueueMode.loop:
+            footer += "This track was looped // "
+
+        footer += "Synth Music 2024"
+
+        embed.set_footer(text=footer, icon_url=bot.get_avatar())
+
+        return embed
+
+    @staticmethod
     async def play_track(
-        self,
         bot: Bot,
-        interaction: disnake.Interaction,
+        interaction: disnake.ApplicationCommandInteraction,
         player: wavelink.Player,
         embed: disnake.Embed,
-        track: wavelink.Playable,
         volume: int,
     ) -> None:
         if not player.playing:
             if not player.current:
                 await player.set_volume(min(100, max(1, volume)))
-            embed = await self.music_embed(track)
-            message = await interaction.channel.send(content=None, embed=embed)
+            # embed = await self.music_embed(interaction, track)
+            message = await interaction.channel.send(content="Waiting...")
             await interaction.delete_original_response(delay=2)
 
             track = player.queue.get()
@@ -112,28 +176,6 @@ class MusicFunctions:
         await player.set_volume(min(100, max(1, volume)))
 
     @staticmethod
-    async def check_error_volume(
-        interaction: disnake.Interaction, volume: int
-    ) -> disnake.Embed:
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
-
-        if player.volume == volume:
-            embed = CustomEmbed.error_embed(
-                author=interaction.user,
-                title=f"<:crossmark:1282338837456224394> Cannot set the same volume ({volume}%)",
-            ).get_embed()
-
-        else:
-            embed = CustomEmbed(
-                author=interaction.user,
-                title=f"<:checkmark:1282338829486788670> Set volume to {volume}",
-            ).get_embed()
-
-            await MusicFunctions.set_volume(player, volume)
-
-        return embed
-
-    @staticmethod
     async def disconnect(interaction: disnake.ApplicationCommandInteraction) -> None:
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
@@ -147,7 +189,7 @@ class MusicFunctions:
             )
 
         await player.disconnect()
-        await player.message.edit(
+        await player.message.edit(  # type: ignore
             embed=CustomEmbed.error_embed(
                 author=interaction.user,
                 title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
@@ -158,36 +200,13 @@ class MusicFunctions:
         await interaction.delete_original_response()
 
     @staticmethod
-    async def check_for_error(
-        interaction: disnake.ApplicationCommandInteraction, query: str = None
-    ) -> None:
-        player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
-        )
-
-        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
-
-        if query and query.startswith("❌"):
-            error_embed.title = query
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-        elif not player:
-            error_embed.title = (
-                "<:crossmark:1282338837456224394> | You are not in a voice channel"
-            )
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-        elif not player.queue.is_empty and not player.auto_queue.is_empty:
-            error_embed.title = "<:crossmark:1282338837456224394> | Your queue is empty"
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-    @staticmethod
     async def display_queue(interaction: disnake.ApplicationCommandInteraction) -> None:
         await interaction.response.defer(ephemeral=True)
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        await MusicFunctions.check_for_error(interaction)
+        await MusicError.check_basic(interaction)
+        await MusicError.check_queue(interaction)
+        # await MusicFunctions.check_for_error(interaction)
 
         queue_ = (
             player.queue
@@ -221,7 +240,7 @@ class MusicFunctions:
                     [
                         f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
                         f"`{(await guild.get_or_fetch_member(int(music.extras.requested_by))) if hasattr(music.extras, 'requested_by') else 'Unknown'}`"
-                        for _, music in queue_list[i : i + 10]
+                        for _, music in queue_list[i: i + 10]
                         if music
                     ]
                 ),
@@ -238,7 +257,9 @@ class MusicFunctions:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        await MusicFunctions.check_for_error(interaction)
+        await MusicError.check_basic(interaction)
+        await MusicError.check_queue(interaction)
+        # await MusicFunctions.check_for_error(interaction)
 
         if not hasattr(player, "previous_queue"):
             player.previous_queue = player.queue.copy()
@@ -264,3 +285,24 @@ class MusicFunctions:
                 bot, interaction, player.previous_queue, player.previous_auto_queue
             ),
         )
+
+    async def toggle_player(
+        self, interaction: disnake.ApplicationCommandInteraction
+    ) -> None:
+        await interaction.response.defer(ephemeral=True)
+
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+
+        await player.pause(not player.paused)
+
+        embed = CustomEmbed(
+            title="⏸️ | Paused Player" if player.paused else "▶ | Resumed Player",
+            description=f"Current song: **{player.current.title}**",
+            color=BasicColors.SUCCESS,
+        ).get_embed()
+
+        main_embed = await self.nowplaying(interaction)
+
+        await interaction.send(embed=embed, ephemeral=True)
+
+        await player.message.edit(embed=main_embed)  # type: ignore

@@ -1,3 +1,4 @@
+import importlib
 from datetime import timedelta
 
 import disnake
@@ -17,6 +18,10 @@ class MusicEvent(commands.Cog):
 
         self.bot.loop.create_task(self.connect_nodes())
         self.logger = logger.bind(source=self.__class__.__module__)
+
+        self.functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
+        )
 
     async def connect_nodes(self) -> None:
         nodes = [wavelink.Node(uri="http://localhost:2333", password="weever_gay")]
@@ -38,28 +43,7 @@ class MusicEvent(commands.Cog):
         ):
             await payload.player.play(payload.original, add_history=False)
 
-        requestor = getattr(track.extras, "requested_by", None)
-        if requestor:
-            requestor = await self.bot.get_or_fetch_user(requestor)
-
-        embed = CustomEmbed(
-            author=requestor,
-            title="Now playing",
-            description=f"[{track.title}]({str(track.uri)})",
-            footer_text=f"Volume: {payload.player.volume}% // Synth Music 2024",
-        ).get_embed()
-
-        embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
-        embed.add_field(
-            name="Duration:",
-            value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
-            inline=True,
-        )
-
-        if original and original.recommended:
-            embed.set_footer(text=f"Auto recommended // Synth Music 2024")
-        elif payload.player.queue.mode == wavelink.QueueMode.loop:
-            embed.set_footer(text="This track was looped // Synth Music 2024")
+        embed = await self.functions.music_embed(message, track)
 
         embed.set_image(url=track.artwork if track.artwork else None)
         queue = (
@@ -71,10 +55,10 @@ class MusicEvent(commands.Cog):
                 else payload.player.queue
             )
         )
-        print(queue.history.count)
         history_exists = queue.history.count > 0
 
         await message.edit(  # type: ignore
+            content=None,
             embed=embed,
             view=NavigationPanel(
                 self.bot,
