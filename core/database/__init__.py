@@ -1,6 +1,6 @@
 from tortoise import Tortoise
 
-from core.logger.logger import logger
+from core import logger
 from core.main.config import settings
 
 
