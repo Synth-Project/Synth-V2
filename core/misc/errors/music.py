@@ -16,8 +16,8 @@ class MusicError:
         interaction: disnake.ApplicationCommandInteraction, query: str = None
     ) -> None:
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
 
         error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
@@ -48,7 +48,9 @@ class MusicError:
     async def check_error_volume(
         interaction: disnake.Interaction, volume: int
     ) -> disnake.Embed:
-        music_functions = getattr(importlib.import_module("core.misc.music.functions"), "MusicFunctions")
+        music_functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
+        )
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
         if player.volume == volume:

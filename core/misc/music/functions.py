@@ -240,7 +240,7 @@ class MusicFunctions:
                     [
                         f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
                         f"`{(await guild.get_or_fetch_member(int(music.extras.requested_by))) if hasattr(music.extras, 'requested_by') else 'Unknown'}`"
-                        for _, music in queue_list[i: i + 10]
+                        for _, music in queue_list[i : i + 10]
                         if music
                     ]
                 ),

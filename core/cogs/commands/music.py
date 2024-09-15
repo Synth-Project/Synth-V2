@@ -35,8 +35,8 @@ class Music(commands.Cog):
     ) -> None:
 
         player: wavelink.Player = (
-                interaction.guild.voice_client
-                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         await interaction.me.edit(deafen=True)
 
@@ -105,9 +105,7 @@ class Music(commands.Cog):
             ).get_embed()
 
         await self.repository.save_song(interaction.author.id, track_info)
-        await self.functions.play_track(
-            self.bot, interaction, player, embed, volume
-        )
+        await self.functions.play_track(self.bot, interaction, player, embed, volume)
 
     @player.sub_command(name="skip", description="Skip the current track")
     async def skip(
@@ -230,7 +228,10 @@ class Music(commands.Cog):
                 ephemeral=True,
             )
 
-        elif not interaction.author.voice or interaction.author.voice.channel != player.channel:
+        elif (
+            not interaction.author.voice
+            or interaction.author.voice.channel != player.channel
+        ):
             embed = CustomEmbed.error_embed(
                 author=interaction.author,
                 title="<:crossmark:1282338837456224394> | You are not in a voice channel",
