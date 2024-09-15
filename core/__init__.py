@@ -61,3 +61,10 @@ def string_logging_setup():
 
 console_logging_setup()
 string_logging_setup()
+
+
+cog_paths = [
+    "core/cogs/commands",
+    "core/cogs/events",
+    "core/cogs/autocomplete",
+]

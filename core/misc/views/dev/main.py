@@ -1,7 +1,9 @@
 import disnake
 from disnake.ext import commands
 from core.misc.embed import CustomEmbed
+from core.misc.views.base import CustomButton
 from core.misc.views.dev.bot_manager import DevBotManagerView
+from core.misc.views.dev.cog_manager import CogDropdown, CogView
 from core.misc.views.dev.console import DevConsoleView
 
 
@@ -39,6 +41,14 @@ class DevSelect(disnake.ui.Select):
                 ).get_embed()
                 await interaction.response.edit_message(
                     embed=embed, view=DevBotManagerView(self.bot)
+                )
+            case "cog_manager":
+                embed = CustomEmbed(
+                    title="🔨 | Cog Manager",
+                    description="Welcome to the Cog Manager. Use the buttons below to navigate.",
+                ).get_embed()
+                await interaction.response.edit_message(
+                    embed=embed, view=CogView(self.bot)
                 )
             case "console":
                 embed = CustomEmbed(

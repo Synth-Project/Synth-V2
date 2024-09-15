@@ -7,7 +7,7 @@ from disnake.ext import commands
 from core.main.config.config import settings
 
 from core.database import init_database, close_database
-from core import logger
+from core import logger, cog_paths
 
 
 class Bot(commands.AutoShardedInteractionBot):
@@ -24,7 +24,7 @@ class Bot(commands.AutoShardedInteractionBot):
         self.logger = logger.bind(source=self.__class__.__module__)
 
     async def load_extensions(
-        self, bot: commands.Bot, cogs_paths: list[str] = None
+        self, bot: commands.Bot
     ) -> None:
         stats = {
             "commands": {"loaded": [], "total": 0},
@@ -32,14 +32,7 @@ class Bot(commands.AutoShardedInteractionBot):
             "autocomplete": {"loaded": [], "total": 0},
         }
 
-        if not cogs_paths:
-            cogs_paths = [
-                "core/cogs/commands",
-                "core/cogs/events",
-                "core/cogs/autocomplete",
-            ]
-
-        for path in cogs_paths:
+        for path in cog_paths:
             category = (
                 "commands"
                 if "commands" in path

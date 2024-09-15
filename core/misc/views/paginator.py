@@ -1,4 +1,5 @@
 from disnake import ui, ButtonStyle, MessageInteraction
+import disnake
 
 
 class PreviousButton(ui.Button):
@@ -76,7 +77,7 @@ class CreatePaginator(ui.View):
     :param author_id: The author of the embeds.
     :param timeout: The timeout of the paginator.
     :return:
-    """
+    """ 
 
     def __init__(self, embeds, author_id: int = None, timeout: float = None):
         super().__init__(timeout=timeout)
@@ -90,3 +91,4 @@ class CreatePaginator(ui.View):
         disabled = len(embeds) == 1
         self.add_item(PreviousButton(True))
         self.add_item(NextButton(disabled))
+        

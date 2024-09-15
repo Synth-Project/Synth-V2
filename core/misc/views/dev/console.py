@@ -2,27 +2,15 @@ import disnake
 from disnake.ext import commands
 from core.misc.embed import CustomEmbed
 from core import info_logger, debug_logger, error_logger
+from core.misc.views.base import CustomButton
 
 
 class DevConsoleView(disnake.ui.View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
-
-    @disnake.ui.button(
-        label="Back",
-        emoji="⬅️",
-        style=disnake.ButtonStyle.gray,
-        custom_id="dev_console_back",
-    )
-    async def back(
-        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ):
         from core.cogs.commands.dev import Dev, DevMainView
-
-        await interaction.response.edit_message(
-            view=DevMainView(self.bot), embed=Dev.embed()
-        )
+        self.add_item(CustomButton(row=1, view=DevMainView(self.bot), embed=Dev.embed()))
 
     @disnake.ui.select(
         cls=disnake.ui.Select,
