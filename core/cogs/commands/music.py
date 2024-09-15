@@ -19,6 +19,8 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super(Music, self).__init__()
         self.bot = bot
+        self.repository = MusicRepository()
+        self.functions = MusicFunctions()
 
     @commands.slash_command()
     async def player(self, _) -> None:
@@ -40,8 +42,8 @@ class Music(commands.Cog):
             return
 
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+                interaction.guild.voice_client
+                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         await interaction.me.edit(deafen=True)
 
@@ -105,8 +107,8 @@ class Music(commands.Cog):
                 footer_text=f"Volume: {player.volume}% // Synth Music 2024",
             ).get_embed()
 
-        await MusicRepository().save_song(interaction.author.id, track_info)
-        await MusicFunctions().play_track(
+        await self.repository.save_song(interaction.author.id, track_info)
+        await self.functions.play_track(
             self.bot, interaction, player, embed, track, volume
         )
 
@@ -118,13 +120,23 @@ class Music(commands.Cog):
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
 
+        queue = (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else player.queue
+            )
+        )
+
         if not player:
             error_embed.title = "❌ | No active player found"
             await interaction.send(embed=error_embed, ephemeral=True)
             return
 
         if track:
-            for index, song in enumerate(player.queue):
+            for index, song in enumerate(queue):
                 if track.lower() in f"{song.author} - {song.title}".lower():
                     track = player.queue[index]
                     player.queue.put_at(0, track)
@@ -136,7 +148,51 @@ class Music(commands.Cog):
                 await interaction.send(embed=error_embed, ephemeral=True)
                 return
 
-        await MusicFunctions().skip_track(player, interaction)
+        await self.functions.skip_track(player, interaction)
+
+    @player.sub_command(name="previous", description="Skip to the previous track")
+    async def previous(
+        self, interaction: disnake.ApplicationCommandInteraction, track: str = None
+    ):
+        await interaction.response.defer(ephemeral=True)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+        queue = (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                else player.queue
+            )
+        )
+
+        if not player:
+            error_embed.title = "❌ | No active player found"
+            await interaction.send(embed=error_embed, ephemeral=True)
+            return
+
+        if track:
+            for index, song in enumerate(queue.history):
+                if track.lower() in f"{song.author} - {song.title}".lower():
+                    track = queue.history[index]
+                    queue.put_at(0, track)
+                    queue.put_at(1, player.current)
+                    break
+            else:
+                error_embed.title = (
+                    "❌ | The specified track was not found in the queue!"
+                )
+                await interaction.send(embed=error_embed, ephemeral=True)
+                return
+        else:
+            previous_track = queue.history.get()
+            queue.put_at(0, previous_track)
+            queue.put_at(1, player.current)
+
+        await self.functions.skip_track(player, interaction, True)
+
 
     @player.sub_command(name="volume", description="Set a new volume")
     async def volume(
@@ -152,7 +208,7 @@ class Music(commands.Cog):
             return
 
         volume = min(100, max(1, volume))
-        await MusicFunctions().set_volume(player, volume)
+        await self.functions.set_volume(player, volume)
         await interaction.delete_original_response()
 
     @player.sub_command(name="queue", description="See a list of songs in the queue")
@@ -180,7 +236,7 @@ class Music(commands.Cog):
                     [
                         f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
                         f"**{(await self.bot.get_or_fetch_user(music.extras.requested_by)).name if music.extras.requested_by else 'Unknown'}**"
-                        for _, music in queue_list[i : i + 10]
+                        for _, music in queue_list[i: i + 10]
                         if music
                     ]
                 ),

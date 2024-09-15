@@ -14,7 +14,7 @@ class PlayAutocomplete(commands.Cog):
 
     @Music.play.autocomplete("query")
     async def play_autocomplete(
-        interaction: disnake.ApplicationCommandInteraction, search_query: str
+        self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         if not interaction.author.voice:
             return await interaction.response.autocomplete(

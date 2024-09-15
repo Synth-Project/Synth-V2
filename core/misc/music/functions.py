@@ -66,7 +66,8 @@ class MusicFunctions:
 
     @staticmethod
     async def skip_track(
-        player: wavelink.Player, interaction: disnake.ApplicationCommandInteraction
+        player: wavelink.Player, interaction: disnake.ApplicationCommandInteraction,
+        previous: bool = False
     ) -> None:
         embed = CustomEmbed(
             author=interaction.user,  # type: ignore
@@ -81,6 +82,19 @@ class MusicFunctions:
         await interaction.delete_original_response()  # TODO: В ідеалі нам тут нічого відповідати не треба, бо це калл, але я хз, башка не робить.
         await player.message.reply(embed=embed)  # type: ignore
         await player.skip()
+
+        if previous:
+            player.queue.history.remove(player.current)
+
+            await player.message.edit(  # type: ignore
+                view=NavigationPanel(
+                    bot,
+                    (await interaction.original_response()).id,
+                    history_exists=False,
+                    player=player,
+                    interaction=interaction,
+                )
+            )
 
     @staticmethod
     async def set_volume(player: wavelink.Player, volume: int) -> None:

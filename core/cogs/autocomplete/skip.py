@@ -13,11 +13,11 @@ class SkipAutocomplete(commands.Cog):
 
     @Music.skip.autocomplete("track")
     async def skip_autocomplete(
-        interaction: disnake.ApplicationCommandInteraction, search_query: str
+        self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+                interaction.guild.voice_client
+                or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
         queue_ = (
             player.queue

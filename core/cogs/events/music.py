@@ -33,8 +33,8 @@ class MusicEvent(commands.Cog):
         message = payload.player.message  # type: ignore
 
         if (
-            payload.player.queue.mode == wavelink.QueueMode.loop
-            and original != payload.player.current
+                payload.player.queue.mode == wavelink.QueueMode.loop
+                and original != payload.player.current
         ):
             await payload.player.play(payload.original, add_history=False)
 
@@ -62,7 +62,17 @@ class MusicEvent(commands.Cog):
             embed.set_footer(text="This track was looped // Synth Music 2024")
 
         embed.set_image(url=track.artwork if track.artwork else None)
-        history_exists = payload.player.queue.history.count > 0
+        queue = (
+            payload.player.queue
+            if not payload.player.queue.is_empty
+            else (
+                payload.player.auto_queue
+                if payload.player.autoplay == wavelink.AutoPlayMode.enabled
+                else payload.player.queue
+            )
+        )
+        print(queue.history.count)
+        history_exists = queue.history.count > 0
 
         await message.edit(  # type: ignore
             embed=embed,
@@ -86,7 +96,7 @@ class MusicEvent(commands.Cog):
         if not player.queue.is_empty:
             new_track = player.queue.get()
             await player.play(new_track, add_history=False)
-        else:
+        elif not player.current and not player.playing:
             old_track = payload.original
             player.queue.history.put_at(0, old_track)
 
