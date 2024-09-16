@@ -10,7 +10,7 @@ from core.database import init_database, close_database
 from core import logger, cog_paths
 
 
-class Bot(commands.AutoShardedInteractionBot):
+class Bot(commands.AutoShardedBot):
     """The base class of Synth bot."""
 
     def __init__(self) -> None:
@@ -19,6 +19,7 @@ class Bot(commands.AutoShardedInteractionBot):
             reload=True,
             owner_ids=settings.OWNERS,
             test_guilds=settings.TEST_GUILDS,
+            command_prefix=">>"
         )
         self.debug = settings.DEBUG
         self.logger = logger.bind(source=self.__class__.__module__)

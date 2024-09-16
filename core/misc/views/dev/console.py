@@ -3,6 +3,7 @@ from disnake.ext import commands
 from core.misc.embed import CustomEmbed
 from core import info_logger, debug_logger, error_logger
 from core.misc.views.base import CustomButton
+from core.misc.views.paginator import CreatePaginator
 
 
 class DevConsoleView(disnake.ui.View):
@@ -32,11 +33,19 @@ class DevConsoleView(disnake.ui.View):
             "debug": debug_logger.getvalue(),
             "error": error_logger.getvalue(),
         }[log_name]
+        log_parts = [log_content[i:i+1000] for i in range(0, len(log_content), 1000)] or ["No logs available."]
 
-        embed = CustomEmbed(
-            title=f"🔧 | Console {log_name.capitalize()} Logs"
-        ).get_embed()
-        embed.description = (
-            f"```{log_content}```" if log_content else f"No logs available."
+        embeds = [
+            CustomEmbed(
+                title=f"🔧 | Console {log_name.capitalize()} Logs",
+                description=f"```{part}```"
+            ).get_embed() for _, part in enumerate(log_parts)
+        ]
+        view = CreatePaginator(embeds, interaction.author.id, timeout=120)
+        view.add_item(CustomButton(row=0, view=self, embed=interaction.message.embeds[0]))
+
+        await interaction.edit_original_message(
+            embed=embeds[0], 
+            view=view
         )
-        await interaction.edit_original_message(embed=embed)
+

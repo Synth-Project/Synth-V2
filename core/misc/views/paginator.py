@@ -6,7 +6,7 @@ class PreviousButton(ui.Button):
     def __init__(self, disabled):
         super().__init__(
             label="<",
-            style=ButtonStyle.blurple,
+            style=ButtonStyle.gray,
             disabled=disabled,
             custom_id="previous",
         )
@@ -44,7 +44,7 @@ class PreviousButton(ui.Button):
 class NextButton(ui.Button):
     def __init__(self, disabled):
         super().__init__(
-            label=">", style=ButtonStyle.blurple, disabled=disabled, custom_id="next"
+            label=">", style=ButtonStyle.gray, disabled=disabled, custom_id="next"
         )
 
     async def callback(self, inter: MessageInteraction) -> None:

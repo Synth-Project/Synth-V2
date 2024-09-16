@@ -11,4 +11,5 @@ class CustomButton(disnake.ui.Button):
         self.kwargs = kwargs
 
     async def callback(self, interaction: disnake.MessageInteraction):
+        await interaction.edit_original_message(view = None, content=None)
         await interaction.response.edit_message(**self.kwargs)
