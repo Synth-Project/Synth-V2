@@ -77,36 +77,36 @@ class FunCommands(commands.Cog):
         image_url = await self.get_random_image_from_cache("cat")
         if image_url:
             embed = CustomEmbed(title="😺 | Cat").get_embed().set_image(image_url)
-            await inter.response.send_message(embed=embed)
+            await inter.response.send_message(embed=embed, ephemeral=True)
         else:
             error_embed = CustomEmbed.error_embed(
                 title="❌ | Cannot find any cat images."
-            )
-            await inter.response.send_message(embed=error_embed)
+            ).get_embed()
+            await inter.response.send_message(embed=error_embed, ephemeral=True)
 
     @commands.slash_command(description="Retrieve a random dog image from r/dog")
     async def dog(self, inter: disnake.ApplicationCommandInteraction) -> None:
         image_url = await self.get_random_image_from_cache("dog")
         if image_url:
             embed = CustomEmbed(title="🐶 | Dog").get_embed().set_image(image_url)
-            await inter.response.send_message(embed=embed)
+            await inter.response.send_message(embed=embed, ephemeral=True)
         else:
             error_embed = CustomEmbed.error_embed(
                 title="❌ | Cannot find any dog images."
-            )
-            await inter.response.send_message(embed=error_embed)
+            ).get_embed()
+            await inter.response.send_message(embed=error_embed, ephemeral=True)
 
     @commands.slash_command(description="Retrieve a random fox image from r/fox")
     async def fox(self, inter: disnake.ApplicationCommandInteraction) -> None:
         image_url = await self.get_random_image_from_cache("fox")
         if image_url:
             embed = CustomEmbed(title="🦊 | Fox").get_embed().set_image(image_url)
-            await inter.response.send_message(embed=embed)
+            await inter.response.send_message(embed=embed, ephemeral=True)
         else:
             error_embed = CustomEmbed.error_embed(
                 title="❌ | Cannot find any fox images."
-            )
-            await inter.response.send_message(embed=error_embed)
+            ).get_embed()
+            await inter.response.send_message(embed=error_embed, ephemeral=True)
 
     @commands.slash_command(description="Pop-it game")
     async def popit(self, interaction: disnake.ApplicationCommandInteraction) -> None:
