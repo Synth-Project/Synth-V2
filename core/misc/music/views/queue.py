@@ -73,12 +73,17 @@ class QueueDropdown(disnake.ui.Select):
                 else "Auto recommended"
             )
 
+            try:
+                duration = timedelta(seconds=round(track.length / 1000))
+            except OverflowError:
+                duration = "N/A"
+
             options.append(
                 disnake.SelectOption(
                     emoji="<:spotify:1284447177082408990>",
                     label=track.title,
                     value=str(index),
-                    description=f"{timedelta(seconds=round(track.length / 1000))} // Requested by: {requested_by}",
+                    description=f"{duration} // Requested by: {requested_by}",
                 )
             )
 
