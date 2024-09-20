@@ -5,7 +5,7 @@ import wavelink
 from disnake.ext import commands
 
 from core.misc.music.functions import MusicFunctions
-from core.misc.errors.music import MusicError
+from core.misc.music.errors import MusicError
 
 from core.database.repositories.music import MusicRepository
 from core.misc.color import BasicColors

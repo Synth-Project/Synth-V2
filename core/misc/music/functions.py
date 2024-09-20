@@ -11,7 +11,7 @@ from core.main.main import bot
 from core.misc.paginator import CreatePaginator
 from core.misc.embed import CustomEmbed
 from core.misc.color import BasicColors
-from core.misc.errors.music import MusicError
+from core.misc.music.errors import MusicError
 
 from core.misc.music.views.panel import NavigationPanel
 from core.misc.music.views.shuffle import ShuffleView
