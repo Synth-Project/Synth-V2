@@ -39,11 +39,14 @@ class MusicFunctions:
         embed.url = str(track.uri)
 
         embed.add_field(name="Artist:", value=f"`{track.author}`", inline=True)
-        embed.add_field(
-            name="Duration:",
-            value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
-            inline=True,
-        )
+        try:
+            embed.add_field(
+                name="Duration:",
+                value=f"`{str(timedelta(seconds=round(track.length / 1000)))}`",
+                inline=True,
+            )
+        except OverflowError:
+            pass
 
         footer = f"{'Paused //' if player.paused else ''} Volume: {player.volume}% // "
         if track.recommended:
@@ -185,7 +188,6 @@ class MusicFunctions:
                     author=interaction.user,
                     title="<:crossmark:1282338837456224394> | I am not in a voice channel",
                 ).get_embed(),
-                ephemeral=True,
             )
 
         await player.disconnect()
@@ -194,7 +196,6 @@ class MusicFunctions:
                 author=interaction.user,
                 title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
             ).get_embed(),
-            ephemeral=True,
             view=None,
         )
         await interaction.delete_original_response()
