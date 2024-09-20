@@ -7,36 +7,36 @@ from disnake.ext import commands
 from core.main.config.config import settings
 
 from core.database import init_database, close_database
-from core import logger
+from core import logger, cog_paths
 
 
-class Bot(commands.AutoShardedInteractionBot):
+class Bot(commands.AutoShardedBot):
     """The base class of Synth bot."""
 
-    def __init__(self: "Bot") -> None:
+    def __init__(self) -> None:
         super(Bot, self).__init__(
-            # help_command=CustomHelpCommand(),
             intents=disnake.Intents.all(),
             reload=True,
             owner_ids=settings.OWNERS,
             test_guilds=settings.TEST_GUILDS,
+            command_prefix=">>",
         )
         self.debug = settings.DEBUG
         self.logger = logger.bind(source=self.__class__.__module__)
 
-    async def load_extensions(
-        self, bot: commands.Bot, cogs_paths: list[str] = None
-    ) -> None:
+    async def load_extensions(self, bot: commands.Bot) -> None:
         stats = {
             "commands": {"loaded": [], "total": 0},
             "events": {"loaded": [], "total": 0},
+            "autocomplete": {"loaded": [], "total": 0},
         }
 
-        if not cogs_paths:
-            cogs_paths = ["core/cogs/commands", "core/cogs/events"]
-
-        for path in cogs_paths:
-            category = "commands" if "commands" in path else "events"
+        for path in cog_paths:
+            category = (
+                "commands"
+                if "commands" in path
+                else "events" if "events" in path else "autocomplete"
+            )
             for file_path in glob.glob(os.path.join(path, "*.py")):
                 file_name = os.path.basename(file_path)
 
@@ -61,7 +61,7 @@ class Bot(commands.AutoShardedInteractionBot):
 
                     traceback.print_exception(type(e), e, e.__traceback__)
 
-        for category in ["commands", "events"]:
+        for category in ["commands", "events", "autocomplete"]:
             if stats[category]["loaded"]:
                 names = ", ".join(
                     [name.split(".")[-1] for name in stats[category]["loaded"]]
@@ -83,11 +83,11 @@ class Bot(commands.AutoShardedInteractionBot):
         await close_database()
 
     async def on_ready(self) -> None:
-        self.logger.info(
+        logger.info(
             f"\nInvite link: https://discord.com/api/oauth2/authorize?client_id="
             f"{self.user.id}&permissions=980937982&scope=bot%20applications.commands"
         )
-        self.logger.debug(f"Connected to {self.user}")
+        logger.debug(f"Connected to {self.user}")
 
         await self.load_extensions(bot=self)
         await self.wait_until_ready()
@@ -100,12 +100,6 @@ class Bot(commands.AutoShardedInteractionBot):
             )
         )
 
-    def get_bot(self) -> "Bot":
-        """Returns the bot instance."""
-        return self
-
-    def get_avatar(self) -> str | None:
-        """Returns the URL of the bot's avatar if set, otherwise returns None."""
-        if self.user and self.user.display_avatar:
-            return self.user.display_avatar.url
-        return None
+    def get_avatar(self) -> str:
+        """Returns the URL of the bot's avatar"""
+        return "https://cdn.discordapp.com/avatars/1168226895758901408/8cc117b5f9a539896875e7a0b837c2ed.webp?size=1024&format=webp&width=0&height=256"

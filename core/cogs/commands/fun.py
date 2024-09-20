@@ -7,6 +7,8 @@ from disnake.ext import commands, tasks
 
 from loguru import logger
 from core.bot import Bot
+from core.misc.embed import CustomEmbed
+from core.misc.fun.views.tictactoe import ConfirmView, TicTacToeView
 
 
 class FunCommands(commands.Cog):
@@ -74,25 +76,183 @@ class FunCommands(commands.Cog):
     async def cat(self, inter: disnake.ApplicationCommandInteraction) -> None:
         image_url = await self.get_random_image_from_cache("cat")
         if image_url:
-            await inter.response.send_message(image_url)
+            embed = CustomEmbed(title="😺 | Cat").get_embed().set_image(image_url)
+            await inter.response.send_message(embed=embed)
         else:
-            await inter.response.send_message("Cannot find any cat images.")
+            error_embed = CustomEmbed.error_embed(
+                title="❌ | Cannot find any cat images."
+            )
+            await inter.response.send_message(embed=error_embed)
 
     @commands.slash_command(description="Retrieve a random dog image from r/dog")
     async def dog(self, inter: disnake.ApplicationCommandInteraction) -> None:
         image_url = await self.get_random_image_from_cache("dog")
         if image_url:
-            await inter.response.send_message(image_url)
+            embed = CustomEmbed(title="🐶 | Dog").get_embed().set_image(image_url)
+            await inter.response.send_message(embed=embed)
         else:
-            await inter.response.send_message("Cannot find any dog images.")
+            error_embed = CustomEmbed.error_embed(
+                title="❌ | Cannot find any dog images."
+            )
+            await inter.response.send_message(embed=error_embed)
 
     @commands.slash_command(description="Retrieve a random fox image from r/fox")
     async def fox(self, inter: disnake.ApplicationCommandInteraction) -> None:
         image_url = await self.get_random_image_from_cache("fox")
         if image_url:
-            await inter.response.send_message(image_url)
+            embed = CustomEmbed(title="🦊 | Fox").get_embed().set_image(image_url)
+            await inter.response.send_message(embed=embed)
         else:
-            await inter.response.send_message("Cannot find any fox images.")
+            error_embed = CustomEmbed.error_embed(
+                title="❌ | Cannot find any fox images."
+            )
+            await inter.response.send_message(embed=error_embed)
+
+    @commands.slash_command(description="Pop-it game")
+    async def popit(self, interaction: disnake.ApplicationCommandInteraction) -> None:
+        pop_it = """
+🔴🔴🔴🔴🔴🔴
+🟡🟡🟡🟡🟡🟡
+🔵🔵🔵🔵🔵🔵
+🟢🟢🟢🟢🟢🟢
+🟤🟤🟤🟤🟤🟤
+🟣🟣🟣🟣🟣🟣
+        """
+        embed = CustomEmbed(
+            title="👆 | Pop-it",
+            description=self.add_spoilers(pop_it),
+        ).get_embed()
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    def add_spoilers(self, text):
+        return "".join(f"||{char}||" if char.strip() else char for char in text)
+
+    @commands.slash_command()
+    async def simple(self, _):
+        pass
+
+    @simple.sub_command(description="Simple dimple")
+    async def dimple(self, interaction: disnake.ApplicationCommandInteraction) -> None:
+        dimple = """
+⚫⚫⚫
+⚫||🔵||⚫
+⚫⚫⚫
+⚫||🟡||⚫
+⚫⚫⚫
+        """
+        embed = CustomEmbed(
+            title="👆 | Simple Dimple",
+            description=dimple,
+        ).get_embed()
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @commands.slash_command()
+    async def url(self, _):
+        pass
+
+    @url.sub_command(description="Shorten a URL")
+    async def shorten(
+        self, interaction: disnake.ApplicationCommandInteraction, url: str
+    ) -> None:
+        """
+        Shorten a URL using TinyURL.
+        """
+        short_url_embed = CustomEmbed(
+            title="🔗 | Shorten URL",
+            description="",
+        ).get_embed()
+        error_embed = CustomEmbed.error_embed(
+            title="❌ | An error occurred while shortening the URL",
+        ).get_embed()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"http://tinyurl.com/api-create.php?url={url}"
+            ) as response:
+                if response.status == 200:
+                    short_url = await response.text()
+                    short_url_embed.description = short_url
+                    await interaction.response.send_message(
+                        embed=short_url_embed, ephemeral=True
+                    )
+                    return
+
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+    @url.sub_command(description="Unshorten a URL")
+    async def unshorten(
+        self, interaction: disnake.ApplicationCommandInteraction, url: str
+    ) -> None:
+        embed = CustomEmbed(title="🔗 | Unshorten URL").get_embed()
+        error_embed = CustomEmbed.error_embed(
+            title="❌ | An error occurred while unshortening the URL"
+        ).get_embed()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://unshorten.me/api/v2/unshorten?url={url}",
+                headers={
+                    "Authorization": "Token 9cdfabb415e6c1ae83f9e371b9b08f7e18a9f362"
+                },
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data and data.get("unshortened_url"):
+                        embed.description = data["unshortened_url"]
+                        await interaction.response.send_message(
+                            embed=embed, ephemeral=True
+                        )
+                        return
+
+        await interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+    @commands.slash_command()
+    async def tic_tac_toe(
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        opponent: disnake.Member,
+    ) -> None:
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+        ).get_embed()
+        embed = CustomEmbed(
+            title="🎮 | Tic-Tac-Toe", author=interaction.author
+        ).get_embed()
+        if opponent.bot:
+            error_embed.title = "❌ | You can't play Tic-Tac-Toe with a bot."
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            return
+
+        if opponent == interaction.user:
+            error_embed.title = "❌ | You can't play Tic-Tac-Toe with yourself."
+            await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            return
+
+        embed.description = f"Do you want to play Tic-Tac-Toe with {interaction.author.name}? You have 3 minutes to respond."
+        view = ConfirmView(confirmer=opponent)
+        await interaction.response.send_message(
+            f"{opponent.mention}", embed=embed, view=view
+        )
+        await view.wait()
+
+        if view.value is None:
+            error_embed.title = f"❌ | Opponent didn't respond in time. Game cancelled."
+            await interaction.edit_original_response(embed=error_embed, view=None)
+            return
+        elif view.value is False:
+            error_embed.title = f"❌ | Opponent declined the game. Game cancelled."
+            await interaction.edit_original_response(embed=error_embed, view=None)
+            return
+
+        game_view = TicTacToeView(interaction.user, opponent)
+        embed.description = (
+            f"**{interaction.author.name}** (X) vs **{opponent.name}** (O)!"
+        )
+        await interaction.edit_original_response(
+            f"{interaction.user.mention}",
+            embed=embed,
+            view=game_view,
+        )
 
 
 def setup(bot: commands.Bot) -> None:

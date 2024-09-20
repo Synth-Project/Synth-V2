@@ -1,161 +1,96 @@
-from typing import Any, Dict, List, Optional, Union
-import math
+from typing import Union, Literal
 
 import disnake
-import mafic
+from disnake import Embed
+
+from core.main.main import bot
+from core.misc.color import BasicColors
+
+footer_text = "Synth 2024 // All rights reserved"
 
 
-class EmbedPaginator(disnake.ui.View):
+class CustomEmbed:
     def __init__(
         self,
-        interaction: Union[
-            disnake.MessageCommandInteraction, disnake.MessageInteraction
-        ],
-        author: disnake.Member,
-        embed: disnake.Embed,
-        data: Optional[Union[Dict, List]],
-        timeout: Optional[int] = None,
-        separate: int = 10,
-    ) -> None:
-        super().__init__(timeout=timeout)
-        self.current_page = 1
-        self.interaction = interaction
-        self.author: disnake.Member = author
-        self.embed: disnake.Embed = embed
-        self.separate = separate
-        self.data = data
-
-    async def send_message(
-        self,
-        ctx: Union[
-            disnake.ext.commands.Context,
-            disnake.MessageCommandInteraction,
-            disnake.MessageInteraction,
-        ],
-    ) -> Union[disnake.Message, Any]:
-        self.prev_page.disabled = True
-        self.next_page.disabled = False
-
-        if isinstance(
-            ctx, (disnake.MessageCommandInteraction, disnake.MessageInteraction)
-        ):
-            return await ctx.response.send_message(
-                embed=self.embed, view=self, ephemeral=True
-            )
-        return await ctx.send(embed=self.embed, view=self)
-
-    async def _create_embed(
-        self, embed: disnake.Embed, data: Union[Dict, List]
-    ) -> disnake.Embed:
-        embed: disnake.Embed = disnake.Embed(
-            title=embed.title,
-            colour=embed.colour,
-            timestamp=embed.timestamp,
-            description="",
+        embed_type: Literal["default", "error"] = "default",
+        title: str = "",
+        description: str = "",
+        color: Union[
+            disnake.Colour,
+            int,
+            BasicColors.SUCCESS,  # type: ignore
+            BasicColors.ERROR,  # type: ignore
+            BasicColors.DEFAULT,  # type: ignore
+        ] = BasicColors.DEFAULT,
+        image: str = None,
+        thumbnail: str = None,
+        footer_text: str = footer_text,
+        author: Union[disnake.Member, disnake.User] = None,
+    ):
+        self._embed = self._build_embed(
+            title, description, color, image, thumbnail, footer_text, author
         )
+        if embed_type == "error":
+            self._embed.colour = BasicColors.ERROR.value
 
-        for index, music in enumerate(data, start=1):
-            if index > self.separate:
-                break
+    @staticmethod
+    def _build_embed(
+        title: str,
+        description: str,
+        color: Union[disnake.Colour, int, BasicColors],
+        image: str,
+        thumbnail: str,
+        footer_text: str,
+        author: Union[disnake.Member, disnake.User],
+    ) -> disnake.Embed:
+        """Build a common embed structure."""
+        if isinstance(color, BasicColors):
+            color = color.value
 
-            music: mafic.Track
-            embed.description += f"`{index}.` **{music.author} - {music.title}**\n"
+        embed = disnake.Embed(title=title, description=description, color=color)
+        embed.set_footer(text=footer_text, icon_url=bot.get_avatar())
 
-        all_pages = math.ceil(len(self.data) / self.separate) - 1
-        embed.set_footer(text=f"Page {self.current_page} of {all_pages}")
+        if author:
+            embed.set_author(
+                name=author.display_name, icon_url=author.display_avatar.url
+            )
+
+        if image:
+            embed.set_image(url=image)
+        if thumbnail:
+            embed.set_thumbnail(url=thumbnail)
 
         return embed
 
-    async def update(
-        self,
-        message: Union[disnake.MessageCommandInteraction, disnake.MessageInteraction],
-        embed: disnake.Embed,
-    ) -> None:
-        await message.edit_original_response(embed=embed, view=self)
+    def get_embed(self) -> disnake.Embed:
+        """Retrieve the constructed embed."""
+        return self._embed
 
-    @disnake.ui.button(label="️◀️", style=disnake.ButtonStyle.blurple)
-    async def prev_page(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ) -> None:
-        if self.current_page <= 0:
-            self.prev_page.disabled = True
-            self.next_page.disabled = False
+    def to_dict(self) -> dict:
+        return self.get_embed().to_dict()
 
-            return await self.update(self.interaction, self.embed)
+    @classmethod
+    async def from_json(cls, json: dict) -> Embed:
+        """Create a CustomEmbed from a JSON object."""
+        return cls()._embed.from_dict(json)
 
-        await interaction.response.defer()
-
-        self.current_page -= 1
-
-        if self.current_page <= 0:
-            self.prev_page.disabled = True
-            self.next_page.disabled = False
-            return await self.update(self.interaction, self.embed)
-        else:
-            self.prev_page.disabled = False if self.current_page > 0 else True
-            self.next_page.disabled = (
-                False
-                if self.current_page < (math.ceil(len(self.data) / self.separate) - 1)
-                else True
-            )
-
-            start = self.current_page * self.separate
-            data = self.data[start:]
-            return await self.update(
-                self.interaction, await self._create_embed(self.embed, data)
-            )
-        # await self.update_buttons()
-
-    @disnake.ui.button(label="▶️", style=disnake.ButtonStyle.blurple)
-    async def next_page(
-        self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
-    ) -> None:
-        if self.current_page >= (math.ceil(len(self.data) / self.separate) - 1):
-            self.next_page.disabled = True
-            self.prev_page.disabled = False
-
-            return await self.update(self.interaction, self.embed)
-
-        await interaction.response.defer()
-        self.current_page += 1
-
-        self.prev_page.disabled = False if self.current_page > 0 else True
-        self.next_page.disabled = (
-            False
-            if self.current_page < (math.ceil(len(self.data) / self.separate) - 1)
-            else True
+    @classmethod
+    def error_embed(
+        cls,
+        title: str = None,
+        description: str = "",
+        image: str = None,
+        thumbnail: str = None,
+        footer_text: str = footer_text,
+        author: Union[disnake.Member, disnake.User] = None,
+    ):
+        return cls(
+            embed_type="error",
+            color=BasicColors.ERROR,
+            title=title,
+            description=description,
+            image=image,
+            thumbnail=thumbnail,
+            footer_text=footer_text,
+            author=author,
         )
-        start = self.current_page * self.separate
-        data = self.data[start:]
-        return await self.update(
-            self.interaction, await self._create_embed(self.embed, data)
-        )
-        # await self.update_buttons()
-
-    async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
-        if interaction.user.id != self.author.id:
-            await interaction.send(
-                content="You are not allowed to use this buttons!", ephemeral=True
-            )
-            return False
-        return True
-
-
-def custom_embed(
-    title: str = None,
-    description: str = None,
-    color: Union[disnake.Colour, int, None] = 0x2F3236,
-    image: str = None,
-    thumbnail: str = None,
-) -> disnake.Embed:
-
-    embed = disnake.Embed()
-    embed.set_footer(text="Synth © 2024 | All Rights Reserved")
-
-    embed.title = title
-    embed.description = description
-    embed.colour = color
-    embed.set_image(url=image)
-    embed.set_thumbnail(url=thumbnail)
-
-    return embed
