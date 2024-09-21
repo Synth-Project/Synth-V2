@@ -11,7 +11,6 @@ from core.bot import Bot
 from core.main.config.config import settings
 
 bot = Bot()
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 

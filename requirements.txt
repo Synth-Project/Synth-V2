@@ -4,3 +4,4 @@ pydantic
 pydantic_settings
 tortoise-orm[asyncpg]
 loguru
+g4f
