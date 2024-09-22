@@ -37,6 +37,8 @@ class Bot(commands.AutoShardedInteractionBot):
                 "core/cogs/commands",
                 "core/cogs/events",
                 "core/cogs/autocomplete",
+                "core/cogs/autocomplete/music",
+                # "core/cogs/autocomplete/fun",
             ]
 
         for path in cogs_paths:

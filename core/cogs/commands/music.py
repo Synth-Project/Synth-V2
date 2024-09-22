@@ -40,6 +40,8 @@ class Music(commands.Cog):
         )
         await interaction.me.edit(deafen=True)
 
+        await interaction.response.defer(ephemeral=True)
+
         await self.errors.check_basic(interaction, query)
 
         await interaction.send(

@@ -75,7 +75,9 @@ class MusicFunctions:
         )
 
         embed = CustomEmbed(
-            author=requested, title="Now playing", image=track.artwork
+            author=requested,
+            title=f"{MusicFunctions.get_track_source(track)} Now playing",
+            image=track.artwork,
         ).get_embed()
         embed.url = str(track.uri)
 
@@ -137,6 +139,18 @@ class MusicFunctions:
         )
 
     @staticmethod
+    def get_track_source(track: wavelink.Playable) -> str:
+        emojis = {
+            "youtube": "<:youtube:1279826494847451199>",
+            # "youtubemusic": "<:youtube:1279826494847451199>",
+            "soundcloud": "<:soundcloud:1285240280135766058>",
+            "spotify": "<:spotify:1284447177082408990>",
+            "applemusic": "<:applemusic:1285240602014908507>",
+            "deezer": "<:deezer:1285240923432681483>",
+        }
+        return emojis.get(track.source)
+
+    @staticmethod
     async def skip_track(
         player: wavelink.Player,
         interaction: disnake.ApplicationCommandInteraction,
@@ -147,12 +161,12 @@ class MusicFunctions:
             title="Track skipped",
             description=(
                 f"Skipped the **[{player.current.title}]({str(player.current.uri)})**.\n"
-                f"Now playing: **[{player.queue[0].title}]({str(player.queue[0].uri)})**."
+                f"{MusicFunctions.get_track_source(player.current)} Now playing: **[{player.queue[0].title}]({str(player.queue[0].uri)})**."
             ),
             color=BasicColors.SUCCESS,
         ).get_embed()
 
-        await interaction.delete_original_response()  # TODO: В ідеалі нам тут нічого відповідати не треба, бо це калл, але я хз, башка не робить.
+        await interaction.delete_original_response()
         await player.message.reply(embed=embed)  # type: ignore
         await player.skip()
 
@@ -220,18 +234,6 @@ class MusicFunctions:
         )
         queue_list = list(enumerate(queue_, start=1))
 
-        """
-        requested_by = (
-                (
-                    await (
-                        await self.bot.fetch_guild(self.player.guild.id)
-                    ).fetch_member(int(track.extras.requested_by))
-                ).name
-                if hasattr(track.extras, "requested_by")
-                else "Auto recommended"
-            )
-            """
-
         guild = interaction.guild
 
         embeds = [
@@ -239,8 +241,8 @@ class MusicFunctions:
                 title=f"{interaction.guild.name}'s Queue",
                 description="\n".join(
                     [
-                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {music.title} // "
-                        f"`{(await guild.get_or_fetch_member(int(music.extras.requested_by))) if hasattr(music.extras, 'requested_by') else 'Unknown'}`"
+                        f"`[ {str(timedelta(seconds=round(music.length / 1000)))} ]` {MusicFunctions.get_track_source(music)} {music.title} // "
+                        f"`{(await guild.get_or_fetch_member(int(music.extras.requested_by))) if hasattr(music.extras, 'requested_by') else 'Unknown'}` // "
                         for _, music in queue_list[i : i + 10]
                         if music
                     ]
@@ -275,7 +277,10 @@ class MusicFunctions:
 
         embed = CustomEmbed(
             title="<:shuffle:1279835431315308605> Shuffled the queue",
-            description=f"Current song: **{player.current.title}**\nNext song: **{next_song.title}**",
+            description=(
+                f"{MusicFunctions.get_track_source(player.current)} Current song: **{player.current.title}**"
+                f"\n{MusicFunctions.get_track_source(next_song)} Next song: **{next_song.title}**"
+            ),
             color=BasicColors.SUCCESS,
         ).get_embed()
 
@@ -298,7 +303,7 @@ class MusicFunctions:
 
         embed = CustomEmbed(
             title="⏸️ | Paused Player" if player.paused else "▶ | Resumed Player",
-            description=f"Current song: **{player.current.title}**",
+            description=f"{MusicFunctions.get_track_source(player.current)} Current song: **{player.current.title}**",
             color=BasicColors.SUCCESS,
         ).get_embed()
 

@@ -1,3 +1,4 @@
+import importlib
 from datetime import timedelta
 
 import disnake
@@ -53,6 +54,10 @@ class QueueDropdown(disnake.ui.Select):
         Get the options for the dropdown menu
         :return: list
         """
+        functions = getattr(
+            importlib.import_module("core.misc.music.functions"), "MusicFunctions"
+        )
+
         start_idx, end_idx = (
             self.page - 1
         ) * self.items_per_page, self.page * self.items_per_page
@@ -80,7 +85,7 @@ class QueueDropdown(disnake.ui.Select):
 
             options.append(
                 disnake.SelectOption(
-                    emoji="<:spotify:1284447177082408990>",
+                    emoji=functions.get_track_source(track),
                     label=track.title,
                     value=str(index),
                     description=f"{duration} // Requested by: {requested_by}",

@@ -44,6 +44,8 @@ class MusicError:
             error_embed.title = "<:crossmark:1282338837456224394> | Your queue is empty"
             return await interaction.send(embed=error_embed, ephemeral=True)
 
+        return
+
     @staticmethod
     async def check_error_volume(
         interaction: disnake.Interaction, volume: int
