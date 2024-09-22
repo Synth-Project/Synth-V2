@@ -1,7 +1,10 @@
-disnake
-aiohttp
+disnake~=2.9.2
+aiohttp~=3.10.5
 pydantic
 pydantic_settings
 tortoise-orm[asyncpg]
-loguru
+loguru~=0.7.2
+chess~=1.10.0
+pydantic-settings~=2.4.0
+CairoSVG~=2.7.1
 g4f
