@@ -31,12 +31,19 @@ class MessageLogging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message) -> None:
-        if message.author.bot or message.content.startswith("!") or not message.content.startswith(f"<@{self.bot.user.id}>"):
+        if (
+            message.author.bot
+            or message.content.startswith("!")
+            or not message.content.startswith(f"<@{self.bot.user.id}>")
+        ):
             return
         await message.add_reaction("<a:loading:1168599537682755584>")
         async with message.channel.typing():
             try:
-                response = await self.ask_gpt(message.content.replace(f"<@{self.bot.user.id}>", ""), message.author.id)
+                response = await self.ask_gpt(
+                    message.content.replace(f"<@{self.bot.user.id}>", ""),
+                    message.author.id,
+                )
                 print(message.author.name)
                 print(self.conversation_history)
                 embed = CustomEmbed(title="⚙ | GPT", description=response).get_embed()
@@ -45,7 +52,9 @@ class MessageLogging(commands.Cog):
             except Exception as e:
                 await message.reply(f"Have this error with this shitto:\n```\n{e}\n```")
                 await message.add_reaction("<a:error:1168599839899144253>")
-        await message.remove_reaction("<a:loading:1168599537682755584>", message.guild.me)
+        await message.remove_reaction(
+            "<a:loading:1168599537682755584>", message.guild.me
+        )
 
 
 def setup(bot: commands.Bot) -> None:
