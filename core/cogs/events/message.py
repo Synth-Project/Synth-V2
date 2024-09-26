@@ -1,6 +1,7 @@
 import disnake
 from disnake.ext import commands
 import g4f
+import io
 
 from core.misc.embed import CustomEmbed
 
@@ -10,24 +11,28 @@ class MessageLogging(commands.Cog):
         super(MessageLogging, self).__init__()
 
         self.bot = bot
-        self.conversation_history = {}
+        # self.conversation_history = {}
 
     async def ask_gpt(self, prompt: str, user_id: int) -> str:
-        if user_id not in self.conversation_history:
-            self.conversation_history[user_id] = []
+        # if user_id not in self.conversation_history:
+        #     self.conversation_history[user_id] = []
 
-        self.conversation_history[user_id].append({"role": "user", "content": prompt})
-        messages = self.conversation_history[user_id]
+        # self.conversation_history[user_id].append({"role": "user", "content": prompt})
+        # messages = self.conversation_history[user_id]
         response = await g4f.ChatCompletion.create_async(
             model=g4f.models.gpt_4o_mini, messages={"role": "user", "content": prompt}
         )
         self.conversation_history[user_id].append(
             {"role": "assistant", "content": response}
         )
+        # self.conversation_history[user_id].append(
+        #     {"role": "assistant", "content": response}
+        # )
         return response
 
     def split_message(self, message: str, limit: int = 2000):
-        return [message[i : i + limit] for i in range(0, len(message), limit)]
+        return [message[i: i + limit] for i in range(0, len(message), limit)]
+    
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message) -> None:
