@@ -1,10 +1,9 @@
-import asyncio
 import datetime
 import sys
 from typing import Union
 
 import disnake
-from disnake.utils import MISSING
+from disnake import utils as disnake_utils
 from disnake.ext import commands, tasks
 from memory_profiler import memory_usage
 
@@ -13,17 +12,16 @@ from core.database.repositories.birthday import BirthdayRepository
 from core.database.repositories.reminder import ReminderRepository
 from core.misc.embed import CreatePaginator, custom_embed
 from core.misc.emoji import StandartEmoji
-from core.misc.util.misc import generate_time_options, shorten_text
+from core.misc.util.misc import generate_time_options, shorten_text, get_channel
 from core.misc.util.views.main import MainReminderView
 
 startup = datetime.datetime.now()
 
-
 class Utilities(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.Bot) -> None:
         super(Utilities, self).__init__()
         self.bot = bot
-        self.badges = {
+        self.badges: dict[int, str] = {
             1: "<:staff:1168622635228344403>",
             2: "<:partner:1168622631705137233>",
             4: "<:hypesquad:1168622629901586605>",
@@ -41,23 +39,11 @@ class Utilities(commands.Cog):
             133172312: "<:synthdev:1169689479452311582>",
         }
 
-    async def cog_load(self):
+    async def cog_load(self) -> None:
         self.check_reminds.start()
-
-    async def _get_message(self, channel_id: int):
-        """Fetch a channel and return whether it was successful."""
-        try:
-            channel = self.bot.get_channel(channel_id) or await self.bot.fetch_channel(
-                channel_id
-            )
-            return channel
-        except (
-            disnake.HTTPException,
-            disnake.NotFound,
-            disnake.Forbidden,
-            disnake.InvalidData,
-        ):
-            return False
+        
+    def cog_unload(self) -> None:
+        self.check_reminds.cancel()
 
     async def remind(self, remind: Remind):
         user_model = await ReminderRepository().get_one(reminds=remind)
@@ -65,7 +51,7 @@ class Utilities(commands.Cog):
         channel = (
             await self.bot.getch_user(user_model.id)
             if remind.type == ReminderType.DM
-            else await self._get_message(remind.channel_id)
+            else await get_channel(self.bot, remind.channel_id)
         )
 
         if not channel:
@@ -95,13 +81,13 @@ class Utilities(commands.Cog):
         self,
         interaction,
         silent: bool = commands.Param(
-            name="--silent", description="Silent mode", default=False
+            name="silent", description="Silent mode", default=False
         ),
     ):
         emoji_count = len(interaction.guild.emojis)
         list_of_bots = len([m for m in interaction.guild.members if m.bot])
         list_of_users = len([m for m in interaction.guild.members if not m.bot])
-        guild_created_at = disnake.utils.format_dt(
+        guild_created_at = disnake_utils.format_dt(
             interaction.guild.created_at, style="f"
         )
         text_channels = len(interaction.guild.text_channels)
@@ -167,7 +153,7 @@ class Utilities(commands.Cog):
         try:
             deleted_messages = await channel.purge(
                 limit=message_count,
-                check=lambda m: m.author == target_user if target_user else MISSING,
+                check=lambda m: m.author == target_user if target_user else disnake_utils.MISSING,
             )
         except (disnake.Forbidden, disnake.HTTPException):
             await interaction.send(
@@ -208,7 +194,7 @@ class Utilities(commands.Cog):
             name="Main",
             value=f"<:clock:1169690592465395722> Ping: `{round(self.bot.latency * 1000)}` ms\n"
             f"<:activities:1169690504393404456> RAM: `{round(memory_usage()[0], 2)}` mb\n"
-            f"<:icons_goodping:1169690518645649478> Uptime: {disnake.utils.format_dt(startup, style='F')}\n",
+            f"<:icons_goodping:1169690518645649478> Uptime: {disnake_utils.format_dt(startup, style='F')}\n",
             inline=False,
         )
         embed.add_field(
@@ -224,9 +210,8 @@ class Utilities(commands.Cog):
             value=f"<:calendar:1169690539168366712> Created at: `31/10/2023`\n"
             f"<:created_at:1169684592006017034> Bot version: `v2.0.0`\n"
             f"<:wrench:1169690509929889802> Python version: `{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}`\n"
-            f"<:owner:1169684595697004616> Owners: [Nixxoq](https://discord.com/users/999682446675161148), "
-            f"[Weever](https://discord.com/users/419159175009009675), "
-            f"[LazyDev](https://discord.com/users/1256533103967735811)",
+            f"<:owner:1169684595697004616> Developers: [Nixxoq](https://discord.com/users/999682446675161148), "
+            f"[Weever](https://discord.com/users/419159175009009675)",
             inline=False,
         )
 
@@ -251,7 +236,7 @@ class Utilities(commands.Cog):
             default=None,
         ),
         silent: bool = commands.Param(
-            name="--silent", description="Silent mode", default=False
+            name="silent", description="Silent mode", default=False
         ),
     ) -> None:
         user = user or interaction.user
@@ -261,7 +246,7 @@ class Utilities(commands.Cog):
         )
         value = (
             f"<:info:1169685342077583480> ID: `{user.id}`\n"
-            f"<:created_at:1169684592006017034> Created at: {disnake.utils.format_dt(user.created_at, style='f')}\n"
+            f"<:created_at:1169684592006017034> Created at: {disnake_utils.format_dt(user.created_at, style='f')}\n"
         )
 
         embed.set_thumbnail(
@@ -275,7 +260,7 @@ class Utilities(commands.Cog):
 
         if isinstance(user, disnake.Member):
             value += (
-                f"<:info:1169685342077583480> Joined at: {disnake.utils.format_dt(user.joined_at, style='f')}\n"
+                f"<:info:1169685342077583480> Joined at: {disnake_utils.format_dt(user.joined_at, style='f')}\n"
                 f"<:activities:1169690504393404456> Status: `{str(user.status).upper()}`\n"
                 f"<:globe:1169690501063123065> Is on mobile?: `{str(user.is_on_mobile()).upper()}`\n"
                 f"<:globe:1169690501063123065> Booster?: `{str(user.premium_since is not None).upper()}`\n"
@@ -362,7 +347,7 @@ class Utilities(commands.Cog):
             )
 
         reminders_list = [
-            f"- **{shorten_text(remind.text, 10)}**\n - Time: {disnake.utils.format_dt(remind.time, style='R')}\n - Type: {str(remind.type.value).capitalize()}"
+            f"- **{shorten_text(remind.text, 10)}**\n - Time: {disnake_utils.format_dt(remind.time, style='R')}\n - Type: {str(remind.type.value).capitalize()}"
             for remind in result
             if result
         ]
