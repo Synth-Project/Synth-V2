@@ -43,18 +43,18 @@ def shorten_text(text: str, max_length: int = 75) -> str:
     return text
 
 
-async def get_channel(bot: commands.Bot, channel_id: int | str) -> disnake.abc.GuildChannel | bool:
+async def get_channel(
+    bot: commands.Bot, channel_id: int | str
+) -> disnake.abc.GuildChannel | bool:
     """Fetch a channel and return whether it was successful."""
-    
+
     if isinstance(channel_id, str) and channel_id.isdigit():
         channel_id = int(channel_id)
     else:
         return False
-    
+
     try:
-        channel = bot.get_channel(channel_id) or await bot.fetch_channel(
-            channel_id
-        )
+        channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
         return channel
     except (
         disnake.HTTPException,

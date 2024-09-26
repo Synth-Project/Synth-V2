@@ -17,6 +17,7 @@ from core.misc.util.views.main import MainReminderView
 
 startup = datetime.datetime.now()
 
+
 class Utilities(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         super(Utilities, self).__init__()
@@ -41,7 +42,7 @@ class Utilities(commands.Cog):
 
     async def cog_load(self) -> None:
         self.check_reminds.start()
-        
+
     def cog_unload(self) -> None:
         self.check_reminds.cancel()
 
@@ -153,7 +154,9 @@ class Utilities(commands.Cog):
         try:
             deleted_messages = await channel.purge(
                 limit=message_count,
-                check=lambda m: m.author == target_user if target_user else disnake_utils.MISSING,
+                check=lambda m: (
+                    m.author == target_user if target_user else disnake_utils.MISSING
+                ),
             )
         except (disnake.Forbidden, disnake.HTTPException):
             await interaction.send(
