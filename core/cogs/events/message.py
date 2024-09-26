@@ -31,8 +31,7 @@ class MessageLogging(commands.Cog):
         return response
 
     def split_message(self, message: str, limit: int = 2000):
-        return [message[i: i + limit] for i in range(0, len(message), limit)]
-    
+        return [message[i : i + limit] for i in range(0, len(message), limit)]
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message) -> None:

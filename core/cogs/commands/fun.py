@@ -34,11 +34,11 @@ class FunCommands(commands.Cog):
     ) -> None:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    f"https://www.reddit.com/r/{subreddit}.json?limit=100",
-                    headers={
-                        "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-                    },
+                f"https://www.reddit.com/r/{subreddit}.json?limit=100",
+                headers={
+                    "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+                },
             ) as response:
                 if response.status != 200:
                     logger.info(f"An error occurred while getting data for {subreddit}")
@@ -49,9 +49,9 @@ class FunCommands(commands.Cog):
 
                 for post in posts:
                     if (
-                            (post := post["data"]["url"])
-                            and post.endswith(media_type)
-                            and post not in self.cache[subreddit]
+                        (post := post["data"]["url"])
+                        and post.endswith(media_type)
+                        and post not in self.cache[subreddit]
                     ):
                         self.cache[subreddit].append(post)
 
@@ -176,7 +176,7 @@ class FunCommands(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    f"http://tinyurl.com/api-create.php?url={url}"
+                f"http://tinyurl.com/api-create.php?url={url}"
             ) as response:
                 if response.status == 200:
                     short_url = await response.text()
@@ -199,10 +199,10 @@ class FunCommands(commands.Cog):
 
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    f"https://unshorten.me/api/v2/unshorten?url={url}",
-                    headers={
-                        "Authorization": "Token 9cdfabb415e6c1ae83f9e371b9b08f7e18a9f362"
-                    },
+                f"https://unshorten.me/api/v2/unshorten?url={url}",
+                headers={
+                    "Authorization": "Token 9cdfabb415e6c1ae83f9e371b9b08f7e18a9f362"
+                },
             ) as response:
                 if response.status == 200:
                     data = await response.json()
@@ -215,7 +215,9 @@ class FunCommands(commands.Cog):
 
         await interaction.response.send_message(embed=error_embed, ephemeral=True)
 
-    @fun.sub_command(name="tic-tac-toe", description="Play Tic-Tac-Toe with another player")
+    @fun.sub_command(
+        name="tic-tac-toe", description="Play Tic-Tac-Toe with another player"
+    )
     async def tic_tac_toe(
         self,
         interaction: disnake.ApplicationCommandInteraction,
@@ -269,7 +271,11 @@ class FunCommands(commands.Cog):
         pass
 
     @gpt.sub_command(name="channel", description="Setup GPT")
-    async def gpt_channel(self, interaction: disnake.ApplicationCommandInteraction, channel: disnake.TextChannel = None) -> None:
+    async def gpt_channel(
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        channel: disnake.TextChannel = None,
+    ) -> None:
         if not channel:
             channel = interaction.channel
 
@@ -279,7 +285,6 @@ class FunCommands(commands.Cog):
             ).get_embed()
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-
 
 
 def setup(bot: commands.Bot) -> None:
