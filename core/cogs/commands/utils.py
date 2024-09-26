@@ -4,6 +4,7 @@ import sys
 from typing import Union
 
 import disnake
+from disnake.utils import MISSING
 from disnake.ext import commands, tasks
 from memory_profiler import memory_usage
 
@@ -50,15 +51,22 @@ class Utilities(commands.Cog):
                 channel_id
             )
             return channel
-        except disnake.HTTPException:
+        except (
+            disnake.HTTPException,
+            disnake.NotFound,
+            disnake.Forbidden,
+            disnake.InvalidData,
+        ):
             return False
 
     async def remind(self, remind: Remind):
         user_model = await ReminderRepository().get_one(reminds=remind)
-        if remind.type == ReminderType.DM:
-            channel = await self.bot.getch_user(user_model.id)
-        else:
-            channel = await self._get_message(remind.channel_id)
+
+        channel = (
+            await self.bot.getch_user(user_model.id)
+            if remind.type == ReminderType.DM
+            else await self._get_message(remind.channel_id)
+        )
 
         if not channel:
             await Remind.delete(remind)
@@ -67,10 +75,9 @@ class Utilities(commands.Cog):
         embed = custom_embed("Reminder", remind.text)
 
         if isinstance(channel, (disnake.User, disnake.Member)):
-            try:
-                await channel.send(embed=embed)
-            except:
-                await Remind.delete(remind)
+            await channel.create_dm()
+            if channel.dm_channel:
+                await channel.dm_channel.send(embed=embed)
         else:
             await channel.send(content=f"<@{user_model.id}>", embed=embed)
 
@@ -78,8 +85,7 @@ class Utilities(commands.Cog):
 
     @tasks.loop(seconds=1)
     async def check_reminds(self):
-        result = await ReminderRepository().get_all_reminds()
-        if result:
+        if result := await ReminderRepository().get_all_reminds():
             for remind in result:
                 if remind.time <= datetime.datetime.now().timestamp():
                     await self.remind(remind)
@@ -161,7 +167,7 @@ class Utilities(commands.Cog):
         try:
             deleted_messages = await channel.purge(
                 limit=message_count,
-                check=lambda m: m.author == target_user if target_user else None,
+                check=lambda m: m.author == target_user if target_user else MISSING,
             )
         except (disnake.Forbidden, disnake.HTTPException):
             await interaction.send(
