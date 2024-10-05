@@ -8,3 +8,4 @@ git+https://github.com/Synth-discord-bot/Wavelink-Disnake
 git+https://github.com/Synth-discord-bot/disnake-ext-invitetracker
 memory_profiler
 pydantic-settings~=2.4.0
+babel
