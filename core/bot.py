@@ -8,6 +8,7 @@ from core.main.config.config import settings
 
 from core.database import init_database, close_database
 from core import logger, cog_paths
+from core.misc.translation import TranslationManager
 
 
 class Bot(commands.AutoShardedBot):
@@ -19,14 +20,12 @@ class Bot(commands.AutoShardedBot):
             reload=True,
             owner_ids=settings.OWNERS,
             test_guilds=settings.TEST_GUILDS,
-            command_prefix=">>"
+            command_prefix=">>",
         )
         self.debug = settings.DEBUG
         self.logger = logger.bind(source=self.__class__.__module__)
 
-    async def load_extensions(
-        self, bot: commands.Bot
-    ) -> None:
+    async def load_extensions(self, bot: commands.Bot) -> None:
         stats = {
             "commands": {"loaded": [], "total": 0},
             "events": {"loaded": [], "total": 0},
@@ -76,8 +75,8 @@ class Bot(commands.AutoShardedBot):
         total_all = stats["commands"]["total"] + stats["events"]["total"]
         self.logger.info(f"[%] {total_loaded}/{total_all} cogs loaded")
 
-    @staticmethod
-    async def on_connect() -> None:
+    async def on_connect(self) -> None:
+        self.translation = TranslationManager()
         await init_database()
 
     @staticmethod
