@@ -15,10 +15,16 @@ class PreviousAutocomplete(commands.Cog):
     async def previous_autocomplete(
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
+        if not interaction.author.voice:
+            return await interaction.response.autocomplete(
+                choices=["❌ | You are not in a voice channel"]
+            )
+
         player: wavelink.Player = (
             interaction.guild.voice_client
             or await interaction.author.voice.channel.connect(cls=wavelink.Player)
         )
+
         queue_ = (
             player.queue
             if not player.queue.is_empty
@@ -29,33 +35,24 @@ class PreviousAutocomplete(commands.Cog):
             )
         )
 
-        if not interaction.author.voice:
-            return await interaction.response.autocomplete(
-                choices=["❌ | You are not in a voice channel"]
-            )
-
+        history = queue_.history
         if not search_query:
             autocomplete_list = (
-                [
-                    shorten_text(f"{song.author} - {song.title}")
-                    for song in queue_.history[:25]
-                ]
-                if len(queue_.history) > 0
+                [shorten_text(f"{song.author} - {song.title}") for song in history[:25]]
+                if history
                 else ["❌ | There are no songs has been played before"]
             )
-            return await interaction.response.autocomplete(choices=autocomplete_list)
-
-        matching_songs = [
-            shorten_text(f"{song.author} - {song.title}")
-            for song in queue_.history
-            if search_query.lower() in song.title.lower()
-        ]
-
-        autocomplete_list = (
-            matching_songs[:25]
-            if matching_songs
-            else ["❌ | No song with that name in the queue"]
-        )
+        else:
+            matching_songs = [
+                shorten_text(f"{song.author} - {song.title}")
+                for song in history
+                if search_query.lower() in song.title.lower()
+            ]
+            autocomplete_list = (
+                matching_songs[:25]
+                if matching_songs
+                else ["❌ | No song with that name in the queue"]
+            )
 
         await interaction.response.autocomplete(choices=autocomplete_list)
 

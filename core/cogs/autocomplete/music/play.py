@@ -1,9 +1,6 @@
-from sys import platform
-
 import disnake
 from disnake.ext import commands
 import wavelink
-from wavelink import TrackSource
 
 from core.cogs.commands.music import Music
 from core.database.repositories.music import MusicRepository
@@ -36,65 +33,45 @@ class PlayAutocomplete(commands.Cog):
 
         if not search_query:
             result, _ = await MusicRepository().add_one(id=interaction.author.id)
-
             autocomplete_list = (
                 [
                     f"History: {shorten_text(song.name)}"
-                    for song in (await result.songs.all())
+                    for song in await result.songs.all()
                 ]
                 if result and await result.songs.all().count() > 0
                 else ["❌ | Try to add a song for the first time"]
             )
-
             return await interaction.response.autocomplete(choices=autocomplete_list)
 
-        if not search_query.startswith("https"):
-            search_results = await wavelink.Playable.search(
-                search_query, source="spsearch"
-            )
+        source = next(
+            (
+                source
+                for source, pattern in patterns.items()
+                if re.match(pattern, search_query)
+            ),
+            "spsearch",
+        )
+        try:
+            search_results = await wavelink.Playable.search(search_query, source=source)
             autocomplete_options = [
-                f"Found: {shorten_text(f'{track.title} — {track.author}')} | {track.source}"
+                (
+                    f"Found: {shorten_text(f'{track.title} — {track.author}')} | {track.source}"
+                    if source == "spsearch"
+                    else f"Found: {shorten_text(f'{track.title} — {track.author}')}"
+                )
                 for index, track in enumerate(search_results)
                 if index < 25
             ]
-
             if not autocomplete_options:
                 autocomplete_options = [
                     "❌ | Could not find any tracks with that query"
                 ]
-
-            await interaction.response.autocomplete(choices=autocomplete_options)
-
-        for source, pattern in patterns.items():
-            if re.match(pattern, search_query):
-                try:
-                    search_results = await wavelink.Playable.search(
-                        search_query, source=source
-                    )
-                    if search_results:
-                        autocomplete_options = [
-                            f"Found: {shorten_text(f'{track.title} — {track.author}')}"
-                            for index, track in enumerate(search_results)
-                            if index < 25
-                        ]
-
-                        if not autocomplete_options:
-                            autocomplete_options = [
-                                "❌ | Could not find any tracks with that query"
-                            ]
-
-                        await interaction.response.autocomplete(
-                            choices=autocomplete_options
-                        )
-                except Exception as e:
-                    print(f"Error fetching track: {e}")  # Add logging here
-                    return await interaction.response.autocomplete(
-                        choices=["❌ | Something went wrong with your request"]
-                    )
-
-        return await interaction.response.autocomplete(
-            choices=["❌ | Unknown url source"]
-        )
+            return await interaction.response.autocomplete(choices=autocomplete_options)
+        except Exception as e:
+            print(f"Error fetching track: {e}")
+            return await interaction.response.autocomplete(
+                choices=["❌ | Something went wrong with your request"]
+            )
 
 
 def setup(bot: commands.Bot):
