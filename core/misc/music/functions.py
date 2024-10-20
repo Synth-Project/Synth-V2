@@ -119,16 +119,18 @@ class MusicFunctions:
 
             track = player.queue.get()
 
-            setattr(player, "message", message)
+            # setattr(player, "message", message)
             player.inactive_timeout = 300
+            player.main_message = message
 
             await player.play(track, add_history=False)
+            print("play?")
 
         else:
             await interaction.edit_original_response(content=None, embed=embed)
             await interaction.delete_original_response(delay=5)
 
-        await player.message.edit(  # type: ignore
+        await player.main_message.edit(
             view=NavigationPanel(
                 bot,
                 (await interaction.original_response()).id,
@@ -157,7 +159,7 @@ class MusicFunctions:
         previous: bool = False,
     ) -> None:
         embed = CustomEmbed(
-            author=interaction.user,  # type: ignore
+            author=interaction.user,
             title="Track skipped",
             description=(
                 f"Skipped the **[{player.current.title}]({str(player.current.uri)})**.\n"
@@ -167,13 +169,13 @@ class MusicFunctions:
         ).get_embed()
 
         await interaction.delete_original_response()
-        await player.message.reply(embed=embed)  # type: ignore
+        await player.main_message.reply(embed=embed)
         await player.skip()
 
         if previous:
             player.queue.history.remove(player.current)
 
-            await player.message.edit(  # type: ignore
+            await player.main_message.edit(
                 view=NavigationPanel(
                     bot,
                     (await interaction.original_response()).id,
@@ -185,11 +187,11 @@ class MusicFunctions:
 
     @staticmethod
     async def set_volume(player: wavelink.Player, volume: int) -> None:
-        embed: disnake.Embed = player.message.embeds[0]  # type: ignore
+        embed: disnake.Embed = player.main_message.embeds[0]
         embed.set_footer(
             text=f"Volume: {volume}% // Synth Music 2024", icon_url=bot.get_avatar()
         )
-        await player.message.edit(embed=embed)  # type: ignore
+        await player.main_message.edit(embed=embed)
         await player.set_volume(min(100, max(1, volume)))
 
     @staticmethod
@@ -205,7 +207,7 @@ class MusicFunctions:
             )
 
         await player.disconnect()
-        await player.message.edit(  # type: ignore
+        await player.main_message.edit(
             embed=CustomEmbed.error_embed(
                 author=interaction.user,
                 title=f"<:disconnect:1279835624257486868> Disconnected from voice channel",
@@ -311,4 +313,4 @@ class MusicFunctions:
 
         await interaction.send(embed=embed, ephemeral=True)
 
-        await player.message.edit(embed=main_embed)  # type: ignore
+        await player.main_message.edit(embed=main_embed)

@@ -1,7 +1,5 @@
 import importlib
-from datetime import timedelta
 
-import disnake
 import wavelink
 from disnake.ext import commands
 
@@ -24,7 +22,7 @@ class MusicEvent(commands.Cog):
         )
 
     async def connect_nodes(self) -> None:
-        nodes = [wavelink.Node(uri="http://localhost:2333", password="weever_gay")]
+        nodes = [wavelink.Node(uri="http://0.0.0.0:2333", password="weever_gay")]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
 
     @commands.Cog.listener()
@@ -35,7 +33,10 @@ class MusicEvent(commands.Cog):
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
         original = payload.original
         track = payload.track
-        message = payload.player.message  # type: ignore
+        message = payload.player.main_message
+        # message = payload.player.message  # type: ignore
+
+        print("event")
 
         if (
             payload.player.queue.mode == wavelink.QueueMode.loop
@@ -96,8 +97,8 @@ class MusicEvent(commands.Cog):
             ),
         ).get_embed()
 
-        await player.message.reply(embed=embed)  # type: ignore
-        await player.message.delete()  # type: ignore
+        await player.main_message.reply(embed=embed)
+        await player.main_message.delete()
 
 
 def setup(bot: commands.Bot) -> None:

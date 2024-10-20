@@ -2,8 +2,8 @@ lavalink:
   plugins:
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.2.0"
       repository: "https://maven.topi.wtf/releases"
-#    - dependency: "dev.lavalink.youtube:youtube-plugin:1.7.2"
-    #- dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.8.3"
+    # - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
       # snapshot: false # Set to true if you want to use a snapshot version.
     - dependency: "dev.schlaubi.lyrics:lavalink:2.5.0"
   server:
@@ -55,10 +55,21 @@ plugins:
       youtube: false # Enable YouTube search source (https://github.com/topi314/LavaSearch)
     spotify:
       clientId: "e64edaa83b1441219e0bfc9e63c0acda" #Enter client id here
-      clientSecret: "e6c2402bf0b04695a0027febc120477a" #Enter client secret here
+      clientSecret: "8ad9bb4d28e645fe8f66485cb2175771" #Enter client secret here
       countryCode: "US" # the country code you want to use for filtering the artists top tracks. See https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
       playlistLoadLimit: 6 # The number of pages at 100 tracks each
       albumLoadLimit: 6 # The number of pages at 50 tracks each
+  youtube:
+    enabled: false
+    # allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    clients:
+      - MUSIC
+      - ANDROID_TESTSUITE
+      - WEB
+      - ANDROID_MUSIC
+      - TVHTML5EMBEDDED
 
 server: # REST and WS server
   port: 2333

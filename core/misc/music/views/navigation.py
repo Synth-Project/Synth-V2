@@ -109,9 +109,9 @@ class NavigationDropdown(disnake.ui.Select):
 
         if clear_view:
             (
-                await self.player.message.edit(embed=embed, view=None)  # type: ignore
+                await self.player.main_message.edit(embed=embed, view=None)
                 if embed
-                else await self.player.message.edit(view=None)  # type: ignore
+                else await self.player.main_message.edit(view=None)
             )
         else:
             self.options = [
@@ -125,9 +125,9 @@ class NavigationDropdown(disnake.ui.Select):
             ]
 
             (
-                await self.player.message.edit(embed=embed, view=self.view)  # type: ignore
+                await self.player.main_message.edit(embed=embed, view=self.view)
                 if embed
-                else await self.player.message.edit(view=self.view)  # type: ignore
+                else await self.player.main_message.edit(view=self.view)
             )
 
     @staticmethod
@@ -214,7 +214,7 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
 
-        embed = player.message.embeds[0]  # type: ignore
+        embed = player.main_message.embeds[0]
         embed.set_footer(text=f"Volume: {volume}% // Synth Music 2024")
         await self._edit_view(embed=embed)
 
