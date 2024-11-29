@@ -22,7 +22,13 @@ class MusicEvent(commands.Cog):
         )
 
     async def connect_nodes(self) -> None:
-        nodes = [wavelink.Node(uri="http://0.0.0.0:2333", password="weever_gay")]
+        nodes = [
+            wavelink.Node(uri="https://lavalink.alfari.id", password="catfein"),
+            wavelink.Node(
+                uri="https://lava-v4.ajieblogs.eu.org",
+                password="https://dsc.gg/ajidevserver",
+            ),
+        ]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
 
     @commands.Cog.listener()

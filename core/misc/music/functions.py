@@ -123,7 +123,8 @@ class MusicFunctions:
             player.inactive_timeout = 300
             player.main_message = message
 
-            await player.play(track, add_history=False)
+            await player.play(track, add_history=True)
+            # await player.play(track, add_history=False)
             print("play?")
 
         else:
