@@ -25,8 +25,8 @@ class MusicEvent(commands.Cog):
         nodes = [
             # wavelink.Node(uri="https://lavalink.alfari.id", password="catfein"),
             # wavelink.Node(
-                # uri="https://lava-v4.ajieblogs.eu.org",
-                # password="https://dsc.gg/ajidevserver",
+            # uri="https://lava-v4.ajieblogs.eu.org",
+            # password="https://dsc.gg/ajidevserver",
             # ),
             wavelink.Node(uri="http://localhost:2333", password="weever_gay"),
         ]
