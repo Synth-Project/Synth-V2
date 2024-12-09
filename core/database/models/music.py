@@ -5,7 +5,7 @@ class Song(Model):
     name = fields.CharField(max_length=256)
     url = fields.CharField(max_length=512)
 
-    class Meta:
+    class Meta:  # type: ignore
         table = "songs"
         table_description = "Song Model"
 

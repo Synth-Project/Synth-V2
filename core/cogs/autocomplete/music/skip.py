@@ -16,8 +16,8 @@ class SkipAutocomplete(commands.Cog):
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client  # type: ignore
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)  # type: ignore
         )
         queue_ = (
             player.queue
@@ -29,20 +29,20 @@ class SkipAutocomplete(commands.Cog):
             )
         )
 
-        if not interaction.author.voice:
+        if not interaction.author.voice:  # type: ignore
             return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
             )
 
         if not search_query:
-            autocomplete_list = (
+            autocomplete_list: list = (
                 [shorten_text(f"{song.author} - {song.title}") for song in queue_[:25]]
                 if len(queue_) > 0
                 else ["❌ | There are no songs in the queue"]
             )
             return await interaction.response.autocomplete(choices=autocomplete_list)
 
-        matching_songs = [
+        matching_songs: list = [
             shorten_text(f"{song.author} - {song.title}")
             for song in queue_
             if search_query.lower() in song.title.lower()

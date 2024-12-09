@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Optional, cast
 
 import disnake
 import wavelink
@@ -35,10 +35,10 @@ class Music(commands.Cog):
     ) -> None:
 
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client  # type: ignore
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)  # type: ignore
         )
-        await interaction.me.edit(deafen=True)
+        await interaction.me.edit(deafen=True)  # type: ignore | it exists
 
         await interaction.response.defer(ephemeral=True)
 
@@ -54,10 +54,14 @@ class Music(commands.Cog):
 
             if tag.lower().startswith("history:"):
                 query = (
-                    await MusicRepository().find_song(
-                        author_id=interaction.author.id, query=query
+                    result.url
+                    if (
+                        result := await self.repository.find_song(
+                            author_id=interaction.author.id, query=query
+                        )
                     )
-                ).url
+                    else ""
+                )
 
         tracks: wavelink.Search = await wavelink.Playable.search(
             query, source="spsearch"
@@ -111,10 +115,10 @@ class Music(commands.Cog):
 
     @player.sub_command(name="skip", description="Skip the current track")
     async def skip(
-        self, interaction: disnake.ApplicationCommandInteraction, track: str = None
+        self, interaction: disnake.ApplicationCommandInteraction, track: Optional[str] = None
     ):
         await interaction.response.defer(ephemeral=True)
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
         error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
 
         queue = (
@@ -133,8 +137,8 @@ class Music(commands.Cog):
         if track:
             for index, song in enumerate(queue):
                 if track.lower() in f"{song.author} - {song.title}".lower():
-                    track = player.queue[index]
-                    player.queue.put_at(0, track)
+                    track = player.queue[index]  # type: ignore
+                    player.queue.put_at(0, track)  # type: ignore
                     break
             else:
                 error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
@@ -144,11 +148,11 @@ class Music(commands.Cog):
 
     @player.sub_command(name="previous", description="Switch to the previous track(s)")
     async def previous(
-        self, interaction: disnake.ApplicationCommandInteraction, track: str = None
+        self, interaction: disnake.ApplicationCommandInteraction, track: Optional[str] = None
     ):
         await interaction.response.defer(ephemeral=True)
 
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
         error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
 
         queue = (
@@ -164,16 +168,16 @@ class Music(commands.Cog):
         await self.errors.check_basic(interaction)
 
         if not track:
-            previous_track = queue.history.get()
+            previous_track = queue.history.get()  # type: ignore
             queue.put_at(0, previous_track)
-            queue.put_at(1, player.current)
+            queue.put_at(1, player.current)  # type: ignore
 
         else:
-            for index, song in enumerate(queue.history):
+            for index, song in enumerate(queue.history):  # type: ignore
                 if track.lower() in f"{song.author} - {song.title}".lower():
-                    track = queue.history[index]
-                    queue.put_at(0, track)
-                    queue.put_at(1, player.current)
+                    track = queue.history[index]  # type: ignore
+                    queue.put_at(0, track)  # type: ignore
+                    queue.put_at(1, player.current)  # type: ignore
                     break
             else:
                 error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
@@ -217,9 +221,9 @@ class Music(commands.Cog):
 
     @player.sub_command(name="nowplaying", description="See the current playing track")
     async def nowplaying(self, interaction: disnake.ApplicationCommandInteraction):
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
-        if not player:
+        if not interaction.guild.voice_client:  # type: ignore
             embed = CustomEmbed.error_embed(
                 author=interaction.author,
                 title="<:crossmark:1282338837456224394> | I am not in a voice channel!",
@@ -231,8 +235,8 @@ class Music(commands.Cog):
             )
 
         elif (
-            not interaction.author.voice
-            or interaction.author.voice.channel != player.channel
+            not interaction.author.voice # type: ignore
+            or interaction.author.voice.channel != player.channel # type: ignore
         ):
             embed = CustomEmbed.error_embed(
                 author=interaction.author,

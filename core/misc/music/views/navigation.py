@@ -24,7 +24,7 @@ class NavigationDropdown(disnake.ui.Select):
         player: Optional[wavelink.Player],
         interaction: Union[disnake.Interaction, disnake.Message],
     ) -> None:
-        self.interaction: disnake.Interaction = interaction
+        self.interaction: Union[disnake.Interaction, disnake.Message] = interaction
         self.bot = bot
         self.player = player
         self.functions = getattr(
@@ -32,12 +32,12 @@ class NavigationDropdown(disnake.ui.Select):
         )
 
         self.queue_ = (
-            player.queue
-            if not player.queue.is_empty
+            player.queue  # type: ignore
+            if not player.queue.is_empty  # type: ignore
             else (
-                player.auto_queue
-                if player.autoplay == wavelink.AutoPlayMode.enabled
-                else player.queue
+                player.auto_queue  # type: ignore
+                if player.autoplay == wavelink.AutoPlayMode.enabled  # type: ignore
+                else player.queue  # type: ignore
             )
         )
 
@@ -109,9 +109,9 @@ class NavigationDropdown(disnake.ui.Select):
 
         if clear_view:
             (
-                await self.player.main_message.edit(embed=embed, view=None)
+                await self.player.main_message.edit(embed=embed, view=None)  # type: ignore
                 if embed
-                else await self.player.main_message.edit(view=None)
+                else await self.player.main_message.edit(view=None)  # type: ignore
             )
         else:
             self.options = [
@@ -125,13 +125,13 @@ class NavigationDropdown(disnake.ui.Select):
             ]
 
             (
-                await self.player.main_message.edit(embed=embed, view=self.view)
+                await self.player.main_message.edit(embed=embed, view=self.view)  # type: ignore
                 if embed
-                else await self.player.main_message.edit(view=self.view)
+                else await self.player.main_message.edit(view=self.view)  # type: ignore
             )
 
     @staticmethod
-    async def _get_lyrics(node: wavelink.Node, guild_id: int) -> str:
+    async def _get_lyrics(node: wavelink.Node, guild_id: int) -> Optional[str]:
         """
         Get the lyrics of the player
 
@@ -200,7 +200,7 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
         response_modal = await self._send_modal(
             interaction, "Enter the volume", "volume", "New volume:"
         )
@@ -214,7 +214,7 @@ class NavigationDropdown(disnake.ui.Select):
             ephemeral=True,
         )
 
-        embed = player.main_message.embeds[0]
+        embed = player.main_message.embeds[0]  # type: ignore
         embed.set_footer(text=f"Volume: {volume}% // Synth Music 2024")
         await self._edit_view(embed=embed)
 
@@ -233,9 +233,9 @@ class NavigationDropdown(disnake.ui.Select):
         Returns: None
         """
         if not hasattr(player, "previous_queue"):
-            player.previous_queue = player.queue.copy()
+            player.previous_queue = player.queue.copy()  # type: ignore
         if not hasattr(player, "previous_auto_queue"):
-            player.previous_auto_queue = player.auto_queue.copy()
+            player.previous_auto_queue = player.auto_queue.copy()  # type: ignore
 
         (player.auto_queue if player.queue.is_empty else player.queue).shuffle()
         next_song = (
@@ -244,14 +244,17 @@ class NavigationDropdown(disnake.ui.Select):
 
         embed = CustomEmbed(
             title="<:shuffle:1279835431315308605> Shuffled the queue",
-            description=f"Current song: **{player.current.title}**\nNext song: **{next_song.title}**",
+            description=f"Current song: **{player.current.title}**\nNext song: **{next_song.title}**",  # type: ignore
             color=BasicColors.SUCCESS,
         ).get_embed()
         await interaction.response.send_message(
             embed=embed,
             ephemeral=True,
             view=ShuffleView(
-                self.bot, interaction, player.previous_queue, player.previous_auto_queue
+                self.bot,
+                interaction,
+                player.previous_queue,  # type: ignore
+                player.previous_auto_queue,  # type: ignore
             ),
         )
 
@@ -327,17 +330,17 @@ class NavigationDropdown(disnake.ui.Select):
         Returns: None
         """
 
-        player = cast(wavelink.Player, interaction.guild.voice_client)
-        lyrics = await self._get_lyrics(player.node, player.guild.id)
+        player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
+        lyrics = await self._get_lyrics(player.node, player.guild.id)  # type: ignore
 
         embed = CustomEmbed(
             author=interaction.user,
             title=(
-                f"Lyrics for {player.current.title}"
+                f"Lyrics for {player.current.title}"  # type: ignore
                 if lyrics
-                else f"<:crossmark:1282338837456224394> Could not find lyrics for {player.current.title}"
+                else f"<:crossmark:1282338837456224394> Could not find lyrics for {player.current.title}"  # type: ignore
             ),
-            description=f"```{lyrics}```" if lyrics else None,
+            description=f"```{lyrics}```" if lyrics else "",
             embed_type="default" if lyrics else "error",
         ).get_embed()
 
@@ -370,7 +373,7 @@ class NavigationDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
         option_actions = {
             "volume": self.volume_change,

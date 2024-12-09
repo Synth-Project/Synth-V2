@@ -4,27 +4,20 @@ from core.database.repositories.base import BaseRepository
 
 
 class MusicRepository(BaseRepository):
-    def __init__(self) -> None:
-        super().__init__()
-
-    @staticmethod
-    async def get_one(**kwargs) -> UserModel | None:
+    async def get_one(self, **kwargs) -> UserModel | None:
         return await UserModel.filter(**kwargs).first().prefetch_related("songs")
 
-    @staticmethod
-    async def get_all(**kwargs) -> list[UserModel]:
+    async def get_all(self, **kwargs) -> list[UserModel]:
         return await UserModel.filter(**kwargs).all().prefetch_related("songs")
 
-    @staticmethod
-    async def add_one(**kwargs) -> tuple[UserModel, bool]:
+    async def add_one(self, **kwargs) -> tuple[UserModel, bool]:
         model, is_created = await UserModel.get_or_create(**kwargs)
         if is_created:
             await model.fetch_related("songs")
         return model, is_created
 
-    @staticmethod
-    async def remove_one(**kwargs):
-        return await UserModel.filter(**kwargs).delete()
+    async def remove_one(self, **kwargs) -> None:
+        await UserModel.filter(**kwargs).delete()
 
     async def find_song(self, author_id: int, query: str) -> Song | None:
         user = await self.get_one(id=author_id)
@@ -46,4 +39,4 @@ class MusicRepository(BaseRepository):
             )
 
         result = await self.get_one(id=author_id)
-        return await result.songs.filter(url=track["url"]).first()
+        return await result.songs.filter(url=track["url"]).first()  # type: ignore

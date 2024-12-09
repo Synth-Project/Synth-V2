@@ -40,40 +40,40 @@ class MusicEvent(commands.Cog):
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
         original = payload.original
         track = payload.track
-        message = payload.player.main_message
+        message = payload.player.main_message  # type: ignore
         # message = payload.player.message  # type: ignore
 
         print("event")
 
         if (
-            payload.player.queue.mode == wavelink.QueueMode.loop
-            and original != payload.player.current
+            payload.player.queue.mode == wavelink.QueueMode.loop  # type: ignore
+            and original != payload.player.current  # type: ignore
         ):
-            await payload.player.play(payload.original, add_history=False)
+            await payload.player.play(payload.original, add_history=False)  # type: ignore
 
         embed = await self.functions.music_embed(message, track)
 
         embed.set_image(url=track.artwork if track.artwork else None)
         queue = (
-            payload.player.queue
-            if not payload.player.queue.is_empty
+            payload.player.queue  # type: ignore
+            if not payload.player.queue.is_empty  # type: ignore
             else (
-                payload.player.auto_queue
-                if payload.player.autoplay == wavelink.AutoPlayMode.enabled
-                else payload.player.queue
+                payload.player.auto_queue  # type: ignore
+                if payload.player.autoplay == wavelink.AutoPlayMode.enabled  # type: ignore
+                else payload.player.queue  # type: ignore
             )
         )
-        history_exists = queue.history.count > 0
+        history_exists = queue.history.count > 0  # type: ignore
 
         await message.edit(  # type: ignore
             content=None,
             embed=embed,
             view=NavigationPanel(
-                self.bot,
-                message.id,
+                self.bot,  # type: ignore
+                message.id,  # type: ignore
                 history_exists=history_exists,
-                player=payload.player,
-                interaction=message,
+                player=payload.player,  # type: ignore
+                interaction=message,  # type: ignore
             ),
         )
 
@@ -90,7 +90,7 @@ class MusicEvent(commands.Cog):
             await player.play(new_track, add_history=False)
         elif not player.current and not player.playing:
             old_track = payload.original
-            player.queue.history.put_at(0, old_track)
+            player.queue.history.put_at(0, old_track)  # type: ignore
 
     @commands.Cog.listener()
     async def on_wavelink_inactive_player(self, player: wavelink.Player) -> None:
@@ -100,12 +100,12 @@ class MusicEvent(commands.Cog):
             title="<:disconnect:1279835624257486868> Disconnected",
             description=(
                 f"I've left the {player.channel.mention} due to inactivity. \n"
-                f"If you will need me again, use the {mention_slash(player.guild, 'player play')} command."
+                f"If you will need me again, use the {mention_slash(player.guild, 'player play')} command."  # type: ignore
             ),
         ).get_embed()
 
-        await player.main_message.reply(embed=embed)
-        await player.main_message.delete()
+        await player.main_message.reply(embed=embed)  # type: ignore
+        await player.main_message.delete()  # type: ignore
 
 
 def setup(bot: commands.Bot) -> None:

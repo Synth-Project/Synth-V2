@@ -1,3 +1,4 @@
+from typing import Optional
 import disnake
 import wavelink
 from disnake.ext import commands
@@ -124,7 +125,7 @@ class EffectsDropdown(disnake.ui.Select):
         await interaction.response.edit_message(view=self.view)
 
     def update_option_emojis(
-        self, selected_option: str = None, reset: bool = False
+        self, selected_option: Optional[str] = None, reset: bool = False
     ) -> None:
         for option in self.options:
             if reset and option.value == "reset":

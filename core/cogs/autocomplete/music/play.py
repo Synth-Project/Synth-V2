@@ -26,14 +26,14 @@ class PlayAutocomplete(commands.Cog):
     async def play_autocomplete(
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
-        if not interaction.author.voice:
+        if not interaction.author.voice:  # type: ignore
             return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
             )
 
         if not search_query:
             result, _ = await MusicRepository().add_one(id=interaction.author.id)
-            autocomplete_list = (
+            autocomplete_list: list = (
                 [
                     f"History: {shorten_text(song.name)}"
                     for song in await result.songs.all()
@@ -53,7 +53,7 @@ class PlayAutocomplete(commands.Cog):
         )
         try:
             search_results = await wavelink.Playable.search(search_query, source=source)
-            autocomplete_options = [
+            autocomplete_options: list = [
                 (
                     f"Found: {shorten_text(f'{track.title} — {track.author}')} | {track.source}"
                     if source == "spsearch"
@@ -61,11 +61,7 @@ class PlayAutocomplete(commands.Cog):
                 )
                 for index, track in enumerate(search_results)
                 if index < 25
-            ]
-            if not autocomplete_options:
-                autocomplete_options = [
-                    "❌ | Could not find any tracks with that query"
-                ]
+            ] or ["❌ | Could not find any tracks with that query"]
             return await interaction.response.autocomplete(choices=autocomplete_options)
         except Exception as e:
             print(f"Error fetching track: {e}")
