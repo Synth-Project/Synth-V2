@@ -115,7 +115,9 @@ class Music(commands.Cog):
 
     @player.sub_command(name="skip", description="Skip the current track")
     async def skip(
-        self, interaction: disnake.ApplicationCommandInteraction, track: Optional[str] = None
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        track: Optional[str] = None,
     ):
         await interaction.response.defer(ephemeral=True)
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
@@ -148,7 +150,9 @@ class Music(commands.Cog):
 
     @player.sub_command(name="previous", description="Switch to the previous track(s)")
     async def previous(
-        self, interaction: disnake.ApplicationCommandInteraction, track: Optional[str] = None
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        track: Optional[str] = None,
     ):
         await interaction.response.defer(ephemeral=True)
 
@@ -235,8 +239,8 @@ class Music(commands.Cog):
             )
 
         elif (
-            not interaction.author.voice # type: ignore
-            or interaction.author.voice.channel != player.channel # type: ignore
+            not interaction.author.voice  # type: ignore
+            or interaction.author.voice.channel != player.channel  # type: ignore
         ):
             embed = CustomEmbed.error_embed(
                 author=interaction.author,

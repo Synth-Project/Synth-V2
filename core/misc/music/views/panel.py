@@ -196,7 +196,9 @@ class NavigationPanel(disnake.ui.View):
         voice_channel_id = interaction.guild.voice_client.channel.id  # type: ignore
         voice_channel = interaction.guild.get_channel_or_thread(  # type: ignore
             voice_channel_id
-        ) or await interaction.guild.fetch_channel(voice_channel_id)  # type: ignore
+        ) or await interaction.guild.fetch_channel(
+            voice_channel_id
+        )  # type: ignore
 
         if not (
             interaction.author.voice  # type: ignore
