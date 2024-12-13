@@ -113,7 +113,8 @@ class CustomEmbed:
 
     @classmethod
     def error_embed(
-        cls, title: str = None,
+        cls,
+        title: str = None,
         description: str = "",
         image: str = None,
         thumbnail: str = None,
