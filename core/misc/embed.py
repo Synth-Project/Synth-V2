@@ -85,7 +85,7 @@ class CustomEmbed:
             color = color.value
 
         embed = disnake.Embed(title=title, description=description, color=color)
-        embed.set_footer(text=footer_text, icon_url=bot.get_avatar())
+        embed.set_footer(text=footer_text)#, icon_url=bot.get_avatar())
 
         if author:
             embed.set_author(
