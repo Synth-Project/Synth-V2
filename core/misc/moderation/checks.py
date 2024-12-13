@@ -40,8 +40,10 @@ def check_self_action(
         An error embed if the check fails, otherwise None.
     """
     if member == interaction.author:
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = "You can't perform this action on yourself."
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+            description="You can't perform this action on yourself.",
+        )
         return error_embed.get_embed()
 
     return None
@@ -64,8 +66,10 @@ def check_bot_action(
         An error embed if the check fails, otherwise None.
     """
     if check_bot and member.bot:
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = "You can't perform this action on a bot."
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+            description="You can't perform this action on a bot.",
+        )
         return error_embed.get_embed()
     return None
 
@@ -84,11 +88,12 @@ def check_role_hierarchy(
         An error embed if the user's role is not higher, otherwise None.
     """
     if member.top_role >= interaction.author.top_role:
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = (
-            f"Your role is not higher than {member.mention}'s role."
-        )
-        return error_embed.get_embed()
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+            description=f"Your role is not higher than {member.mention}'s role.",
+        ).get_embed()
+
+        return error_embed
     return None
 
 
@@ -107,11 +112,12 @@ def check_bot_role_hierarchy(
     """
     bot_member = interaction.guild.me
     if member.top_role >= bot_member.top_role and not interaction.author.guild.owner:
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = (
-            f"{member.mention}'s role is higher than mine. I can't perform this action."
-        )
-        return error_embed.get_embed()
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+            description=f"{member.mention}'s role is higher than mine. I can't perform this action.",
+        ).get_embed()
+
+        return error_embed
     return None
 
 
@@ -128,14 +134,12 @@ def check_mute_time(
     Returns:
         An error embed if the mute time is invalid, otherwise None.
     """
-    if str_time > 2419200:  # 28 days
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = "Mute time cannot be more than 28 days."
-        return error_embed.get_embed()
-    if str_time < 60:  # 1 minute
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = "Mute time cannot be less than 1 minute."
-        return error_embed.get_embed()
+    if not 60 <= str_time <= 2419200:
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author,
+            description="Mute time must be between 1 minute and 28 days.",
+        ).get_embed()
+        return error_embed
     return None
 
 
@@ -165,9 +169,10 @@ async def common_checks(
     resolved_member = await resolve_member(interaction, member, for_unban)
 
     if not resolved_member and not for_unban:
-        error_embed = CustomEmbed.error_embed(author=interaction.author)
-        error_embed.description = "Member not found in the guild."
-        return False, error_embed.get_embed()
+        error_embed = CustomEmbed.error_embed(
+            author=interaction.author, description="Member not found in the guild."
+        ).get_embed()
+        return False, error_embed
 
     checks = [
         check_self_action(interaction, resolved_member),
