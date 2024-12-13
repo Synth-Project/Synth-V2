@@ -43,7 +43,7 @@ def check_self_action(
         error_embed = CustomEmbed.error_embed(author=interaction.author)
         error_embed.description = "You can't perform this action on yourself."
         return error_embed.get_embed()
-    
+
     return None
 
 
