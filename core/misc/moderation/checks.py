@@ -1,189 +1,118 @@
 import disnake
-
-from typing import Union, Tuple, Optional
+from disnake.ext.commands import MemberConverter, UserConverter, CommandError
+from functools import wraps
+from typing import Union, Optional, Callable
 
 from core.misc.embed import CustomEmbed
 
 
-async def resolve_member(
-    interaction: disnake.ApplicationCommandInteraction,
-    member: Union[int, str, disnake.Member, disnake.User],
-    for_unban: bool,
-) -> Optional[disnake.Member]:
+class ModerationResolver:
+    def __init__(self, interaction: disnake.ApplicationCommandInteraction):
+        self.interaction = interaction
+        self.member_converter = MemberConverter()
+        self.user_converter = UserConverter()
+
+    async def resolve(
+        self,
+        member: Union[int, str, disnake.Member, disnake.User],
+        *,
+        for_unban: bool = False,
+        check_bot: bool = False,
+    ) -> Optional[Union[disnake.Member, disnake.User]]:
+        resolved_member = await self._resolve_member(member, for_unban)
+        if not resolved_member:
+            return None
+
+        try:
+            await self._validate_member(resolved_member, for_unban, check_bot)
+        except CommandError as e:
+            error_embed = CustomEmbed.error_embed(
+                description=str(e), author=self.interaction.author
+            )
+            await self.interaction.response.send_message(
+                embed=error_embed.get_embed(), ephemeral=True
+            )
+            return None
+
+        return resolved_member
+
+    async def _resolve_member(
+        self, member: Union[int, str, disnake.Member, disnake.User], for_unban: bool
+    ) -> Optional[Union[disnake.Member, disnake.User]]:
+        if isinstance(member, disnake.Member):
+            return member
+        if isinstance(member, disnake.User):
+            return self.interaction.guild.get_member(member.id) or member
+
+        try:
+            return await self.member_converter.convert(self.interaction, str(member))
+        except CommandError:
+            if for_unban:
+                try:
+                    return await self.user_converter.convert(
+                        self.interaction, str(member)
+                    )
+                except CommandError:
+                    pass
+        return None
+
+    async def _validate_member(
+        self,
+        member: Union[disnake.Member, disnake.User],
+        for_unban: bool = False,
+        check_bot: bool = False,
+    ) -> None:
+        if member.id == self.interaction.author.id:
+            raise CommandError("You can't perform this action on yourself")
+
+        if check_bot and getattr(member, "bot", False):
+            raise CommandError("You can't perform this action on a bot")
+
+        if not for_unban and isinstance(member, disnake.Member or disnake.User):
+            if member.top_role >= self.interaction.author.top_role:
+                raise CommandError(
+                    f"Your role is not higher than {member.mention}'s role"
+                )
+
+            if (
+                member.top_role >= self.interaction.guild.me.top_role
+                and self.interaction.author.id != self.interaction.guild.owner_id
+            ):
+                raise CommandError(f"{member.mention}'s role is higher than mine")
+
+
+def resolve_member(*, for_unban: bool = False, check_bot: bool = False):
     """
-    Resolves a user or member to a guild member.
+    A decorator to resolve and validate members for moderation commands.
 
     Args:
-        interaction: The interaction context.
-        member: The target member or user to resolve.
-        for_unban: If True, skips checks for member existence in the guild.
-
-    Returns:
-        The resolved disnake.Member object or None if the member is not found.
+        for_unban: Skip guild member checks if True
+        check_bot: Include bot-specific checks if True
     """
-    if isinstance(member, disnake.User):
-        return interaction.guild.get_member(member.id)
-    return member if for_unban or isinstance(member, disnake.Member) else None
 
+    def decorator(func: Callable):
+        @wraps(func)
+        async def wrapper(
+            self,
+            interaction: disnake.ApplicationCommandInteraction,
+            member: Union[int, str, disnake.Member, disnake.User],
+            *args,
+            **kwargs,
+        ):
+            resolver = ModerationResolver(interaction)
+            resolved_member = await resolver.resolve(
+                member, for_unban=for_unban, check_bot=check_bot
+            )
 
-def check_self_action(
-    interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
-) -> Optional[disnake.Embed]:
-    """
-    Checks if the action is being performed on the interaction author.
+            if not resolved_member:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(
+                        "Member not found.", ephemeral=True
+                    )
+                return None
 
-    Args:
-        interaction: The interaction context.
-        member: The target member to check.
+            return await func(self, interaction, resolved_member, *args, **kwargs)
 
-    Returns:
-        An error embed if the check fails, otherwise None.
-    """
-    if member == interaction.author:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author,
-            description="You can't perform this action on yourself.",
-        )
-        return error_embed.get_embed()
+        return wrapper
 
-    return None
-
-
-def check_bot_action(
-    interaction: disnake.ApplicationCommandInteraction,
-    member: disnake.Member,
-    check_bot: bool,
-) -> Optional[disnake.Embed]:
-    """
-    Checks if the action is being performed on a bot.
-
-    Args:
-        interaction: The interaction context.
-        member: The target member to check.
-        check_bot: Whether to include bots in the check.
-
-    Returns:
-        An error embed if the check fails, otherwise None.
-    """
-    if check_bot and member.bot:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author,
-            description="You can't perform this action on a bot.",
-        )
-        return error_embed.get_embed()
-    return None
-
-
-def check_role_hierarchy(
-    interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
-) -> Optional[disnake.Embed]:
-    """
-    Checks if the user's role is higher than the target member's role.
-
-    Args:
-        interaction: The interaction context.
-        member: The target member to check.
-
-    Returns:
-        An error embed if the user's role is not higher, otherwise None.
-    """
-    if member.top_role >= interaction.author.top_role:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author,
-            description=f"Your role is not higher than {member.mention}'s role.",
-        ).get_embed()
-
-        return error_embed
-    return None
-
-
-def check_bot_role_hierarchy(
-    interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
-) -> Optional[disnake.Embed]:
-    """
-    Checks if the bot's role is higher than the target member's role.
-
-    Args:
-        interaction: The interaction context.
-        member: The target member to check.
-
-    Returns:
-        An error embed if the bot's role is not higher, otherwise None.
-    """
-    bot_member = interaction.guild.me
-    if member.top_role >= bot_member.top_role and not interaction.author.guild.owner:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author,
-            description=f"{member.mention}'s role is higher than mine. I can't perform this action.",
-        ).get_embed()
-
-        return error_embed
-    return None
-
-
-def check_mute_time(
-    interaction: disnake.ApplicationCommandInteraction, str_time: int
-) -> Optional[disnake.Embed]:
-    """
-    Checks if the mute time is within valid bounds.
-
-    Args:
-        interaction: The interaction context.
-        str_time: The mute duration in seconds.
-
-    Returns:
-        An error embed if the mute time is invalid, otherwise None.
-    """
-    if not 60 <= str_time <= 2419200:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author,
-            description="Mute time must be between 1 minute and 28 days.",
-        ).get_embed()
-        return error_embed
-    return None
-
-
-async def common_checks(
-    interaction: disnake.ApplicationCommandInteraction,
-    member: Union[int, str, disnake.Member, disnake.User],
-    check_bot: bool = False,
-    for_unban: bool = False,
-    for_mute: bool = False,
-    str_time: Optional[int] = None,
-) -> Tuple[bool, Optional[disnake.Embed]]:
-    """
-    Perform common validation checks for moderation actions.
-
-    Args:
-        interaction: The interaction context.
-        member: The target member or user to validate.
-        check_bot: Whether to include bots in validation.
-        for_unban: If True, skips member existence checks.
-        for_mute: If True, validates mute-specific conditions.
-        str_time: The mute duration in seconds, if applicable.
-
-    Returns:
-        A tuple where the first element is True if all checks pass,
-        and the second element is an error embed if a check fails.
-    """
-    resolved_member = await resolve_member(interaction, member, for_unban)
-
-    if not resolved_member and not for_unban:
-        error_embed = CustomEmbed.error_embed(
-            author=interaction.author, description="Member not found in the guild."
-        ).get_embed()
-        return False, error_embed
-
-    checks = [
-        check_self_action(interaction, resolved_member),
-        check_bot_action(interaction, resolved_member, check_bot),
-        check_role_hierarchy(interaction, resolved_member) if not for_unban else None,
-        check_bot_role_hierarchy(interaction, resolved_member) if check_bot else None,
-        check_mute_time(interaction, str_time) if for_mute else None,
-    ]
-
-    for error in checks:
-        if error:
-            return False, error
-
-    return True, None
+    return decorator

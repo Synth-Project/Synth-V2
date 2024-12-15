@@ -93,11 +93,11 @@ class Bot(commands.AutoShardedInteractionBot):
         await close_database()
 
     async def on_ready(self) -> None:
-        logger.info(
-            f"\nInvite link: https://discord.com/api/oauth2/authorize?client_id="
+        self.logger.info(
+            f"Invite link: https://discord.com/api/oauth2/authorize?client_id="
             f"{self.user.id}&permissions=980937982&scope=bot%20applications.commands"
         )
-        logger.debug(f"Connected to {self.user}")
+        self.logger.debug(f"Connected to {self.user}")
 
         await self.load_extensions(bot=self)
         await self.wait_until_ready()
