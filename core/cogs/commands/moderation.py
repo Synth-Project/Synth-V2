@@ -203,7 +203,7 @@ class Moderation(commands.Cog):
         member: disnake.Member,
     ):
         embed = CustomEmbed().get_embed()
-    
+
         embed.title = "<:unmute:1169690521472614500> Successfully unmuted"
         embed.description = (
             f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
