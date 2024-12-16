@@ -11,7 +11,10 @@ class DevBotManagerView(disnake.ui.View):
         super(DevBotManagerView, self).__init__(timeout=None)
         self.bot = bot
         from core.cogs.commands.dev import Dev, DevMainView
-        self.add_item(CustomButton(row=0,view=DevMainView(self.bot), embed=Dev.embed()))
+
+        self.add_item(
+            CustomButton(row=0, view=DevMainView(self.bot), embed=Dev.embed())
+        )
 
     @disnake.ui.button(
         label="Stop",

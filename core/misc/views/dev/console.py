@@ -11,7 +11,10 @@ class DevConsoleView(disnake.ui.View):
         super().__init__(timeout=None)
         self.bot = bot
         from core.cogs.commands.dev import Dev, DevMainView
-        self.add_item(CustomButton(row=1, view=DevMainView(self.bot), embed=Dev.embed()))
+
+        self.add_item(
+            CustomButton(row=1, view=DevMainView(self.bot), embed=Dev.embed())
+        )
 
     @disnake.ui.select(
         cls=disnake.ui.Select,
@@ -33,19 +36,20 @@ class DevConsoleView(disnake.ui.View):
             "debug": debug_logger.getvalue(),
             "error": error_logger.getvalue(),
         }[log_name]
-        log_parts = [log_content[i:i+1000] for i in range(0, len(log_content), 1000)] or ["No logs available."]
+        log_parts = [
+            log_content[i : i + 1000] for i in range(0, len(log_content), 1000)
+        ] or ["No logs available."]
 
         embeds = [
             CustomEmbed(
                 title=f"🔧 | Console {log_name.capitalize()} Logs",
-                description=f"```{part}```"
-            ).get_embed() for _, part in enumerate(log_parts)
+                description=f"```{part}```",
+            ).get_embed()
+            for _, part in enumerate(log_parts)
         ]
         view = CreatePaginator(embeds, interaction.author.id, timeout=120)
-        view.add_item(CustomButton(row=0, view=self, embed=interaction.message.embeds[0]))
-
-        await interaction.edit_original_message(
-            embed=embeds[0], 
-            view=view
+        view.add_item(
+            CustomButton(row=0, view=self, embed=interaction.message.embeds[0])
         )
 
+        await interaction.edit_original_message(embed=embeds[0], view=view)
