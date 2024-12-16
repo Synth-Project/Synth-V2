@@ -2,47 +2,45 @@ import re
 from typing import Dict
 
 TIME_UNITS: Dict[str, int] = {
-    "s": 1,
-    "m": 60,
-    "h": 3600,
-    "d": 86400,
-    "w": 604800,
-    "mo": 2592000,
-    "y": 31536000,
+    "s": 1, "sec": 1, "second": 1,
+    "m": 60, "min": 60, "minute": 60,
+    "h": 3600, "hr": 3600, "hour": 3600,
+    "d": 86400, "day": 86400,
+    "w": 604800, "week": 604800,
+    "mo": 2592000, "month": 2592000,
+    "y": 31536000, "yr": 31536000, "year": 31536000,
+}
+
+CYRILLIC_MAP: Dict[str, str] = {
+    "с": "s", "сек": "s",
+    "м": "m", "мин": "m", 
+    "ч": "h", "час": "h", 
+    "д": "d", "дн": "d",  
+    "н": "w", "нед": "w",  
+    "мес": "mo",           
+    "г": "y", "лет": "y",  
 }
 
 
 async def str_to_seconds(input_string: str) -> int:
     """
-    Convert a string describing a time to an integer in seconds.
+    Convert a string describing a time duration to an integer in seconds.
 
-    The string can use the following units: s, m, h, d, w, mo, y.
-    The string can also use the following Cyrillic units: с, х, г, д, т, м, р.
-    The string can also use the following English units: second, minute, hour, day, week, month, year.
-
-    If the string contains multiple units, they are added together.
+    Supports both Latin and Cyrillic units, along with common full forms.
+    If the string contains multiple units, their values are summed up.
     """
     input_string = re.sub(r"[-\s]+", "", input_string.lower())
-    input_string = input_string.replace("month", "mo").replace("мес", "mo")
 
-    cyrillic_map = {
-        "с": "s",
-        "х": "m",
-        "г": "h",
-        "д": "d",
-        "т": "w",
-        "м": "mo",
-        "р": "y",
-    }
-    for cyr, lat in cyrillic_map.items():
-        input_string = input_string.replace(cyr, lat)
+    for cyr, lat in CYRILLIC_MAP.items():
+        input_string = re.sub(fr"\b{cyr}\b", lat, input_string)
 
-    total = 0
+    total_seconds = 0
     matches = re.findall(r"(\d+)([a-z]+)", input_string)
     for value, unit in matches:
         if unit in TIME_UNITS:
-            total += int(value) * TIME_UNITS[unit]
-    return total
+            total_seconds += int(value) * TIME_UNITS[unit]
+
+    return total_seconds
 
 
 async def hms(seconds: float) -> str:

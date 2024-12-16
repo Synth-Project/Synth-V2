@@ -3,6 +3,7 @@ import time
 
 import disnake
 from disnake.ext import commands
+from disnake.utils import utcnow
 
 from core.misc.moderation.checks import resolve_member
 from core.misc.moderation.misc import str_to_seconds, hms
@@ -55,7 +56,7 @@ class Moderation(commands.Cog):
             )
             await member.send(embed=embed)
 
-        except (Exception, BaseException, disnake.Forbidden):
+        except disnake.Forbidden:
             pass
 
         await interaction.guild.ban(member, reason=f"{interaction.user}: {reason}")
@@ -69,7 +70,7 @@ class Moderation(commands.Cog):
         member: disnake.User,
     ) -> None:
         """
-        Unban a user on this guild
+        Unban a user on this guild.
 
         Args:
             interaction: The interaction context.
@@ -78,15 +79,15 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        embed = CustomEmbed().get_embed()
-
-        embed.title = "<:invite:1169690514430382160> Successfully unbanned"
-        embed.description = (
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member.mention} (`{id}`)"
-        )
-
         await interaction.guild.unban(member)
+
+        embed = CustomEmbed(
+            title="<:invite:1169690514430382160> Successfully unbanned",
+            description=(
+                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"**Member:** {member.mention} (`{member.id}`)\n"
+            ),
+        ).get_embed()
         await interaction.send(embed=embed)
 
     @commands.slash_command(name="kick", description="Kick a user from this guild")
@@ -129,7 +130,7 @@ class Moderation(commands.Cog):
             )
             await member.send(embed=embed)
 
-        except (Exception, BaseException, disnake.Forbidden):
+        except disnake.Forbidden:
             pass
 
         await member.kick(reason=reason)
@@ -167,13 +168,15 @@ class Moderation(commands.Cog):
             )
             return await interaction.send(embed=error_embed.get_embed())
 
+        unmute_time = utcnow() + datetime.timedelta(seconds=str_time)
+
         embed.title = "<:mute:1170712518725992529> Successfully muted"
         embed.description = (
             f"**Member:** {member.mention} ({member})\n"
             f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
             f"**Time:** {str(await hms(float(str_time)))}\n"
             f"**Reason:** {reason}\n"
-            f"**Unmute date:** <t:{int(time.time()) + str_time}>"
+            f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
         )
 
         await member.edit(
@@ -188,22 +191,32 @@ class Moderation(commands.Cog):
                 f"**Server:** {interaction.guild.name}\n"
                 f"**Time:** {str(await hms(float(str_time)))}\n"
                 f"**Reason:** {reason}\n"
-                f"**Unmute date:** <t:{int(time.time() + float(str_time))}>"
+                f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
             )
             await member.send(embed=embed)
-        except (Exception, BaseException, disnake.Forbidden):
+        except disnake.Forbidden:
             pass
 
     @commands.slash_command(name="unmute", description="Unmute a user")
-    @resolve_member()
+    @resolve_member(for_unmute=True)
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def unmute(
         self,
         interaction: disnake.ApplicationCommandInteraction,
         member: disnake.Member,
-    ):
+    ) -> None:
+        """
+        Unmute a user
+
+        Args:
+            interaction: The interaction context.
+            member: The member to unmute.
+
+        Returns:
+            None
+        """
         embed = CustomEmbed().get_embed()
-    
+
         embed.title = "<:unmute:1169690521472614500> Successfully unmuted"
         embed.description = (
             f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
@@ -220,7 +233,7 @@ class Moderation(commands.Cog):
                 f"**Server:** {interaction.guild.name}\n"
             )
             await member.send(embed=embed)
-        except (Exception, BaseException, disnake.Forbidden):
+        except disnake.Forbidden:
             pass
 
 
