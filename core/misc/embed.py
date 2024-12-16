@@ -94,6 +94,7 @@ class CustomEmbed:
 
         if image:
             embed.set_image(url=image)
+
         if thumbnail:
             embed.set_thumbnail(url=thumbnail)
 

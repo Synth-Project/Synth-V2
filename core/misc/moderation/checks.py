@@ -1,5 +1,10 @@
 import disnake
-from disnake.ext.commands import MemberConverter, UserConverter, CommandError
+from disnake.ext.commands import (
+    BadArgument,
+    MemberConverter,
+    UserConverter,
+    CommandError,
+)
 
 from core.misc.embed import CustomEmbed
 
@@ -59,7 +64,7 @@ class ModerationResolver:
 
         try:
             return await self.member_converter.convert(self.interaction, str(member))
-        except CommandError:
+        except (CommandError, BadArgument):
             if for_unban:
                 return (
                     await self.user_converter.convert(self.interaction, str(member))
@@ -90,7 +95,7 @@ class ModerationResolver:
         if member.id == author.id:
             return await self._send_error("You can't perform this action on yourself")
 
-        if check_bot and getattr(member, "bot", False):
+        if check_bot and member.bot:
             return await self._send_error("You can't perform this action on a bot")
 
         if for_unban:

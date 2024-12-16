@@ -1,5 +1,4 @@
 import datetime
-import time
 
 import disnake
 from disnake.ext import commands
@@ -37,14 +36,15 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        embed = CustomEmbed().get_embed()
+        embed = CustomEmbed(
+            title="<:ban:1170712517308317756> Successfully banned",
+            description=(
+                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"**Member:** {member.mention} ({member})\n"
+                f"**Reason:** {reason}"
+            ),
+        ).get_embed()
 
-        embed.title = "<:ban:1170712517308317756> Successfully banned"
-        embed.description = (
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member.mention} ({member})\n"
-            f"**Reason:** {reason}"
-        )
         await interaction.send(embed=embed)
 
         try:
@@ -55,8 +55,7 @@ class Moderation(commands.Cog):
                 f"**Server:** {interaction.guild.name}"
             )
             await member.send(embed=embed)
-
-        except disnake.Forbidden:
+        except (disnake.HTTPException, disnake.Forbidden):
             pass
 
         await interaction.guild.ban(member, reason=f"{interaction.user}: {reason}")
@@ -111,14 +110,15 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        embed = CustomEmbed().get_embed()
+        embed = CustomEmbed(
+            title="<:kick:1170712514288435271> Successfully kicked",
+            description=(
+                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"**Member:** {member.mention} ({member})\n"
+                f"**Reason:** {reason}"
+            ),
+        ).get_embed()
 
-        embed.title = "<:kick:1170712514288435271> Successfully kicked"
-        embed.description = (
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member.mention} ({member})\n"
-            f"**Reason:** {reason}"
-        )
         await interaction.send(embed=embed)
 
         try:
@@ -129,8 +129,7 @@ class Moderation(commands.Cog):
                 f"**Server:** {interaction.guild.name}"
             )
             await member.send(embed=embed)
-
-        except disnake.Forbidden:
+        except (disnake.HTTPException, disnake.Forbidden):
             pass
 
         await member.kick(reason=reason)
@@ -158,8 +157,6 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        embed = CustomEmbed().get_embed()
-
         str_time = await str_to_seconds(mute_time)
 
         if str_time == 0:
@@ -170,14 +167,16 @@ class Moderation(commands.Cog):
 
         unmute_time = utcnow() + datetime.timedelta(seconds=str_time)
 
-        embed.title = "<:mute:1170712518725992529> Successfully muted"
-        embed.description = (
-            f"**Member:** {member.mention} ({member})\n"
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Time:** {str(await hms(float(str_time)))}\n"
-            f"**Reason:** {reason}\n"
-            f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
-        )
+        embed = CustomEmbed(
+            title="<:mute:1170712518725992529> Successfully muted",
+            description=(
+                f"**Member:** {member.mention} ({member})\n"
+                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"**Time:** {str(await hms(float(str_time)))}\n"
+                f"**Reason:** {reason}\n"
+                f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
+            ),
+        ).get_embed()
 
         await member.edit(
             timeout=disnake.utils.utcnow() + datetime.timedelta(seconds=str_time)
@@ -194,7 +193,7 @@ class Moderation(commands.Cog):
                 f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
             )
             await member.send(embed=embed)
-        except disnake.Forbidden:
+        except (disnake.HTTPException, disnake.Forbidden):
             pass
 
     @commands.slash_command(name="unmute", description="Unmute a user")
@@ -215,13 +214,13 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        embed = CustomEmbed().get_embed()
-
-        embed.title = "<:unmute:1169690521472614500> Successfully unmuted"
-        embed.description = (
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member.mention} ({member})"
-        )
+        embed = CustomEmbed(
+            title="<:unmute:1169690521472614500> Successfully unmuted",
+            description=(
+                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"**Member:** {member.mention} ({member})"
+            ),
+        ).get_embed()
 
         await member.edit(timeout=None)
         await interaction.send(embed=embed)
@@ -233,7 +232,7 @@ class Moderation(commands.Cog):
                 f"**Server:** {interaction.guild.name}\n"
             )
             await member.send(embed=embed)
-        except disnake.Forbidden:
+        except (disnake.HTTPException, disnake.Forbidden):
             pass
 
 
