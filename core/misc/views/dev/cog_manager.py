@@ -8,12 +8,16 @@ from core import cog_paths
 from core.misc.embed import CustomEmbed
 from core.misc.views.base import CustomButton
 
+
 class CogView(disnake.ui.View):
     def __init__(self, bot: commands.Bot):
         super().__init__(timeout=None)
         self.bot = bot
         from core.cogs.commands.dev import Dev, DevMainView
-        self.add_item(CustomButton(row=1, view=DevMainView(self.bot), embed=Dev.embed()))
+
+        self.add_item(
+            CustomButton(row=1, view=DevMainView(self.bot), embed=Dev.embed())
+        )
         self.add_item(CogDropdown(self.bot))
 
     @staticmethod
@@ -23,6 +27,7 @@ class CogView(disnake.ui.View):
             description="Welcome to the Cog Manager. Use the buttons below to navigate.",
         ).get_embed()
         return embed
+
 
 class CogDropdown(disnake.ui.Select):
     def __init__(self, bot: commands.Bot) -> None:
@@ -62,12 +67,15 @@ class CogDropdown(disnake.ui.Select):
                 if file_name == "__init__.py":
                     continue
 
-                cog_name = f"{path.replace("/", ".")}.{file_name[:-3]}"
+                cog_name = f"{path.replace('/', '.')}.{file_name[:-3]}"
                 cog_status = False
                 cog_class = None
-                
+
                 for loaded_cog_name, loaded_cog_instance in all_loaded_cogs.items():
-                    if loaded_cog_name.startswith(file_name[:-3].capitalize()) or loaded_cog_name == file_name[:-3].capitalize():
+                    if (
+                        loaded_cog_name.startswith(file_name[:-3].capitalize())
+                        or loaded_cog_name == file_name[:-3].capitalize()
+                    ):
                         cog_status = True
                         cog_class = loaded_cog_instance.__class__.__name__
                         break
@@ -75,11 +83,9 @@ class CogDropdown(disnake.ui.Select):
                         cog_status = False
                         cog_class = None
 
-                cogs.append({
-                    "name": cog_name,
-                    "status": cog_status,
-                    "class": cog_class
-                })
+                cogs.append(
+                    {"name": cog_name, "status": cog_status, "class": cog_class}
+                )
 
         return cogs
 
@@ -115,7 +121,6 @@ class CogDropdown(disnake.ui.Select):
 
         return options
 
-
     async def callback(self, interaction: disnake.MessageInteraction):
         """
         Callback for the dropdown menu
@@ -133,7 +138,9 @@ class CogDropdown(disnake.ui.Select):
             self.page -= 1
         else:
             cog_name = selected_value
-            matching_cog = next((cog for cog in self.cogs if cog["name"] == cog_name), None)
+            matching_cog = next(
+                (cog for cog in self.cogs if cog["name"] == cog_name), None
+            )
             if matching_cog:
                 if matching_cog["status"]:
                     if matching_cog["class"] != None:
@@ -143,9 +150,10 @@ class CogDropdown(disnake.ui.Select):
                     embed = CustomEmbed(
                         title=f"🔨 | Cog Manager: {matching_cog['name']}",
                     ).get_embed()
-                    await interaction.response.edit_message(view=CogManagerView(self.bot, matching_cog))
+                    await interaction.response.edit_message(
+                        view=CogManagerView(self.bot, matching_cog)
+                    )
                     return
-
 
         self.cogs = self._get_cogs()
         self.options = self._get_options()
@@ -169,14 +177,22 @@ class CogManagerView(disnake.ui.View):
         self.cog_class = cog_info["class"]
 
         self.load_unload_cog.label = "Unload" if self.cog_status else "Load"
-        self.load_unload_cog.style = disnake.ButtonStyle.red if self.cog_status else disnake.ButtonStyle.green
+        self.load_unload_cog.style = (
+            disnake.ButtonStyle.red if self.cog_status else disnake.ButtonStyle.green
+        )
 
-    @disnake.ui.button(label="Load", style=disnake.ButtonStyle.green, custom_id="load_unload_cog")
-    async def load_unload_cog(self, button: disnake.ui.Button, interaction: disnake.MessageInteraction):
+    @disnake.ui.button(
+        label="Load", style=disnake.ButtonStyle.green, custom_id="load_unload_cog"
+    )
+    async def load_unload_cog(
+        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
         cog_name = self.cog_name
         cog_status = self.cog_status
 
-        button.style = disnake.ButtonStyle.red if cog_status else disnake.ButtonStyle.green
+        button.style = (
+            disnake.ButtonStyle.red if cog_status else disnake.ButtonStyle.green
+        )
         button.label = "Unload" if cog_status else "Load"
 
         print(cog_status)
