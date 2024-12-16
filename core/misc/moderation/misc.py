@@ -2,23 +2,40 @@ import re
 from typing import Dict
 
 TIME_UNITS: Dict[str, int] = {
-    "s": 1, "sec": 1, "second": 1,
-    "m": 60, "min": 60, "minute": 60,
-    "h": 3600, "hr": 3600, "hour": 3600,
-    "d": 86400, "day": 86400,
-    "w": 604800, "week": 604800,
-    "mo": 2592000, "month": 2592000,
-    "y": 31536000, "yr": 31536000, "year": 31536000,
+    "s": 1,
+    "sec": 1,
+    "second": 1,
+    "m": 60,
+    "min": 60,
+    "minute": 60,
+    "h": 3600,
+    "hr": 3600,
+    "hour": 3600,
+    "d": 86400,
+    "day": 86400,
+    "w": 604800,
+    "week": 604800,
+    "mo": 2592000,
+    "month": 2592000,
+    "y": 31536000,
+    "yr": 31536000,
+    "year": 31536000,
 }
 
 CYRILLIC_MAP: Dict[str, str] = {
-    "с": "s", "сек": "s",
-    "м": "m", "мин": "m", 
-    "ч": "h", "час": "h", 
-    "д": "d", "дн": "d",  
-    "н": "w", "нед": "w",  
-    "мес": "mo",           
-    "г": "y", "лет": "y",  
+    "с": "s",
+    "сек": "s",
+    "м": "m",
+    "мин": "m",
+    "ч": "h",
+    "час": "h",
+    "д": "d",
+    "дн": "d",
+    "н": "w",
+    "нед": "w",
+    "мес": "mo",
+    "г": "y",
+    "лет": "y",
 }
 
 
@@ -32,7 +49,7 @@ async def str_to_seconds(input_string: str) -> int:
     input_string = re.sub(r"[-\s]+", "", input_string.lower())
 
     for cyr, lat in CYRILLIC_MAP.items():
-        input_string = re.sub(fr"\b{cyr}\b", lat, input_string)
+        input_string = re.sub(rf"\b{cyr}\b", lat, input_string)
 
     total_seconds = 0
     matches = re.findall(r"(\d+)([a-z]+)", input_string)
