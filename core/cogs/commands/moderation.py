@@ -283,7 +283,7 @@ class Moderation(commands.Cog):
             f"**Member:** {member} (`{member.id}`)\n"
             f"**Reason:** {reason}"
         )
-        await interaction.send(embed=embed) 
+        await interaction.send(embed=embed)
 
 
 def setup(bot: commands.Bot) -> None:
