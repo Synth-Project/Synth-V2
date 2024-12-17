@@ -3,8 +3,11 @@ from disnake.ext import commands
 from loguru import logger
 from typing import Optional, Dict, List
 
+from core.database.models.logging import MessageLogging
+from core.database.repositories.logging import LoggingRepository
 
-class MessageLogging(commands.Cog):
+
+class MessageEvents(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
@@ -42,7 +45,6 @@ class MessageLogging(commands.Cog):
         async for entry in guild.audit_logs(limit=1, action=action):
             cache = self.cache_audit_log.get(guild_id, [])
 
-            # Check if entry exists in cache
             cached_entry = next((log for log in cache if log.id == entry.id), None)
 
             is_new = cached_entry is None
@@ -66,6 +68,12 @@ class MessageLogging(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message: disnake.Message) -> None:
         if not message.guild:
+            return
+
+        result: MessageLogging = await LoggingRepository.get_message_logger(
+            guild_id=message.guild.id
+        )
+        if not result or not result.delete_event:
             return
 
         entry = await self._process_audit_log(
@@ -140,4 +148,4 @@ class MessageLogging(commands.Cog):
 
 
 def setup(bot: commands.Bot) -> None:
-    bot.add_cog(MessageLogging(bot))
+    bot.add_cog(MessageEvents(bot))
