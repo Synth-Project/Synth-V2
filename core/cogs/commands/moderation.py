@@ -284,7 +284,6 @@ class Moderation(commands.Cog):
             f"**Reason:** {reason}"
         )
         await interaction.send(embed=embed)
-        await interaction.send(embed=embed)
 
     @commands.slash_command(
         name="crosskick",
