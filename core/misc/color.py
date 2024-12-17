@@ -1,9 +1,9 @@
 from disnake import Guild
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 
-class BasicColors(Enum):
+class BasicColors(IntEnum):
     DEFAULT: int = 0x2F3236
     WARNING: int = 0xF5E042
     ERROR: int = 0xF54242

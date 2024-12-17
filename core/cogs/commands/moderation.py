@@ -2,12 +2,18 @@ import datetime
 
 import disnake
 from disnake.ext import commands
-from disnake.ext.commands import UserConverter, MemberConverter
 from disnake.utils import utcnow
 
+from core.misc.color import BasicColors
 from core.misc.moderation.checks import resolve_member
-from core.misc.moderation.misc import str_to_seconds, hms
+from core.misc.moderation.misc import (
+    str_to_seconds,
+    hms,
+    generate_mute_list,
+    generate_ban_list,
+)
 from core.misc.embed import CustomEmbed
+from core.misc.paginator import CreatePaginator
 
 
 class Moderation(commands.Cog):
@@ -196,6 +202,45 @@ class Moderation(commands.Cog):
             await member.send(embed=embed)
         except (disnake.HTTPException, disnake.Forbidden):
             pass
+
+    @commands.slash_command(name="moderation")
+    async def moderation(self, interaction: disnake.ApplicationCommandInteraction):
+        pass
+
+    @moderation.sub_command(name="show", description="Show moderation lists")
+    async def show_list(
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        list: str = commands.Param(
+            choices=["bans", "mutes"],
+            description="Choose which list to show",
+        ),
+    ):
+        # processors = {
+        #     "mutes": self._process_mute_list,
+        #     "bans": self._process_ban_list,
+        # }
+
+        # embeds, error = await processors[list_type](interaction)
+        match list:
+            case "mutes":
+                embeds, error = await generate_mute_list(interaction)
+            case "bans":
+                embeds, error = await generate_ban_list(interaction)
+
+        if error:
+            error_embed = disnake.Embed(
+                color=BasicColors.ERROR, description=description
+            )
+            error_embed.set_footer(
+                text=interaction.user, icon_url=interaction.user.avatar
+            )
+            return await interaction.send(embed=error_embed)
+
+        paginator = CreatePaginator(
+            embeds=embeds, author_id=interaction.author.id, timeout=600
+        )
+        await interaction.send(embed=embeds[0], view=paginator)
 
     @commands.slash_command(name="unmute", description="Unmute a user")
     @resolve_member(for_unmute=True)
