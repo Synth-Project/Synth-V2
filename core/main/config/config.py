@@ -1,14 +1,16 @@
 import os
 from typing import List
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     DEBUG: bool
-    BOT_TOKEN: str
+    BOT_TOKEN: SecretStr
     OWNERS: List[int]
     TEST_GUILDS: List[int]
+    BOT_LOGS_ID: int
 
     @property
     def DATABASE_URL(self) -> str:
