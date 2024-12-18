@@ -1,13 +1,14 @@
 from tortoise import fields, Model
 
 
-class Song(Model):
+class Music(Model):
     name = fields.CharField(max_length=256)
     url = fields.CharField(max_length=512)
+    dj_role = fields.IntField(default=0, null=True)
 
     class Meta:
-        table = "songs"
-        table_description = "Song Model"
+        table = "musics"
+        table_description = "Musics Model"
 
     def __str__(self) -> str:
-        return f"Song: name={self.name}, url={self.url}"
+        return f"Music: name={self.name}, url={self.url}"

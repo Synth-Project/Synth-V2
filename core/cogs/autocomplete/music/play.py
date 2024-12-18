@@ -1,3 +1,5 @@
+import re
+
 import disnake
 from disnake.ext import commands
 import wavelink
@@ -5,7 +7,6 @@ import wavelink
 from core.cogs.commands.music import Music
 from core.database.repositories.music import MusicRepository
 from core.misc.misc import shorten_text
-import re
 
 patterns = {
     "spsearch": r"https?://open\.spotify\.com/(track|playlist|show|episode|album)/[A-Za-z0-9]+",
@@ -36,9 +37,9 @@ class PlayAutocomplete(commands.Cog):
             autocomplete_list = (
                 [
                     f"History: {shorten_text(song.name)}"
-                    for song in await result.songs.all()
+                    for song in await result.musics.all()
                 ]
-                if result and await result.songs.all().count() > 0
+                if result and await result.musics.all().count() > 0
                 else ["❌ | Try to add a song for the first time"]
             )
             return await interaction.response.autocomplete(choices=autocomplete_list)
@@ -54,11 +55,7 @@ class PlayAutocomplete(commands.Cog):
         try:
             search_results = await wavelink.Playable.search(search_query, source=source)
             autocomplete_options = [
-                (
-                    f"Found: {shorten_text(f'{track.title} — {track.author}')} | {track.source}"
-                    if source == "spsearch"
-                    else f"Found: {shorten_text(f'{track.title} — {track.author}')}"
-                )
+                f"Found: {shorten_text(f'{track.title} — {track.author}')}"
                 for index, track in enumerate(search_results)
                 if index < 25
             ]

@@ -45,7 +45,7 @@ class Music(commands.Cog):
         await self.errors.check_basic(interaction, query)
 
         await interaction.send(
-            "<a:loading:1281259173639884882> Searching for tracks...",
+            "<a:loading:1168599537682755584> Searching for tracks...",
             ephemeral=True,
         )
 

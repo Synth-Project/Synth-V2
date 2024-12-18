@@ -75,29 +75,32 @@ class DownloadDropdown(disnake.ui.Select):
         track = player.current
 
         await interaction.response.edit_message(
-            content="<a:loading:1281259173639884882> Downloading track, please wait...",
+            content="<a:loading:1168599537682755584> Downloading track, please wait...",
             embed=None,
             view=None,
         )
 
-        with io.BytesIO() as output:
-            await asyncio.get_event_loop().run_in_executor(
-                None, lambda: download_track(track, output)
-            )
-            output.seek(0)
-
-            file_size = output.getbuffer().nbytes
-
-            if file_size > MAX_FILE_SIZE_MB:
-                await interaction.edit_original_response(
-                    content=f"Error: Track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB)."
+        try:
+            with io.BytesIO() as output:
+                await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: download_track(track, output)
                 )
-                return
+                output.seek(0)
 
-            await interaction.edit_original_response(
-                content=f"Here is the track in {audio_format} format",
-                file=disnake.File(output, f"{track.title}.{audio_format}"),
-            )
+                file_size = output.getbuffer().nbytes
+
+                if file_size > MAX_FILE_SIZE_MB:
+                    await interaction.edit_original_response(
+                        content=f"Error: Track exceeds the 25MB limit (size: {file_size / (1024 * 1024):.2f} MB)."
+                    )
+                    return
+
+                await interaction.edit_original_response(
+                    content=f"Here is the track in {audio_format} format",
+                    file=disnake.File(output, f"{track.title}.{audio_format}"),
+                )
+        except ValueError:
+            await interaction.edit_original_response("Internal server error or no videos found for this track.")
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         await self.download_track(interaction, self.values[0])

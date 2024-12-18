@@ -1,9 +1,46 @@
+import re
+import requests
 from io import BytesIO
 from contextlib import redirect_stdout
 
 import disnake
 from wavelink import Playable
 from yt_dlp import YoutubeDL
+
+from core import logger
+
+
+def find_youtube(track: Playable) -> str:
+    """
+    Find the first YouTube video for a track.
+
+    :param track: The track to search for.
+    :return: The URL of the first YouTube video.
+    """
+    search_link = f"https://www.youtube.com/results?search_query={(track.title).replace(" ", "+")}"
+    logger.info(f"Search link: {search_link}")
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:132.0) Gecko/20100101 Firefox/132.0"
+        )
+    }
+
+    try:
+        response = requests.get(search_link, headers=headers, timeout=10)
+        response.raise_for_status()
+
+    except requests.RequestException:
+        raise ValueError("Please check your internet connection and try again later.")
+
+    search_results = re.findall(r"watch\?v=(\S{11})", response.text)
+    if not search_results:
+        raise ValueError("No YouTube videos found for this track.")
+
+    first_vid = "https://www.youtube.com/watch?v=" + search_results[0]
+    logger.info(f"First video: {first_vid}")
+
+    return first_vid
 
 
 def download_track(track: Playable, output: BytesIO) -> int:
@@ -22,7 +59,7 @@ def download_track(track: Playable, output: BytesIO) -> int:
             "postprocessors": [],
         }
     ) as ydl:
-        ydl.download([track.uri])
+        ydl.download([find_youtube(track)])
 
         return output.seek(0)
 
