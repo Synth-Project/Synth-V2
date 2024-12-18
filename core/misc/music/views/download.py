@@ -63,7 +63,7 @@ class DownloadDropdown(disnake.ui.Select):
 
         Returns: None
         """
-        player = cast(wavelink.Player, interaction.guild.voice_client)
+        player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
         if not player or not player.current:
             embed = CustomEmbed(

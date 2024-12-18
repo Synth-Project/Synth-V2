@@ -50,7 +50,7 @@ def download_track(track: Playable, output: BytesIO) -> int:
     :param output: The output stream.
     :return: None
     """
-    with redirect_stdout(output), YoutubeDL(
+    with redirect_stdout(output), YoutubeDL(  # type: ignore
         {
             "extract_audio": True,
             "format": "bestaudio",

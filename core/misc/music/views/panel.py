@@ -13,7 +13,7 @@ from core.misc.music.views.queue import QueueDropdown
 class NavigationPanel(disnake.ui.View):
     def __init__(
         self,
-        bot: commands.bot,
+        bot: commands.Bot,
         message_id: int,
         player: wavelink.Player,
         history_exists: bool = False,
@@ -84,13 +84,13 @@ class NavigationPanel(disnake.ui.View):
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
-        skipped_track = player.current if player.playing else self.queue_.history.get()
-        previous_track = self.queue_.history.get()
+        skipped_track = player.current if player.playing else self.queue_.history.get()  # type: ignore
+        previous_track = self.queue_.history.get()  # type: ignore
 
         self.queue_.put_at(0, previous_track)
-        self.queue_.put_at(1, skipped_track)
+        self.queue_.put_at(1, skipped_track)  # type: ignore
 
         if not player.playing:
             await player.play(self.queue_.get(), add_history=False)
@@ -104,14 +104,14 @@ class NavigationPanel(disnake.ui.View):
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ) -> None:
 
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
         if player.current:
             if (
-                self.queue_.history.count == 0
-                or player.current != self.queue_.history[0]
+                self.queue_.history.count == 0  # type: ignore
+                or player.current != self.queue_.history[0]  # type: ignore
             ):
-                self.queue_.history.put_at(0, player.current)
+                self.queue_.history.put_at(0, player.current)  # type: ignore
 
         await player.skip()
 
@@ -121,19 +121,19 @@ class NavigationPanel(disnake.ui.View):
     async def resume_and_pause(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
         await player.pause(not player.paused)
         self.resume_and_pause.label = "Resume" if player.paused else "Pause"
 
         if player.paused:
             for item in self.children:
                 if item != self.resume_and_pause:
-                    item.disabled = True
+                    item.disabled = True  # type: ignore
 
             await interaction.response.edit_message(view=self)
         else:
             for item in self.children:
-                item.disabled = False
+                item.disabled = False  # type: ignore
 
             self.queue.disabled = self.player.paused or self.queue_.count < 1
             self.skip.disabled = self.player.paused or len(self.queue_) < 1
@@ -157,7 +157,7 @@ class NavigationPanel(disnake.ui.View):
     async def autoplay(
         self, _: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
         assert player
 
@@ -176,7 +176,7 @@ class NavigationPanel(disnake.ui.View):
 
     @disnake.ui.button(label="Loop", style=disnake.ButtonStyle.green, row=1)
     async def loop(self, _: disnake.ui.Button, interaction: disnake.MessageInteraction):
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
 
         assert player
 
@@ -193,14 +193,16 @@ class NavigationPanel(disnake.ui.View):
         await interaction.response.edit_message(view=self)
 
     async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
-        voice_channel_id = interaction.guild.voice_client.channel.id
-        voice_channel = interaction.guild.get_channel_or_thread(
+        voice_channel_id = interaction.guild.voice_client.channel.id  # type: ignore
+        voice_channel = interaction.guild.get_channel_or_thread(  # type: ignore
             voice_channel_id
-        ) or await interaction.guild.fetch_channel(voice_channel_id)
+        ) or await interaction.guild.fetch_channel(
+            voice_channel_id
+        )  # type: ignore
 
         if not (
-            interaction.author.voice
-            and interaction.author.voice.channel.id == voice_channel.id
+            interaction.author.voice  # type: ignore
+            and interaction.author.voice.channel.id == voice_channel.id  # type: ignore
         ):
             embed = CustomEmbed(
                 title="A misunderstanding happened",

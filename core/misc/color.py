@@ -15,4 +15,5 @@ class CustomColors:
         self.guild = guild
 
     def get_default_color(self) -> int:
-        pass  # TODO: When we will add a database for colors (something will be in /settings) need to implement this
+        # should be moved to another branch with this implementation
+        pass

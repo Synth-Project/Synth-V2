@@ -20,12 +20,12 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
         self.base_path = base_path
 
     def on_modified(self, event):
-        if event.src_path.endswith(".py") and not any(
-            part in event.src_path for part in ["__pycache__", ".pyc"]
+        if event.src_path.endswith(".py") and not any(  # type: ignore
+            part in event.src_path for part in ["__pycache__", ".pyc"]  # type: ignore
         ):
-            settings.DEBUG and print(f"Changed file: {event.src_path}")
+            settings.DEBUG and print(f"Changed file: {event.src_path}")  # type: ignore
             asyncio.run_coroutine_threadsafe(
-                self._reload_module(event.src_path), self.loop
+                self._reload_module(event.src_path), self.loop  # type: ignore
             )
 
     async def _reload_module(self, file_path: str):
@@ -35,9 +35,9 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             )
             importlib.invalidate_caches()
             self._reload_core_modules()
-            settings.DEBUG and print(f"Reloaded: {module_name}")
+            settings.DEBUG and print(f"Reloaded: {module_name}")  # type: ignore
         except BaseException as error:
-            settings.DEBUG and print(f"Error reloading module: {error}")
+            settings.DEBUG and print(f"Error reloading module: {error}")  # type: ignore
 
         from core.database import init_database
 
@@ -49,9 +49,9 @@ class AsyncFileChangeHandler(FileSystemEventHandler):
             if name.startswith("core.") and not "__pycache__" in name:
                 try:
                     importlib.reload(module)
-                    settings.DEBUG and print(f"Reloaded: {name}")
+                    settings.DEBUG and print(f"Reloaded: {name}")  # type: ignore
                 except BaseException as error:
-                    settings.DEBUG and print(f"Error reloading {name}: {error}")
+                    settings.DEBUG and print(f"Error reloading {name}: {error}")  # type: ignore
 
 
 async def start_watching(loop: asyncio.AbstractEventLoop, path: str):
@@ -76,4 +76,4 @@ if __name__ == "__main__":
 
     #! Watchdogs doesn't work correctly now
     # loop.create_task(start_watching(loop, os.path.join(os.getcwd(), "core")))
-    loop.run_until_complete(bot.run(settings.BOT_TOKEN))
+    loop.run_until_complete(bot.run(settings.BOT_TOKEN))  # type: ignore

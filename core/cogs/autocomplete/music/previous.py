@@ -15,14 +15,14 @@ class PreviousAutocomplete(commands.Cog):
     async def previous_autocomplete(
         self, interaction: disnake.ApplicationCommandInteraction, search_query: str
     ):
-        if not interaction.author.voice:
+        if not interaction.author.voice:  # type: ignore
             return await interaction.response.autocomplete(
                 choices=["❌ | You are not in a voice channel"]
             )
 
         player: wavelink.Player = (
-            interaction.guild.voice_client
-            or await interaction.author.voice.channel.connect(cls=wavelink.Player)
+            interaction.guild.voice_client  # type: ignore
+            or await interaction.author.voice.channel.connect(cls=wavelink.Player)  # type: ignore
         )
 
         queue_ = (
@@ -35,9 +35,10 @@ class PreviousAutocomplete(commands.Cog):
             )
         )
 
-        history = queue_.history
+        history = queue_.history or []
+
         if not search_query:
-            autocomplete_list = (
+            autocomplete_list: list = (
                 [shorten_text(f"{song.author} - {song.title}") for song in history[:25]]
                 if history
                 else ["❌ | There are no songs has been played before"]

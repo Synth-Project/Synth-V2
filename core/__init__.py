@@ -2,7 +2,7 @@ import sys
 from loguru import logger
 
 
-def logging_setup():
+def logging_setup() -> None:
     format_info = "<blue>{time:HH:mm:ss.SS}</blue> | [<bold><u><yellow>{extra[source]}</yellow></u></bold>]: <green>{message}</green>"
     format_debug = "<blue>{time:HH:mm:ss.SS}</blue> | [<bold><u><yellow>{extra[source]}</yellow></u></bold>]: <blue>{message}</blue>"
     format_error = "<blue>{time:HH:mm:ss.SS}</blue> | <red>{message}</red>"

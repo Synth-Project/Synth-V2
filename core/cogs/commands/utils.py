@@ -14,7 +14,7 @@ class Utilities(commands.Cog):
 
     @commands.slash_command()
     async def hello(self, interaction: disnake.ApplicationCommandInteraction):
-        await interaction.send(content=mention_slash(interaction.guild, "player play"))
+        await interaction.send(content=mention_slash(interaction.guild, "player play"))  # type: ignore
 
     @commands.slash_command(name="clear", description="Clear messages from chat")
     async def _clear_messages(

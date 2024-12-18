@@ -15,16 +15,14 @@ class MusicRepository(BaseRepository):
     async def get_all(**kwargs) -> list[UserModel]:
         return await UserModel.filter(**kwargs).all().prefetch_related("musics")
 
-    @staticmethod
-    async def add_one(**kwargs) -> tuple[UserModel, bool]:
+    async def add_one(self, **kwargs) -> tuple[UserModel, bool]:
         model, is_created = await UserModel.get_or_create(**kwargs)
         if is_created:
             await model.fetch_related("musics")
         return model, is_created
 
-    @staticmethod
-    async def remove_one(**kwargs):
-        return await UserModel.filter(**kwargs).delete()
+    async def remove_one(self, **kwargs) -> None:
+        await UserModel.filter(**kwargs).delete()
 
     async def find_song(self, author_id: int, query: str) -> Music | None:
         user = await self.get_one(id=author_id)
