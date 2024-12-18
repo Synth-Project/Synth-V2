@@ -100,7 +100,9 @@ class DownloadDropdown(disnake.ui.Select):
                     file=disnake.File(output, f"{track.title}.{audio_format}"),
                 )
         except ValueError:
-            await interaction.edit_original_response("Internal server error or no videos found for this track.")
+            await interaction.edit_original_response(
+                "Internal server error or no videos found for this track."
+            )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
         await self.download_track(interaction, self.values[0])

@@ -1,6 +1,4 @@
 from enum import StrEnum
 
 
-class CustomEmojis(StrEnum):
-    ...
-
+class CustomEmojis(StrEnum): ...
