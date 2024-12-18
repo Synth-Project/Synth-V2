@@ -22,7 +22,11 @@ class Moderation(commands.Cog):
 
         self.bot = bot
 
-    @commands.slash_command(name="ban", description="Ban a user from this guild")
+    @commands.slash_command(name="moderation")
+    async def moderation(self, _: disnake.ApplicationCommandInteraction):
+        pass
+
+    @moderation.sub_command(name="ban", description="Ban a user from this guild")
     @resolve_member()
     @commands.has_guild_permissions(ban_members=True)
     async def ban(
@@ -67,7 +71,7 @@ class Moderation(commands.Cog):
 
         await interaction.guild.ban(member, reason=f"{interaction.user}: {reason}")
 
-    @commands.slash_command(name="unban", description="Unban a user on this guild")
+    @moderation.sub_command(name="unban", description="Unban a user on this guild")
     @resolve_member(for_unban=True)
     @commands.has_permissions(ban_members=True)
     async def unban(
@@ -96,7 +100,7 @@ class Moderation(commands.Cog):
         ).get_embed()
         await interaction.send(embed=embed)
 
-    @commands.slash_command(name="kick", description="Kick a user from this guild")
+    @moderation.sub_command(name="kick", description="Kick a user from this guild")
     @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def kick(
@@ -141,7 +145,7 @@ class Moderation(commands.Cog):
 
         await member.kick(reason=reason)
 
-    @commands.slash_command(name="mute", description="Mute a user for a specified time")
+    @moderation.sub_command(name="mute", description="Mute a user for a specified time")
     @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def mute(
@@ -203,10 +207,6 @@ class Moderation(commands.Cog):
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 
-    @commands.slash_command(name="moderation")
-    async def moderation(self, interaction: disnake.ApplicationCommandInteraction):
-        pass
-
     @moderation.sub_command(name="show", description="Show moderation lists")
     async def show_list(
         self,
@@ -242,7 +242,7 @@ class Moderation(commands.Cog):
         )
         await interaction.send(embed=embeds[0], view=paginator)
 
-    @commands.slash_command(name="unmute", description="Unmute a user")
+    @moderation.sub_command(name="unmute", description="Unmute a user")
     @resolve_member(for_unmute=True)
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def unmute(
@@ -281,7 +281,7 @@ class Moderation(commands.Cog):
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 
-    @commands.slash_command(
+    @moderation.sub_command(
         name="crossban",
         description="Ban user from all servers, where the requester is administrator",
     )
@@ -330,7 +330,7 @@ class Moderation(commands.Cog):
         )
         await interaction.send(embed=embed)
 
-    @commands.slash_command(
+    @moderation.sub_command(
         name="crosskick",
         description="Kick user from all servers, where the requester is administrator",
     )
