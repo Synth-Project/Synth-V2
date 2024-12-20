@@ -1,5 +1,5 @@
 from core.database.models.user import UserModel
-from core.database.models.music import Music
+from core.database.models.music import UserMusic as Music
 from core.database.repositories.base import BaseRepository
 
 

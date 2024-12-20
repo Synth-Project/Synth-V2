@@ -9,6 +9,8 @@ from yt_dlp import YoutubeDL
 
 from core import logger
 
+from typing import Union
+
 
 def find_youtube(track: Playable) -> str:
     """
@@ -103,3 +105,21 @@ def shorten_text(text: str, max_length: int = 75) -> str:
     if len(text) > max_length:
         return text[: max_length - 3] + "..."
     return text
+
+
+def check_user_role(
+    guild: disnake.Guild,
+    member: disnake.Member,
+    role_to_check: Union[disnake.Role, int, str],
+) -> bool:
+    if isinstance(role_to_check, disnake.Role):
+        role_to_check = role_to_check.id
+
+    if isinstance(role_to_check, str):
+        role_to_check = int(role_to_check)
+
+    # role = guild.get_role(role_to_check)
+    # if not role:
+    #     return False
+
+    return any(role.id == role_to_check for role in member.roles)

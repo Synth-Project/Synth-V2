@@ -1,10 +1,9 @@
 from tortoise import fields, Model
 
-
-class Music(Model):
+class UserMusic(Model):
     name = fields.CharField(max_length=256)
     url = fields.CharField(max_length=512)
-    dj_role = fields.IntField(default=0, null=True)
+    # dj_role = fields.IntField(default=0, null=True)
 
     class Meta:
         table = "musics"

@@ -7,9 +7,12 @@ from disnake.ext import commands
 
 from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
+from core.misc.misc import check_user_role
 from core.misc.music.views.download import DownloadDropdown
 from core.misc.music.views.effects import EffectsDropdown
 from core.misc.music.views.shuffle import ShuffleView
+
+from core.database.repositories.guild import GuildMusicRepository
 
 
 class NavigationDropdown(disnake.ui.Select):
@@ -30,6 +33,7 @@ class NavigationDropdown(disnake.ui.Select):
         self.functions = getattr(
             importlib.import_module("core.misc.music.functions"), "MusicFunctions"
         )
+        self.guild_music_repo = GuildMusicRepository()
 
         self.queue_ = (
             player.queue  # type: ignore
@@ -385,5 +389,25 @@ class NavigationDropdown(disnake.ui.Select):
         }
 
         action = option_actions.get(self.values[0])
+
+        dj_role = await self.guild_music_repo.find_dj_role(
+            guild_id=self.interaction.guild.id
+        )
+
+        if self.values[0] == "effects":
+            if not check_user_role(
+                self.interaction.guild, self.interaction.user, dj_role
+            ):
+                await self._edit_view()
+                return await interaction.response.send_message(
+                    "You must have a DJ role to use this function", ephemeral=True
+                )
+
+            if not dj_role:
+                await self._edit_view()
+                return await interaction.response.send_message(
+                    "You must be or set a DJ role to use this function", ephemeral=True
+                )
+
         if action:
             await action(interaction)

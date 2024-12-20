@@ -4,6 +4,8 @@ import wavelink
 from disnake.ext import commands
 
 from core.misc.embed import CustomEmbed
+from core.database.repositories.guild import GuildMusicRepository
+from core.misc.misc import check_user_role
 
 
 class EffectsDropdown(disnake.ui.Select):
@@ -27,6 +29,7 @@ class EffectsDropdown(disnake.ui.Select):
         self.bot: commands.Bot = bot
         self.player: wavelink.Player = player
         self.interaction: disnake.Interaction = interaction
+        self.guild_music_repo = GuildMusicRepository()
 
         self.filters: wavelink.Filters = player.filters
 
@@ -55,6 +58,25 @@ class EffectsDropdown(disnake.ui.Select):
         )
 
     async def callback(self, interaction: disnake.Interaction) -> None:
+        dj_role = await self.guild_music_repo.find_dj_role(
+            guild_id=self.interaction.guild.id
+        )
+
+        if not dj_role:
+            return await interaction.response.send_message(
+                "You must set up a DJ role to use this function", ephemeral=True
+            )
+
+        if not check_user_role(self.interaction.guild, self.interaction.user, dj_role):
+            return await interaction.response.send_message(
+                "You must have a DJ role to use this function", ephemeral=True
+            )
+
+        # if not check_user_role(self.interaction.guild, self.interaction.user, dj_role):
+        #     return await interaction.response.send_message(
+        #         "You must be or set a DJ role to use this function", ephemeral=True
+        #     )
+
         selected_option = self.values[0]
         if selected_option == "reset":
             await self.reset_filters(interaction)
