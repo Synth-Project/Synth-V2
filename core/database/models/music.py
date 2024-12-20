@@ -1,5 +1,6 @@
 from tortoise import fields, Model
 
+
 class UserMusic(Model):
     name = fields.CharField(max_length=256)
     url = fields.CharField(max_length=512)
