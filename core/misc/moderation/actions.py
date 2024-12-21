@@ -109,7 +109,7 @@ class ModerationActions:
         reason: str,
         ban_time: str = None,
         crossban: bool = False,
-    ) -> None: 
+    ) -> None:
         """
         Bans a user from this guild.
 
@@ -141,4 +141,6 @@ class ModerationActions:
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 
-        await self.interaction.guild.ban(member, reason=f"{self.interaction.user}: {reason}")
+        await self.interaction.guild.ban(
+            member, reason=f"{self.interaction.user}: {reason}"
+        )
