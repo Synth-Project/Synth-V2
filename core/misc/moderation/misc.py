@@ -1,8 +1,11 @@
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 import disnake
 from core.misc.color import BasicColors
+
+from core.database.models.warns import WarnsModel
+from core.misc.embed import CustomEmbed
 
 TIME_UNITS: Dict[str, int] = {
     "s": 1,
@@ -183,3 +186,46 @@ async def generate_ban_list(
         embeds.append(embed)
 
     return embeds, None
+
+
+async def generate_warns_list(
+    interaction: disnake.ApplicationCommandInteraction,
+    warns: Optional[list[WarnsModel]],
+) -> tuple[list[disnake.Embed], str | None]:
+    """
+    Generate a list of currently warned users in the guild.
+
+    Args:
+        interaction: The interaction context from which the guild is accessed.
+
+    Returns:
+        A tuple containing:
+            - A list of disnake.Embed objects, each representing a page with warned users.
+            - A string message if there are no warned users, otherwise None.
+    """
+    if not warns:
+        embed = CustomEmbed(
+            title="<:info:1170712514288435271> User Warns",
+            description="There are currently no warns on this server.",
+            color=BasicColors.DEFAULT,
+        ).get_embed()
+        await interaction.send(embed=embed)
+        return
+
+    warn_pages = []
+    for warn in warns:
+        member = await interaction.guild.get_or_fetch_member(warn.user.id)
+        moderator = await interaction.guild.get_or_fetch_member(warn.warned_by)
+        warn_page = CustomEmbed(
+            title=f"Warn #{warn.id}",
+            description=(
+                f"**Member:** {member.mention} ({member})\n"
+                f"**Moderator:** {moderator.mention} ({moderator})\n"
+                f"**Reason:** {warn.reason or 'No reason provided'}\n"
+                f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}"
+            ),
+            color=BasicColors.WARNING,
+        ).get_embed()
+        warn_pages.append(warn_page)
+
+    return warn_pages, None
