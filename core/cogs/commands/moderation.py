@@ -137,7 +137,9 @@ class Moderation(commands.Cog):
     # @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def view_warns(
-        self, interaction: disnake.ApplicationCommandInteraction, member: disnake.Member
+        self,
+        interaction: disnake.ApplicationCommandInteraction,
+        member: disnake.Member = None,
     ) -> None:
         """
         View all warns for a user
@@ -149,48 +151,43 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        try:
-            warns = await self.user_repository.get_warns(user_id=member.id)
+        if not member:
+            member = interaction.user
 
-            if not warns:
-                embed = CustomEmbed(
-                    title="<:info:1170712514288435271> User Warns",
-                    description=f"{member.mention} has no warns.",
-                    color=BasicColors.DEFAULT,
-                ).get_embed()
-                await interaction.send(embed=embed)
-                return
+        warns = await self.user_repository.get_warns(user_id=member.id)
 
-            warn_pages = []
-            for warn in warns:
-                moderator = await interaction.guild.get_or_fetch_member(warn.warned_by)
-                warn_page = CustomEmbed(
-                    title=f"Warn #{warn.warn_id}",
-                    description=(
-                        f"**Member:** {member.mention} ({member})\n"
-                        f"**Moderator:** {moderator.mention} ({moderator})\n"
-                        f"**Reason:** {warn.reason or 'No reason provided'}\n"
-                        f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}"
-                    ),
-                    color=BasicColors.WARNING,
-                ).get_embed()
-                warn_pages.append(warn_page)
+        if not warns:
+            embed = CustomEmbed(
+                title="<:info:1170712514288435271> User Warns",
+                description=f"{member.mention} has no warns.",
+                color=BasicColors.DEFAULT,
+            ).get_embed()
+            await interaction.send(embed=embed)
+            return
 
-            await interaction.send(
-                embed=warn_pages[0],
-                view=(
-                    CreatePaginator(warn_pages)
-                    if len(warn_pages) > 1
-                    else disnake.utils.MISSING
+        warn_pages = []
+        for warn in warns:
+            moderator = await interaction.guild.get_or_fetch_member(warn.warned_by)
+            warn_page = CustomEmbed(
+                title=f"Warn #{warn.warn_id}",
+                description=(
+                    f"**Member:** {member.mention} ({member})\n"
+                    f"**Moderator:** {moderator.mention} ({moderator})\n"
+                    f"**Reason:** {warn.reason or 'No reason provided'}\n"
+                    f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}"
                 ),
-            )
+                color=BasicColors.WARNING,
+            ).get_embed()
+            warn_pages.append(warn_page)
 
-        except Exception as e:
-            await interaction.send(
-                embed=CustomEmbed(
-                    title="Error", description=str(e), color=BasicColors.ERROR
-                ).get_embed()
-            )
+        await interaction.send(
+            embed=warn_pages[0],
+            view=(
+                CreatePaginator(warn_pages)
+                if len(warn_pages) > 1
+                else disnake.utils.MISSING
+            ),
+        )
 
     @moderation.sub_command(name="show", description="Show moderation lists")
     async def show_list(
@@ -251,30 +248,6 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        # embed = CustomEmbed(
-        #     title="<:ban:1170712517308317756> Successfully banned",
-        #     description=(
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Member:** {member.mention} ({member})\n"
-        #         f"**Reason:** {reason}"
-        #     ),
-        # ).get_embed()
-
-        # await interaction.send(embed=embed)
-
-        # try:
-        #     embed.title = "<:ban:1170712517308317756> You were banned"
-        #     embed.description = (
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Reason:** {reason}\n"
-        #         f"**Server:** {interaction.guild.name}"
-        #     )
-        #     await member.send(embed=embed)
-        # except (disnake.HTTPException, disnake.Forbidden):
-        #     pass
-
-        # await interaction.guild.ban(member, reason=f"{interaction.user}: {reason}")
-
         await ModerationActions(self.bot, interaction).ban(member, reason)
 
     @commands.slash_command(name="unban", description="Unban a user on this guild")
@@ -327,30 +300,6 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        # embed = CustomEmbed(
-        #     title="<:kick:1170712514288435271> Successfully kicked",
-        #     description=(
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Member:** {member.mention} ({member})\n"
-        #         f"**Reason:** {reason}"
-        #     ),
-        # ).get_embed()
-
-        # await interaction.send(embed=embed)
-
-        # try:
-        #     embed.title = "<:kick:1170712514288435271> You were kicked"
-        #     embed.description = (
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Reason:** {reason}\n"
-        #         f"**Server:** {interaction.guild.name}"
-        #     )
-        #     await member.send(embed=embed)
-        # except (disnake.HTTPException, disnake.Forbidden):
-        #     pass
-
-        # await member.kick(reason=reason)
-
         await ModerationActions(self.bot, interaction).kick(
             member=member, reason=reason
         )
@@ -378,45 +327,6 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        # str_time = await str_to_seconds(mute_time)
-
-        # if str_time == 0:
-        #     error_embed = CustomEmbed().error_embed(
-        #         description=f"<:disallow:1171111636573093929> | Invalid mute time format."
-        #     )
-        #     return await interaction.send(embed=error_embed.get_embed())
-
-        # unmute_time = utcnow() + datetime.timedelta(seconds=str_time)
-
-        # embed = CustomEmbed(
-        #     title="<:mute:1170712518725992529> Successfully muted",
-        #     description=(
-        #         f"**Member:** {member.mention} ({member})\n"
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Time:** {str(await hms(float(str_time)))}\n"
-        #         f"**Reason:** {reason}\n"
-        #         f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
-        #     ),
-        # ).get_embed()
-
-        # await member.edit(
-        #     timeout=disnake.utils.utcnow() + datetime.timedelta(seconds=str_time)
-        # )
-        # await interaction.send(embed=embed)
-
-        # try:
-        #     embed.title = "<:mute:1170712518725992529> You were muted"
-        #     embed.description = (
-        #         f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-        #         f"**Server:** {interaction.guild.name}\n"
-        #         f"**Time:** {str(await hms(float(str_time)))}\n"
-        #         f"**Reason:** {reason}\n"
-        #         f"**Unmute date:** <t:{int(unmute_time.timestamp())}>"
-        #     )
-        #     await member.send(embed=embed)
-        # except (disnake.HTTPException, disnake.Forbidden):
-        #     pass
-
         await ModerationActions(self.bot, interaction).mute(
             member=member, mute_time=mute_time, reason=reason
         )
@@ -472,42 +382,9 @@ class Moderation(commands.Cog):
         member: disnake.User,
         reason: str = None,
     ):
-        embed = CustomEmbed().get_embed()
-        success_servers: int = 0
-
-        for guild in self.bot.guilds:
-            requested_from_permissions = (
-                await guild.fetch_member(interaction.user.id)
-            ).guild_permissions
-
-            if not requested_from_permissions.administrator:
-                continue
-
-            if member := await guild.fetch_member(member.id):
-                try:
-                    await guild.ban(member, reason=reason)
-
-                    if not guild == interaction.guild:
-                        embed.title = "<:kick:1170712514288435271> Crossban"
-                        embed.description = (
-                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-                            f"**Member:** {member} (`{member.id}`)\n"
-                            f"**Reason:** {reason}"
-                        )
-                        await guild.text_channels[0].send(embed=embed)
-
-                    success_servers += 1
-                except (disnake.HTTPException, disnake.Forbidden):
-                    continue
-
-        embed.title = "<:kick:1170712514288435271> Crossban Success"
-        embed.description = (
-            f"**Kicked from {success_servers} servers.**\n"
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member} (`{member.id}`)\n"
-            f"**Reason:** {reason}"
+        await ModerationActions(self.bot, interaction).cross_ban(
+            member=member, reason=reason
         )
-        await interaction.send(embed=embed)
 
     @moderation.sub_command(
         name="crosskick",
@@ -521,42 +398,9 @@ class Moderation(commands.Cog):
         member: disnake.User,
         reason: str = None,
     ):
-        embed = CustomEmbed().get_embed()
-        success_servers: int = 0
-
-        for guild in self.bot.guilds:
-            requested_from_permissions = (
-                await guild.fetch_member(interaction.user.id)
-            ).guild_permissions
-
-            if not requested_from_permissions.administrator:
-                continue
-
-            if member := await guild.fetch_member(member.id):
-                try:
-                    await guild.kick(member, reason=reason)
-
-                    if not guild == interaction.guild:
-                        embed.title = "<:kick:1170712514288435271> Crosskick"
-                        embed.description = (
-                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-                            f"**Member:** {member} (`{member.id}`)\n"
-                            f"**Reason:** {reason}"
-                        )
-                        await guild.text_channels[0].send(embed=embed)
-
-                    success_servers += 1
-                except (disnake.HTTPException, disnake.Forbidden):
-                    continue
-
-        embed.title = "<:kick:1170712514288435271> Crosskick Success"
-        embed.description = (
-            f"**Kicked from {success_servers} servers.**\n"
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-            f"**Member:** {member} (`{member.id}`)\n"
-            f"**Reason:** {reason}"
+        await ModerationActions(self.bot, interaction).cross_kick(
+            member=member, reason=reason
         )
-        await interaction.send(embed=embed)
 
 
 def setup(bot: commands.Bot) -> None:

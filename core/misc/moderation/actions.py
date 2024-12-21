@@ -144,3 +144,91 @@ class ModerationActions:
         await self.interaction.guild.ban(
             member, reason=f"{self.interaction.user}: {reason}"
         )
+
+    async def cross_ban(
+        self,
+        member: disnake.User,
+        reason: str,
+        ban_time: str = None,
+    ) -> None:
+        embed = CustomEmbed().get_embed()
+        success_servers: int = 0
+
+        for guild in self.bot.guilds:
+            requested_from_permissions = (
+                await guild.fetch_member(interaction.user.id)
+            ).guild_permissions
+
+            if not requested_from_permissions.administrator:
+                continue
+
+            if member := await guild.fetch_member(member.id):
+
+                try:
+                    await guild.ban(member, reason=reason)
+
+                    if not guild == interaction.guild:
+                        embed.title = "<:kick:1170712514288435271> Crossban"
+                        embed.description = (
+                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                            f"**Member:** {member} (`{member.id}`)\n"
+                            f"**Reason:** {reason}"
+                        )
+                        await guild.text_channels[0].send(embed=embed)
+
+                    success_servers += 1
+                except (disnake.HTTPException, disnake.Forbidden):
+                    continue
+
+        embed.title = "<:kick:1170712514288435271> Crossban Success"
+        embed.description = (
+            f"**Kicked from {success_servers} servers.**\n"
+            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+            f"**Member:** {member} (`{member.id}`)\n"
+            f"**Reason:** {reason}"
+        )
+        await interaction.send(embed=embed)
+        return
+
+    async def cross_kick(
+        self,
+        member: disnake.User,
+        reason: str,
+    ) -> None:
+        embed = CustomEmbed().get_embed()
+        success_servers: int = 0
+
+        for guild in self.bot.guilds:
+            requested_from_permissions = (
+                await guild.fetch_member(interaction.user.id)
+            ).guild_permissions
+
+            if not requested_from_permissions.administrator:
+                continue
+
+            if member := await guild.fetch_member(member.id):
+                try:
+                    await guild.kick(member, reason=reason)
+
+                    if not guild == interaction.guild:
+                        embed.title = "<:kick:1170712514288435271> Crosskick"
+                        embed.description = (
+                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                            f"**Member:** {member} (`{member.id}`)\n"
+                            f"**Reason:** {reason}"
+                        )
+                        await guild.text_channels[0].send(embed=embed)
+
+                    success_servers += 1
+                except (disnake.HTTPException, disnake.Forbidden):
+                    continue
+
+        embed.title = "<:kick:1170712514288435271> Crosskick Success"
+        embed.description = (
+            f"**Kicked from {success_servers} servers.**\n"
+            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+            f"**Member:** {member} (`{member.id}`)\n"
+            f"**Reason:** {reason}"
+        )
+        await interaction.send(embed=embed)
+        return
