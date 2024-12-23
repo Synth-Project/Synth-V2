@@ -2,7 +2,13 @@ import disnake
 from disnake.ext import commands
 
 from core.cogs.commands.moderation import Moderation
-from core.misc.moderation.misc import TIME_UNITS, CYRILLIC_MAP, SIMPLIFIED_TIME_UNITS
+from core.misc.moderation.misc import (
+    TIME_UNITS,
+    CYRILLIC_MAP,
+    SIMPLIFIED_TIME_UNITS,
+    str_to_seconds,
+    hms,
+)
 from core.database.repositories.user import UserRepository
 
 
@@ -25,17 +31,26 @@ class WarnAutocomplete(commands.Cog):
         # if not current.isdigit():
         #     return ["❌ | Invalid time format"]
 
-        try:
-            current_num = int(current)
-        except ValueError:
-            return interaction.response.autocomplete(
-                choices=["❌ | Invalid time format"]
-            )
+        # try:
+        #     current_num = int(current)
+        # except ValueError:
+        #     return ["❌ | Invalid time format"]
+        for c in current:
+            if c in TIME_UNITS.keys():
+                if await str_to_seconds(current) != 0:
+                    return [current]
+        else:
+            # if current:
+            try:
+                current_num = int(current)
+            except ValueError:
+                return ["❌ | Invalid time format"]
 
         suggestions = [
             f"{current} {unit}{'s' if current_num > 1 else ''}"
             for unit in SIMPLIFIED_TIME_UNITS
         ]
+        # suggestions = await hms(current_num, True)
 
         return suggestions[:25]
 

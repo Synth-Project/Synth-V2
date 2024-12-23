@@ -76,7 +76,7 @@ async def str_to_seconds(input_string: str) -> int:
     return total_seconds
 
 
-async def hms(seconds: float) -> str:
+async def hms(seconds: float, to_list: bool = False) -> str | list[str]:
     """
     Convert a time in seconds to a human-readable string (e.g. '1h2m3s').
 
@@ -102,6 +102,9 @@ async def hms(seconds: float) -> str:
             parts.append(f"{value} {unit_name}{'s' if value != 1 else ''}")
             if seconds == 0:
                 break
+
+    if to_list:
+        return parts
 
     return " ".join(parts)
 
