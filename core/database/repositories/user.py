@@ -83,7 +83,7 @@ class UserRepository(BaseRepository):
 
     async def remove_warn(self, user_id: int, warn_id: int) -> bool:
         """
-        Remove a specific warn from a user.
+        Remove a specific warn from a user and reorder the remaining warns.
 
         :param user_id: ID of the user
         :param warn_id: ID of the warn to remove
@@ -98,6 +98,12 @@ class UserRepository(BaseRepository):
             return False
 
         await warn.delete()
+
+        remaining_warns = await WarnsModel.filter(user=user).order_by("warn_id")
+        for index, remaining_warn in enumerate(remaining_warns):
+            remaining_warn.warn_id = index + 1
+            await remaining_warn.save()
+
         return True
 
     async def clear_warns(self, user_id: int) -> int:

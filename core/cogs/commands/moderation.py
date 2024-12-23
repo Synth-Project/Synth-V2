@@ -2,8 +2,10 @@ import datetime
 
 import disnake
 from disnake.ext import commands
+from disnake.utils import utcnow
 
 from core.database.repositories.user import UserRepository
+from core.misc.moderation.misc import str_to_seconds
 from core.misc.moderation.actions import ModerationActions
 from core.misc.moderation.checks import resolve_member
 from core.misc.moderation.misc import (
@@ -11,6 +13,7 @@ from core.misc.moderation.misc import (
     generate_ban_list,
     generate_warns_list,
 )
+from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
 from core.misc.paginator import CreatePaginator
 
@@ -26,15 +29,19 @@ class Moderation(commands.Cog):
     async def moderation(self, _: disnake.ApplicationCommandInteraction):
         pass
 
-    @moderation.sub_command(name="warn", description="Warn a user")
-    @resolve_member()
+    @moderation.sub_command_group(name="warn")
+    async def warn(self, _: disnake.ApplicationCommandInteraction) -> None:
+        pass
+
+    @warn.sub_command(name="add", description="Add a warn to a specific user")
     @commands.has_permissions(kick_members=True, ban_members=True)
-    async def warn(
+    async def add_warn(
         self,
         interaction: disnake.ApplicationCommandInteraction,
         member: disnake.Member,
         *,
-        reason: str = None,
+        reason: str = "Not specified",
+        remove_at: str | None = None,
     ) -> None:
         """
         Warn a user
@@ -47,39 +54,59 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
+
+        str_time = await str_to_seconds(remove_at) if remove_at else 0
+        if str_time == 0 and remove_at:
+            error_embed = CustomEmbed().error_embed(
+                description=f"<:disallow:1171111636573093929> | Invalid remove warn time format."
+            )
+            return await self.interaction.send(embed=error_embed.get_embed())
+
+        remove_warn_at = utcnow() + datetime.timedelta(seconds=str_time)
+
         warn = await self.user_repository.add_warn(
-            user_id=member.id, warned_by=interaction.user.id, reason=reason
+            user_id=member.id,
+            warned_by=interaction.user.id,
+            reason=reason,
+            remove_at=remove_warn_at,
         )
 
         embed = CustomEmbed(
-            title="<:warn:1170712514288435271> Successfully warned",
             description=(
-                f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-                f"**Member:** {member.mention} ({member})\n"
-                f"**Reason:** {reason or 'No reason provided'}\n"
-                f"**Warn ID:** {warn.warn_id}"
+                f"- **Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                f"- **Member:** {member.mention} ({member})\n"
+                f"- **Reason:** {reason or 'No reason provided'}\n"
+                f"- **Total warns:** {warn.warn_id}\n"
+                f"- **Remove at**: {f"<t:{int(remove_warn_at.timestamp())}>" if remove_at else "Never"}"
             ),
+            thumbnail=member.display_avatar.url,
         ).get_embed()
+        embed.set_author(
+            name=f"Successfully warned", icon_url=interaction.user.display_avatar.url
+        )
 
         await interaction.send(embed=embed)
 
         try:
             dm_embed = CustomEmbed(
-                title="<:warn:1170712514288435271> You were warned",
                 description=(
-                    f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-                    f"**Reason:** {reason or 'No reason provided'}\n"
-                    f"**Server:** {interaction.guild.name}\n"
-                    f"**Warn ID:** {warn.warn_id}"
+                    f"- **Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                    f"- **Reason:** {reason or 'No reason provided'}\n"
+                    f"- **Server:** {interaction.guild.name}\n"
+                    f"- **Total warns:** {warn.warn_id}\n"
+                    f"- **Remove at**: {f"<t:{int(remove_warn_at.timestamp())}>" if remove_at else "Never"}"
                 ),
+                thumbnail=member.display_avatar.url,
             ).get_embed()
+            dm_embed.set_author(
+                name="You were warned", icon_url=interaction.user.display_avatar.url
+            )
+
             await member.send(embed=dm_embed)
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 
-    @moderation.sub_command(
-        name="remove_warn", description="Remove a specific warn from a user"
-    )
+    @warn.sub_command(name="remove", description="Remove a specific warn from a user")
     @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def remove_warn(
@@ -100,41 +127,41 @@ class Moderation(commands.Cog):
             None
         """
         try:
-            # Attempt to remove the specific warn
+            warn = await self.user_repository.get_warn(
+                user_id=member.id, warn_id=warn_id
+            )
             warn_removed = await self.user_repository.remove_warn(
                 user_id=member.id, warn_id=warn_id
             )
 
             if warn_removed:
                 embed = CustomEmbed(
-                    title="<:success:1170712514288435271> Warn Removed",
                     description=(
-                        f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
-                        f"**Member:** {member.mention} ({member})\n"
-                        f"**Warn ID:** {warn_id}"
+                        f"- **Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                        f"- **Member:** {member.mention} ({member})\n"
+                        f"- **Warned by:** {(await interaction.guild.get_or_fetch_member(warn.warned_by)).mention}\n"
+                        f"- **Warn reason:** {warn.reason}\n"
+                        f"- **Warn date:** {disnake.utils.format_dt(warn.date, "f") if warn.date else "Unknown"}\n"
                     ),
-                    color=BasicColors.SUCCESS,
+                    thumbnail=member.display_avatar.url,
                 ).get_embed()
+
+                embed.set_author(
+                    name=f"Successfully removed warn #{warn.warn_id}",
+                    icon_url=interaction.user.display_avatar.url,
+                )
                 await interaction.send(embed=embed)
             else:
-                embed = CustomEmbed(
+                error_embed = CustomEmbed.error_embed(
                     title="<:error:1170712514288435271> Warn Not Found",
-                    description=(
-                        f"**Member:** {member.mention} ({member})\n"
-                        f"**Warn ID:** {warn_id}\n"
-                        "No warn with this ID was found for the user."
-                    ),
-                    color=BasicColors.ERROR,
-                ).get_embed()
-                await interaction.send(embed=embed)
+                    description="No warn with this ID was found for the user.",
+                )
+                await interaction.send(embed=error_embed.get_embed())
 
         except Exception as e:
-            await interaction.send(
-                CustomEmbed(title="Error", description=str(e), color=BasicColors.ERROR)
-            )
+            print(e)
 
-    @moderation.sub_command(name="view_warns", description="View warns for a user")
-    # @resolve_member()
+    @warn.sub_command(name="view", description="View warns of a user")
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def view_warns(
         self,
@@ -151,34 +178,36 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
-        if not member:
-            member = interaction.user
+
+        member = interaction.user if not member else member
 
         warns = await self.user_repository.get_warns(user_id=member.id)
 
         if not warns:
             embed = CustomEmbed(
-                title="<:info:1170712514288435271> User Warns",
-                description=f"{member.mention} has no warns.",
-                color=BasicColors.DEFAULT,
+                title="<:info:1169685342077583480> User Warns",
+                description=f"{member.mention} currently has no warns.",
             ).get_embed()
-            await interaction.send(embed=embed)
-            return
 
-        warn_pages = []
-        for warn in warns:
-            moderator = await interaction.guild.get_or_fetch_member(warn.warned_by)
-            warn_page = CustomEmbed(
-                title=f"Warn #{warn.warn_id}",
+            return await interaction.send(embed=embed)
+
+        warn_pages = [
+            CustomEmbed(
+                title=f"<:info:1169685342077583480> Warn #{warn.warn_id}",
                 description=(
-                    f"**Member:** {member.mention} ({member})\n"
-                    f"**Moderator:** {moderator.mention} ({moderator})\n"
-                    f"**Reason:** {warn.reason or 'No reason provided'}\n"
-                    f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}"
+                    f"- **Member:** {member.mention} ({member})\n"
+                    f"- **Administrator:** {moderator.mention} ({moderator})\n"
+                    f"- **Reason:** {warn.reason or 'No reason provided'}\n"
+                    f"- **Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}\n"
+                    f"- **Removes at:** {disnake.utils.format_dt(warn.remove_at.timestamp(), style='f') if warn.remove_at else 'Never'}"
                 ),
-                color=BasicColors.WARNING,
+                thumbnail=member.display_avatar.url,
             ).get_embed()
-            warn_pages.append(warn_page)
+            for warn in warns
+            for moderator in [
+                await interaction.guild.get_or_fetch_member(warn.warned_by)
+            ]
+        ]
 
         await interaction.send(
             embed=warn_pages[0],
@@ -198,12 +227,6 @@ class Moderation(commands.Cog):
             description="Choose which list to show",
         ),
     ):
-        # processors = {
-        #     "mutes": self._process_mute_list,
-        #     "bans": self._process_ban_list,
-        # }
-
-        # embeds, error = await processors[list_type](interaction)
         match list:
             case "mutes":
                 embeds, error = await generate_mute_list(interaction)
@@ -214,16 +237,16 @@ class Moderation(commands.Cog):
                 embeds, error = await generate_warns_list(interaction, all_warns)
 
         if error:
-            error_embed = disnake.Embed(
-                color=BasicColors.ERROR, description=description
-            )
+            error_embed = disnake.Embed(title=error, color=BasicColors.ERROR)
             error_embed.set_footer(
                 text=interaction.user, icon_url=interaction.user.avatar
             )
             return await interaction.send(embed=error_embed)
 
-        paginator = CreatePaginator(
-            embeds=embeds, author_id=interaction.author.id, timeout=600
+        paginator = (
+            CreatePaginator(embeds=embeds, author_id=interaction.author.id, timeout=600)
+            if len(embeds) > 1
+            else disnake.utils.MISSING
         )
         await interaction.send(embed=embeds[0], view=paginator)
 
@@ -276,8 +299,8 @@ class Moderation(commands.Cog):
                 f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
                 f"**Member:** {member.mention} (`{member.id}`)\n"
             ),
-        ).get_embed()
-        await interaction.send(embed=embed)
+        )
+        await interaction.send(embed=embed.get_embed())
 
     @moderation.sub_command(name="kick", description="Kick a user from this guild")
     @resolve_member()
@@ -304,7 +327,7 @@ class Moderation(commands.Cog):
             member=member, reason=reason
         )
 
-    @commands.slash_command(name="mute", description="Mute a user for a specified time")
+    @moderation.sub_command(name="mute", description="Mute a user for a specified time")
     @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def mute(
@@ -331,7 +354,7 @@ class Moderation(commands.Cog):
             member=member, mute_time=mute_time, reason=reason
         )
 
-    @commands.slash_command(name="unmute", description="Unmute a user")
+    @moderation.sub_command(name="unmute", description="Unmute a user")
     @resolve_member(for_unmute=True)
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def unmute(
@@ -355,10 +378,10 @@ class Moderation(commands.Cog):
                 f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
                 f"**Member:** {member.mention} ({member})"
             ),
-        ).get_embed()
+        )
 
         await member.edit(timeout=None)
-        await interaction.send(embed=embed)
+        await interaction.send(embed=embed.get_embed())
 
         try:
             embed.title = "<:unmute:1169690521472614500> You were unmuted"
@@ -366,7 +389,7 @@ class Moderation(commands.Cog):
                 f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
                 f"**Server:** {interaction.guild.name}\n"
             )
-            await member.send(embed=embed)
+            await member.send(embed=embed.get_embed())
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 

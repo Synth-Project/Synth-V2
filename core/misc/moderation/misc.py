@@ -117,28 +117,26 @@ async def generate_mute_list(
     ]
 
     if not muted_members:
-        return [], "There are currently no mutes on this server."
+        return [], "Currenly, there are no mutes on the server."
 
-    embeds = []
     per_page = 5
 
-    for i in range(0, len(muted_members), per_page):
-        embed = disnake.Embed(
+    embeds = [
+        disnake.Embed(
             title="<:calendar:1169690539168366712> Active mutes",
             color=BasicColors.DEFAULT,
+        ).add_field(
+            name="",
+            value=(
+                f"`[{idx}]` **{member.mention}** - "
+                f"<t:{round(member.current_timeout.timestamp())}:F> "
+                f"(<t:{round(member.current_timeout.timestamp())}:R>)"
+            ),
+            inline=False,
         )
-
-        for idx, member in enumerate(muted_members[i : i + per_page], start=i + 1):
-            timeout = member.current_timeout
-            embed.add_field(
-                name="",
-                value=f"`[{idx}]` **{member.mention}** - "
-                f"<t:{round(timeout.timestamp())}:F> "
-                f"(<t:{round(timeout.timestamp())}:R>)",
-                inline=False,
-            )
-
-        embeds.append(embed)
+        for i in range(0, len(muted_members), per_page)
+        for idx, member in enumerate(muted_members[i : i + per_page], start=i + 1)
+    ]
 
     return embeds, None
 
@@ -160,30 +158,28 @@ async def generate_ban_list(
     try:
         banned_users = [entry async for entry in interaction.guild.bans()]
     except disnake.Forbidden:
-        return [], "I don't have permission to view banned users."
+        return [], "I don't have required permission to view banned users."
 
     if not banned_users:
-        return [], "There are currently no bans on this server."
+        return [], "Currently, there are not bans on the server."
 
-    embeds = []
     per_page = 5
 
-    for i in range(0, len(banned_users), per_page):
-        embed = disnake.Embed(
+    embeds = [
+        disnake.Embed(
             title="<:ban:1169690539168366712> Active bans",
             color=BasicColors.DEFAULT,
+        ).add_field(
+            name="",
+            value=(
+                f"`[{idx}]` **{ban_entry.user}** (`{ban_entry.user.id}`)\n"
+                f"- **Reason:** {ban_entry.reason or 'No reason provided'}"
+            ),
+            inline=False,
         )
-
-        for idx, ban_entry in enumerate(banned_users[i : i + per_page], start=i + 1):
-            reason = ban_entry.reason or "No reason provided"
-            embed.add_field(
-                name="",
-                value=f"`[{idx}]` **{ban_entry.user}** (`{ban_entry.user.id}`)\n"
-                f"<:list:1169690529643114547> Reason: {reason}",
-                inline=False,
-            )
-
-        embeds.append(embed)
+        for i in range(0, len(banned_users), per_page)
+        for idx, ban_entry in enumerate(banned_users[i : i + per_page], start=i + 1)
+    ]
 
     return embeds, None
 
@@ -205,27 +201,26 @@ async def generate_warns_list(
     """
     if not warns:
         embed = CustomEmbed(
-            title="<:info:1170712514288435271> User Warns",
-            description="There are currently no warns on this server.",
-            color=BasicColors.DEFAULT,
+            title="<:info:1169685342077583480> User Warns",
+            description="Currently, there are no warns on the server.",
         ).get_embed()
-        await interaction.send(embed=embed)
-        return
 
-    warn_pages = []
-    for warn in warns:
-        member = await interaction.guild.get_or_fetch_member(warn.user.id)
-        moderator = await interaction.guild.get_or_fetch_member(warn.warned_by)
-        warn_page = CustomEmbed(
-            title=f"Warn #{warn.id}",
+        return await interaction.send(embed=embed)
+
+    warn_pages = [
+        CustomEmbed(
+            title=f"<:info:1169685342077583480> Warn #{warn.id}",
             description=(
                 f"**Member:** {member.mention} ({member})\n"
-                f"**Moderator:** {moderator.mention} ({moderator})\n"
+                f"**Administrator:** {moderator.mention} ({moderator})\n"
                 f"**Reason:** {warn.reason or 'No reason provided'}\n"
-                f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}"
+                f"**Date:** {disnake.utils.format_dt(warn.date.timestamp(), style='f')}\n"
+                f"**Removes at:** {disnake.utils.format_dt(warn.remove_at.timestamp(), style='f') if warn.remove_at else "Never"}"
             ),
-            color=BasicColors.WARNING,
         ).get_embed()
-        warn_pages.append(warn_page)
+        for warn in warns
+        for member in [await interaction.guild.get_or_fetch_member(warn.user.id)]
+        for moderator in [await interaction.guild.get_or_fetch_member(warn.warned_by)]
+    ]
 
     return warn_pages, None

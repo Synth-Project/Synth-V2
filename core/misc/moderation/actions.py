@@ -8,7 +8,7 @@ from core.misc.moderation.misc import str_to_seconds, hms
 from core.misc.embed import CustomEmbed
 
 
-class ModerationActions:
+class BasicModerationActions:
     def __init__(self, bot: commands.Bot, interaction: disnake.Interaction) -> None:
         self.bot = bot
         self.interaction = interaction
@@ -18,7 +18,6 @@ class ModerationActions:
         member: disnake.Member,
         mute_time: int,
         reason: str = "Not specified",
-        crossmute: bool = False,
     ) -> None:
         """
         Mutes a user for a specified time.
@@ -53,10 +52,10 @@ class ModerationActions:
         await member.edit(
             timeout=disnake.utils.utcnow() + datetime.timedelta(seconds=str_time)
         )
-        await self.interaction.send(embed=embed) and not crossmute
+        await self.interaction.send(embed=embed)
 
         try:
-            embed.title = f"<:mute:1170712518725992529> You were muted {"(crossmute)" if crossmute else ""}"
+            embed.title = f"<:mute:1170712518725992529> You were muted"
             embed.description = (
                 f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
                 f"**Server:** {self.interaction.guild.name}\n"
@@ -68,9 +67,7 @@ class ModerationActions:
         except (disnake.HTTPException, disnake.Forbidden):
             pass
 
-    async def kick(
-        self, member: disnake.Member, reason: str, crosskick: bool = False
-    ) -> None:
+    async def kick(self, member: disnake.Member, reason: str) -> None:
         """
         Kicks a user from this guild.
 
@@ -91,7 +88,7 @@ class ModerationActions:
         await self.interaction.send(embed=embed)
 
         try:
-            embed.title = f"<:kick:1170712514288435271> You were kicked {"(crosskick)" if crosskick else ""}"
+            embed.title = f"<:kick:1170712514288435271> You were kicked"
             embed.description = (
                 f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
                 f"**Reason:** {reason}\n"
@@ -108,7 +105,6 @@ class ModerationActions:
         member: disnake.User,
         reason: str,
         ban_time: str = None,
-        crossban: bool = False,
     ) -> None:
         """
         Bans a user from this guild.
@@ -131,7 +127,7 @@ class ModerationActions:
         await self.interaction.send(embed=embed)
 
         try:
-            embed.title = f"<:ban:1170712517308317756> You were banned {"(crossban)" if crossban else ""}"
+            embed.title = f"<:ban:1170712517308317756> You were banned"
             embed.description = (
                 f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
                 f"**Reason:** {reason}\n"
@@ -145,18 +141,19 @@ class ModerationActions:
             member, reason=f"{self.interaction.user}: {reason}"
         )
 
-    async def cross_ban(
-        self,
-        member: disnake.User,
-        reason: str,
-        ban_time: str = None,
-    ) -> None:
+
+class CrossModerationCommands:
+    def __init__(self, bot: commands.Bot, interaction: disnake.Interaction) -> None:
+        self.bot = bot
+        self.interaction = interaction
+
+    async def cross_ban(self, member: disnake.User, reason: str) -> None:
         embed = CustomEmbed().get_embed()
         success_servers: int = 0
 
         for guild in self.bot.guilds:
             requested_from_permissions = (
-                await guild.fetch_member(interaction.user.id)
+                await guild.fetch_member(self.interaction.user.id)
             ).guild_permissions
 
             if not requested_from_permissions.administrator:
@@ -167,10 +164,10 @@ class ModerationActions:
                 try:
                     await guild.ban(member, reason=reason)
 
-                    if not guild == interaction.guild:
+                    if not guild == self.interaction.guild:
                         embed.title = "<:kick:1170712514288435271> Crossban"
                         embed.description = (
-                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                            f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
                             f"**Member:** {member} (`{member.id}`)\n"
                             f"**Reason:** {reason}"
                         )
@@ -183,12 +180,11 @@ class ModerationActions:
         embed.title = "<:kick:1170712514288435271> Crossban Success"
         embed.description = (
             f"**Kicked from {success_servers} servers.**\n"
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+            f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
             f"**Member:** {member} (`{member.id}`)\n"
             f"**Reason:** {reason}"
         )
-        await interaction.send(embed=embed)
-        return
+        return await self.interaction.send(embed=embed)
 
     async def cross_kick(
         self,
@@ -200,7 +196,7 @@ class ModerationActions:
 
         for guild in self.bot.guilds:
             requested_from_permissions = (
-                await guild.fetch_member(interaction.user.id)
+                await guild.fetch_member(self.interaction.user.id)
             ).guild_permissions
 
             if not requested_from_permissions.administrator:
@@ -210,10 +206,10 @@ class ModerationActions:
                 try:
                     await guild.kick(member, reason=reason)
 
-                    if not guild == interaction.guild:
+                    if not guild == self.interaction.guild:
                         embed.title = "<:kick:1170712514288435271> Crosskick"
                         embed.description = (
-                            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+                            f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
                             f"**Member:** {member} (`{member.id}`)\n"
                             f"**Reason:** {reason}"
                         )
@@ -226,9 +222,14 @@ class ModerationActions:
         embed.title = "<:kick:1170712514288435271> Crosskick Success"
         embed.description = (
             f"**Kicked from {success_servers} servers.**\n"
-            f"**Administrator:** {interaction.user.mention} ({interaction.user})\n"
+            f"**Administrator:** {self.interaction.user.mention} ({self.interaction.user})\n"
             f"**Member:** {member} (`{member.id}`)\n"
             f"**Reason:** {reason}"
         )
-        await interaction.send(embed=embed)
-        return
+        return await self.interaction.send(embed=embed)
+
+
+class ModerationActions(BasicModerationActions, CrossModerationCommands):
+    def __init__(self, bot: commands.Bot, interaction: disnake.Interaction) -> None:
+        self.bot = bot
+        self.interaction = interaction

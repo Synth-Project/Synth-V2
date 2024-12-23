@@ -1,5 +1,5 @@
 from tortoise import Model, fields
-
+from core.database.models.warns import WarnsModel
 
 class UserModel(Model):
     id = fields.BigIntField(primary_key=True)

@@ -3,15 +3,15 @@ from tortoise import fields, Model
 
 class WarnsModel(Model):
     id = fields.BigIntField(pk=True)
-    # user_id = fields.()
-    user = fields.ForeignKeyField("models.UserModel", related_name="user")
-    # guild_id = fields.BigIntField()
-    warned_by = fields.BigIntField()
-    date = fields.DatetimeField(auto_now_add=True)
     warn_id = fields.BigIntField(default=0)
+
+    user = fields.ForeignKeyField("models.UserModel", related_name="user")
+    warned_by = fields.BigIntField()
     reason = fields.TextField(null=True)
-    remove_at = fields.DatetimeField(null=True)
+
+    date = fields.DatetimeField(auto_now_add=True)
     created_at = fields.DatetimeField(auto_now_add=True)
+    remove_at = fields.DatetimeField(null=True)
 
     async def save(
         self,
@@ -29,4 +29,3 @@ class WarnsModel(Model):
     class Meta:
         table = "warns"
         table_description = "Warns model"
-        # unique_together = ("user", "warn_id")
