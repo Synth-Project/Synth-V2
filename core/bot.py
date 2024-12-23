@@ -37,6 +37,7 @@ class Bot(commands.AutoShardedInteractionBot):
                 "core/cogs/commands",
                 "core/cogs/events",
                 "core/cogs/autocomplete",
+                "core/cogs/autocomplete/moderation",
                 "core/cogs/autocomplete/music",
                 # "core/cogs/autocomplete/fun",
             ]

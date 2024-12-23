@@ -28,6 +28,16 @@ TIME_UNITS: Dict[str, int] = {
     "year": 31536000,
 }
 
+SIMPLIFIED_TIME_UNITS = {
+    "second",
+    "minute",
+    "hour",
+    "day",
+    "week",
+    "month",
+    "year",
+}
+
 CYRILLIC_MAP: Dict[str, str] = {
     "с": "s",
     "сек": "s",

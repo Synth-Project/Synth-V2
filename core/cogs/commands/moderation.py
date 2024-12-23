@@ -57,11 +57,12 @@ class Moderation(commands.Cog):
         """
 
         str_time = await str_to_seconds(remove_at) if remove_at else 0
+
         if str_time == 0 and remove_at:
             error_embed = CustomEmbed().error_embed(
                 description=f"<:disallow:1171111636573093929> | Invalid remove warn time format."
             )
-            return await self.interaction.send(embed=error_embed.get_embed())
+            return await interaction.send(embed=error_embed.get_embed())
 
         remove_warn_at = utcnow() + datetime.timedelta(seconds=str_time)
 
@@ -114,7 +115,7 @@ class Moderation(commands.Cog):
         self,
         interaction: disnake.ApplicationCommandInteraction,
         member: disnake.Member,
-        warn_id: int,
+        warn_id: str,
     ) -> None:
         """
         Remove a specific warn from a user
@@ -127,6 +128,12 @@ class Moderation(commands.Cog):
         Returns:
             None
         """
+
+        if not warn_id.isdigit():
+            selected_warn = warn_id.split(":")[0]
+
+        warn_id = int(selected_warn)
+
         try:
             warn = await self.user_repository.get_warn(
                 user_id=member.id, warn_id=warn_id
@@ -180,7 +187,7 @@ class Moderation(commands.Cog):
             None
         """
 
-        member = interaction.user or member
+        member = member or interaction.user
 
         warns = await self.user_repository.get_warns(user_id=member.id)
 
