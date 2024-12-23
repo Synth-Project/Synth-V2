@@ -34,6 +34,7 @@ class Moderation(commands.Cog):
         pass
 
     @warn.sub_command(name="add", description="Add a warn to a specific user")
+    @resolve_member()
     @commands.has_permissions(kick_members=True, ban_members=True)
     async def add_warn(
         self,
@@ -77,7 +78,7 @@ class Moderation(commands.Cog):
                 f"- **Member:** {member.mention} ({member})\n"
                 f"- **Reason:** {reason or 'No reason provided'}\n"
                 f"- **Total warns:** {warn.warn_id}\n"
-                f"- **Remove at**: {f"<t:{int(remove_warn_at.timestamp())}>" if remove_at else "Never"}"
+                f"- **Remove at**: {disnake.utils.format_dt(remove_warn_at, style='f') if remove_at else "Never"}"
             ),
             thumbnail=member.display_avatar.url,
         ).get_embed()
@@ -94,7 +95,7 @@ class Moderation(commands.Cog):
                     f"- **Reason:** {reason or 'No reason provided'}\n"
                     f"- **Server:** {interaction.guild.name}\n"
                     f"- **Total warns:** {warn.warn_id}\n"
-                    f"- **Remove at**: {f"<t:{int(remove_warn_at.timestamp())}>" if remove_at else "Never"}"
+                    f"- **Remove at**: {disnake.utils.format_dt(remove_warn_at, style='f') if remove_at else "Never"}"
                 ),
                 thumbnail=member.display_avatar.url,
             ).get_embed()
@@ -179,7 +180,7 @@ class Moderation(commands.Cog):
             None
         """
 
-        member = interaction.user if not member else member
+        member = interaction.user or member
 
         warns = await self.user_repository.get_warns(user_id=member.id)
 
