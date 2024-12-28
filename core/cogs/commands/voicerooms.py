@@ -34,7 +34,9 @@ class VoiceRooms(commands.Cog):
 
     async def cog_load(self):
         self.update_rooms.start()
-        self.bot.add_view(Buttons(bot=self.bot, author=None, channel=None, message=None))
+        self.bot.add_view(
+            Buttons(bot=self.bot, author=None, channel=None, message=None)
+        )
 
     @commands.Cog.listener()
     async def on_voice_state_update(

@@ -50,7 +50,9 @@ async def get_channel(
 ) -> Optional[disnake.abc.GuildChannel]:
     """Fetch a channel and return whether it was successful."""
 
-    if (isinstance(channel_id, str) and channel_id.isdigit()) or isinstance(channel_id, int):
+    if (isinstance(channel_id, str) and channel_id.isdigit()) or isinstance(
+        channel_id, int
+    ):
         channel_id = int(channel_id)
     else:
         return None
@@ -66,11 +68,14 @@ async def get_channel(
     ):
         return None
 
+
 async def get_message(
     bot: commands.Bot, message_id: int | str, channel: disnake.VoiceChannel | None
 ) -> Optional[disnake.Message]:
     """Fetch a message and return whether it was successful."""
-    if (isinstance(message_id, str) and message_id.isdigit()) or isinstance(message_id, int):
+    if (isinstance(message_id, str) and message_id.isdigit()) or isinstance(
+        message_id, int
+    ):
         message_id = int(message_id)
     else:
         return None

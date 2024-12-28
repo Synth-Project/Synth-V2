@@ -52,7 +52,7 @@ class VoiceRoomsRepository(BaseRepository):
             id=channel_id, owner_id=owner_id, message=message_id
         )
         await main_room.rooms.add(voice_room)
-    
+
     async def update_room(
         self, main_room: MainRoom, channel_id: int, owner_id: int, message_id: int
     ):
@@ -81,7 +81,9 @@ class VoiceRoomsRepository(BaseRepository):
         for main_room in await self.get_all():
             for room in await main_room.rooms.all():
                 room: VoiceRoom = room
-                channel: Optional[disnake.VoiceChannel] = await get_channel(bot, room.id)
+                channel: Optional[disnake.VoiceChannel] = await get_channel(
+                    bot, room.id
+                )
                 if not channel:
                     await self.remove_room(main_room, room.id)
                 elif len(channel.members) == 0:
@@ -121,7 +123,7 @@ class VoiceRoomsRepository(BaseRepository):
             else:
                 embed.add_field(name="Room Settings", value=text)
 
-        await message.edit(embed=embed, content = owner.mention if owner else None)
+        await message.edit(embed=embed, content=owner.mention if owner else None)
 
     async def send_room_message(
         self,
@@ -131,6 +133,7 @@ class VoiceRoomsRepository(BaseRepository):
         main_room: MainRoom,
     ):
         from core.misc.views.voicerooms.buttons import Buttons
+
         embed = custom_embed(title="Private Room Settings")
         embed.description = (
             "<:store:1169690541986959464> - Change channel name\n"

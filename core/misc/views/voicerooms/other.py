@@ -38,7 +38,9 @@ class KickUsersSelect(disnake.ui.Select):
 
     async def callback(self, inter: disnake.MessageInteraction):
         main_room = await self.voices.get_private_room(guild_id=inter.guild_id)
-        result: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
+        result: Optional[VoiceRoom] = await self.voices.get_room(
+            main_room, self.channel.id
+        )
         if result and result.id == self.channel.id:
             for _ in self.values:
                 member = inter.guild.get_member(int(self.values[0]))
@@ -211,7 +213,9 @@ class SetOwnerSelect(disnake.ui.UserSelect):
 
         if not new_owner.bot:
             main_room = await self.voices.get_private_room(guild_id=inter.guild_id)
-            room: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
+            room: Optional[VoiceRoom] = await self.voices.get_room(
+                main_room, self.channel.id
+            )
 
             if room and room.owner_id != new_owner:
                 embed = custom_embed(
@@ -219,7 +223,9 @@ class SetOwnerSelect(disnake.ui.UserSelect):
                     description=f"Ownership successfully transferred to: {new_owner}",
                 )
                 await inter.channel.send(embed=embed)
-                await self.voices.update_room(main_room, room.id, new_owner.id, room.message)
+                await self.voices.update_room(
+                    main_room, room.id, new_owner.id, room.message
+                )
                 return
 
         elif new_owner.id == inter.author.id:
@@ -257,7 +263,9 @@ class AccessToChannelSelect(disnake.ui.UserSelect):
     async def callback(self, inter: disnake.MessageInteraction):
         if selected_users := self.values:
             main_room = await self.voices.get_private_room(guild_id=inter.guild_id)
-            room: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
+            room: Optional[VoiceRoom] = await self.voices.get_room(
+                main_room, self.channel.id
+            )
             if room:
                 for user in selected_users:
                     if perms := self.channel.permissions_for(user):
@@ -309,7 +317,9 @@ class MuteUnmuteSelect(disnake.ui.Select):
 
     async def callback(self, inter: disnake.MessageInteraction):
         main_room = await self.voices.get_private_room(guild_id=self.channel.id)
-        room: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
+        room: Optional[VoiceRoom] = await self.voices.get_room(
+            main_room, self.channel.id
+        )
         if room:
             for member_id in self.values:
                 member = inter.guild.get_member(int(member_id))

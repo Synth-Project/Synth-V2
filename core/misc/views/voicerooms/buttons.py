@@ -63,8 +63,12 @@ class Buttons(disnake.ui.View):
     ):
         await interaction.response.defer(ephemeral=True)
         if perms := self.channel.permissions_for(interaction.guild.default_role):
-            main_room = await self.voices.get_private_room(guild_id=interaction.guild_id)
-            room: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
+            main_room = await self.voices.get_private_room(
+                guild_id=interaction.guild_id
+            )
+            room: Optional[VoiceRoom] = await self.voices.get_room(
+                main_room, self.channel.id
+            )
             owner = interaction.guild.get_member(room.owner_id)
             await self.channel.set_permissions(owner, connect=True)
 
@@ -191,7 +195,9 @@ class Buttons(disnake.ui.View):
             return False
         result = await self.voices.get_private_room(guild_id=interaction.guild_id)
         if result:
-            room: Optional[VoiceRoom] = await self.voices.get_room(result, self.channel.id)
+            room: Optional[VoiceRoom] = await self.voices.get_room(
+                result, self.channel.id
+            )
 
             if room and room.owner_id != interaction.author.id:
                 embed = custom_embed(
