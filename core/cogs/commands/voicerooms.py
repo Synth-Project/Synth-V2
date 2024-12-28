@@ -1,5 +1,6 @@
 import disnake
 from disnake.ext import commands, tasks
+from typing import Optional
 
 from core.database.models.voicerooms import MainRoom
 from core.database.repositories import VoiceRoomsRepository
@@ -33,9 +34,7 @@ class VoiceRooms(commands.Cog):
 
     async def cog_load(self):
         self.update_rooms.start()
-        self.bot.add_view(
-            Buttons(bot=self.bot, author=None, channel=None, voices=None, message=None)
-        )
+        self.bot.add_view(Buttons(bot=self.bot, author=None, channel=None, message=None))
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -59,7 +58,7 @@ class VoiceRooms(commands.Cog):
                 )
 
         elif before.channel and len(before.channel.members) == 0:
-            main_room: MainRoom = await self.voices.get_private_room(
+            main_room: Optional[MainRoom] = await self.voices.get_private_room(
                 before.channel.guild.id
             )
 

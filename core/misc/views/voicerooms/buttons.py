@@ -1,8 +1,8 @@
 import disnake
 from disnake.ext import commands
 
-from core.database.models.voicerooms import MainRoom, VoiceRoom
-
+from core.database.repositories import VoiceRoomsRepository
+from core.database.models import VoiceRoom
 from core.misc.views.voicerooms.other import (
     BitrateSelect,
     SetChannelName,
@@ -23,13 +23,12 @@ class Buttons(disnake.ui.View):
         bot: commands.Bot,
         author: disnake.Member,
         channel: disnake.VoiceChannel,
-        voices: MainRoom,
         message: disnake.Message,
     ):
         super().__init__(timeout=None)
         self.bot = bot
         self.author = author
-        self.voices = voices
+        self.voices = VoiceRoomsRepository()
         self.channel = channel
         self.message = message
 
@@ -64,8 +63,8 @@ class Buttons(disnake.ui.View):
     ):
         await interaction.response.defer(ephemeral=True)
         if perms := self.channel.permissions_for(interaction.guild.default_role):
-            main_room = await self.voices.get_or_none(guild_id=interaction.guild_id)
-            room = await main_room.rooms.filter(id=self.channel.id).first()
+            main_room = await self.voices.get_private_room(guild_id=interaction.guild_id)
+            room: Optional[VoiceRoom] = await self.voices.get_room(main_room, self.channel.id)
             owner = interaction.guild.get_member(room.owner_id)
             await self.channel.set_permissions(owner, connect=True)
 
@@ -152,8 +151,8 @@ class Buttons(disnake.ui.View):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        main_room = await self.voices.get_or_none(guild_id=interaction.guild_id)
-        room: VoiceRoom = await main_room.rooms.filter(id=self.channel.id).first()
+        main_room = await self.voices.get_private_room(guild_id=interaction.guild_id)
+        room: VoiceRoom = await self.voices.get_room(main_room, self.channel.id)
         owner = interaction.guild.get_member(room.owner_id)
         await self.channel.set_permissions(
             interaction.guild.default_role, send_messages=not current_perms
@@ -190,11 +189,9 @@ class Buttons(disnake.ui.View):
                 "❌ | Something went wrong. Try to recreate the room.", ephemeral=True
             )
             return False
-        result = await self.voices.get_or_none(guild_id=interaction.guild_id)
+        result = await self.voices.get_private_room(guild_id=interaction.guild_id)
         if result:
-            room: Optional[VoiceRoom] = await result.rooms.filter(
-                id=self.channel.id
-            ).first()
+            room: Optional[VoiceRoom] = await self.voices.get_room(result, self.channel.id)
 
             if room and room.owner_id != interaction.author.id:
                 embed = custom_embed(

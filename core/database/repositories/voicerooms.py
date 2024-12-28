@@ -3,9 +3,8 @@ from core.database.models import VoiceRoom, MainRoom
 from core.database.repositories.base import BaseRepository
 from typing import Optional
 from disnake.ext import commands
-from core.misc.util.misc import get_channel
+from core.misc.util.misc import get_message, get_channel
 from core.misc.embed import custom_embed
-from core.misc.views.voicerooms.buttons import Buttons
 
 
 class VoiceRoomsRepository(BaseRepository):
@@ -46,10 +45,19 @@ class VoiceRoomsRepository(BaseRepository):
     async def add_room(
         self, main_room: MainRoom, channel_id: int, owner_id: int, message_id: int
     ) -> None:
+        if await self.get_room(main_room, channel_id):
+            await self.update_room(main_room, channel_id, owner_id, message_id)
+            return
         voice_room = await VoiceRoom.create(
-            id=channel_id, owner_id=owner_id, message_id=message_id
+            id=channel_id, owner_id=owner_id, message=message_id
         )
         await main_room.rooms.add(voice_room)
+    
+    async def update_room(
+        self, main_room: MainRoom, channel_id: int, owner_id: int, message_id: int
+    ):
+        await self.remove_room(main_room, channel_id)
+        await self.add_room(main_room, channel_id, owner_id, message_id)
 
     async def get_room(
         self, main_room: MainRoom, channel_id: int
@@ -73,31 +81,19 @@ class VoiceRoomsRepository(BaseRepository):
         for main_room in await self.get_all():
             for room in await main_room.rooms.all():
                 room: VoiceRoom = room
-                channel: disnake.VoiceChannel | bool = await get_channel(bot, room.id)
+                channel: Optional[disnake.VoiceChannel] = await get_channel(bot, room.id)
                 if not channel:
                     await self.remove_room(main_room, room.id)
                 elif len(channel.members) == 0:
                     await channel.delete()
-                    await self.remove_room(main_room, channel.id)
+                    await self.remove_room(main_room, room.id)
                 else:
-                    if room.message:
-                        message: disnake.Message | None = bot.get_message(room.id)
-                        if message:
-                            await self.update_embed(channel, message, main_room)
-                        else:
-                            await self.send_room_message(
-                                bot,
-                                channel,
-                                channel.guild.get_member(room.owner_id),
-                                main_room,
-                            )
+                    message = await get_message(bot, room.message, channel)
+                    if message:
+                        await self.update_embed(channel, message, main_room)
                     else:
-                        await self.send_room_message(
-                            bot,
-                            channel,
-                            channel.guild.get_member(room.owner_id),
-                            main_room,
-                        )
+                        owner = await channel.guild.get_or_fetch_member(room.owner_id)
+                        await self.send_room_message(bot, channel, owner, main_room)
 
     async def update_embed(
         self,
@@ -121,12 +117,11 @@ class VoiceRoomsRepository(BaseRepository):
         if message.embeds[0]:
             embed = message.embeds[0]
             if embed.fields:
-                embed.fields[0].value = text
+                embed.set_field_at(0, name="Room Settings", value=text)
             else:
                 embed.add_field(name="Room Settings", value=text)
-        print(text)
 
-        await message.edit(embed=embed, content="ХУЛИ ТЫ НАХУЙ СМОТРИШЬ ГЭНДОН")
+        await message.edit(embed=embed, content = owner.mention if owner else None)
 
     async def send_room_message(
         self,
@@ -135,6 +130,7 @@ class VoiceRoomsRepository(BaseRepository):
         member: disnake.Member,
         main_room: MainRoom,
     ):
+        from core.misc.views.voicerooms.buttons import Buttons
         embed = custom_embed(title="Private Room Settings")
         embed.description = (
             "<:store:1169690541986959464> - Change channel name\n"
@@ -146,6 +142,8 @@ class VoiceRoomsRepository(BaseRepository):
             "<:mute:1170712518725992529> - Mute/Unmute a member in the room\n"
             "<:owner:1169684595697004616> - Transfer room ownership\n"
             "📝 - Enable/Disable message permissions in the room\n"
+            "🌐 - Change room region\n"
+            "🔊 - Change room bitrate\n"
         )
         message = await channel.send(
             content=member.mention,
@@ -157,7 +155,6 @@ class VoiceRoomsRepository(BaseRepository):
                 bot=bot,
                 author=member,
                 channel=channel,
-                voices=await self.get_private_room(guild_id=channel.guild.id),
                 message=message,
             ),
         )

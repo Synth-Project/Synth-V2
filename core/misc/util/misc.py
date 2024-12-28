@@ -1,3 +1,5 @@
+from types import NoneType
+from typing import Optional
 import disnake
 from disnake.ext import commands
 
@@ -45,13 +47,13 @@ def shorten_text(text: str, max_length: int = 75) -> str:
 
 async def get_channel(
     bot: commands.Bot, channel_id: int | str
-) -> disnake.abc.GuildChannel | bool:
+) -> Optional[disnake.abc.GuildChannel]:
     """Fetch a channel and return whether it was successful."""
 
-    if isinstance(channel_id, str) and channel_id.isdigit():
+    if (isinstance(channel_id, str) and channel_id.isdigit()) or isinstance(channel_id, int):
         channel_id = int(channel_id)
     else:
-        return False
+        return None
 
     try:
         channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
@@ -62,4 +64,19 @@ async def get_channel(
         disnake.Forbidden,
         disnake.InvalidData,
     ):
-        return False
+        return None
+
+async def get_message(
+    bot: commands.Bot, message_id: int | str, channel: disnake.VoiceChannel | None
+) -> Optional[disnake.Message]:
+    """Fetch a message and return whether it was successful."""
+    if (isinstance(message_id, str) and message_id.isdigit()) or isinstance(message_id, int):
+        message_id = int(message_id)
+    else:
+        return None
+
+    if channel:
+        message = bot.get_message(message_id) or await channel.fetch_message(message_id)
+        return message
+    else:
+        return bot.get_message(message_id)
