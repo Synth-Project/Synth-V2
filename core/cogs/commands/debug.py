@@ -56,6 +56,17 @@ class Debug(commands.Cog):
             ephemeral=True,
         )
 
+    # @commands.slash_command()
+    # @commands.contexts(bot_dm=True, private_channel=True, guild=True)
+    # @commands.install_types(user=True, guild=True)
+    # async def test(self, interaction: disnake.ApplicationCommandInteraction) -> None:
+    #     s: disnake.Message = await interaction.channel.send("govno")
+    #     s = await interaction
+    #     await s.forward(channel=interaction.channel)
+
+    # async def
+
 
 def setup(bot: commands.Bot) -> None:
+
     bot.add_cog(Debug(bot))

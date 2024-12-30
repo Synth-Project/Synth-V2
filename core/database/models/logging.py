@@ -1,5 +1,5 @@
 from tortoise import fields, Model
-from .base import BaseModel
+from core.database.models.base import BaseModel
 
 
 class Logging(BaseModel):
@@ -49,11 +49,11 @@ class MemberLogging(Model):
 
 
 class MessageLogging(Model):
-    remove_message_event = fields.BooleanField(default=False)
-    remove_message_event_channel_id = fields.BigIntField(default=0)
+    delete_event = fields.BooleanField(default=False)
+    delete_event_channel_id = fields.BigIntField(default=0)
 
-    edit_message_event = fields.BooleanField(default=False)
-    edit_message_event_channel_id = fields.BigIntField(default=0)
+    edit_event = fields.BooleanField(default=False)
+    edit_event_channel_id = fields.BigIntField(default=0)
 
     class Meta:
         table = "message_logs"
@@ -61,14 +61,14 @@ class MessageLogging(Model):
 
 
 class ReactionLogging(Model):
-    add_reaction_event = fields.BooleanField(default=False)
-    add_reaction_event_channel_id = fields.BigIntField(default=0)
+    add_event = fields.BooleanField(default=False)
+    add_event_channel_id = fields.BigIntField(default=0)
 
-    remove_reaction_event = fields.BooleanField(default=False)
-    remove_reaction_event_channel_id = fields.BigIntField(default=0)
+    remove_event = fields.BooleanField(default=False)
+    remove_event_channel_id = fields.BigIntField(default=0)
 
-    clear_reaction_event = fields.BooleanField(default=False)
-    clear_reaction_event_channel_id = fields.BigIntField(default=0)
+    clear_event = fields.BooleanField(default=False)
+    clear_event_channel_id = fields.BigIntField(default=0)
 
     class Meta:
         table = "reaction_logs"
@@ -85,14 +85,14 @@ class GuildLogging(Model):
 
 
 class ChannelLogging(Model):
-    create_channel_event = fields.BooleanField(default=False)
-    create_channel_event_channel_id = fields.BigIntField(default=0)
+    create_event = fields.BooleanField(default=False)
+    create_event_channel_id = fields.BigIntField(default=0)
 
-    update_channel_event = fields.BooleanField(default=False)
-    update_channel_event_channel_id = fields.BigIntField(default=0)
+    update_event = fields.BooleanField(default=False)
+    update_event_channel_id = fields.BigIntField(default=0)
 
-    delete_channel_event = fields.BooleanField(default=False)
-    delete_channel_event_channel_id = fields.BigIntField(default=0)
+    delete_event = fields.BooleanField(default=False)
+    delete_event_channel_id = fields.BigIntField(default=0)
 
     class Meta:
         table = "channel_logs"
@@ -100,14 +100,14 @@ class ChannelLogging(Model):
 
 
 class RoleLogging(Model):
-    create_role_event = fields.BooleanField(default=False)
-    create_role_event_channel_id = fields.BigIntField(default=0)
+    create_event = fields.BooleanField(default=False)
+    create_event_channel_id = fields.BigIntField(default=0)
 
-    update_role_event = fields.BooleanField(default=False)
-    update_role_event_channel_id = fields.BigIntField(default=0)
+    update_event = fields.BooleanField(default=False)
+    update_event_channel_id = fields.BigIntField(default=0)
 
-    delete_role_event = fields.BooleanField(default=False)
-    delete_role_event_channel_id = fields.BigIntField(default=0)
+    delete_event = fields.BooleanField(default=False)
+    delete_event_channel_id = fields.BigIntField(default=0)
 
     class Meta:
         table = "role_logs"

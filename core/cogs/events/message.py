@@ -2,6 +2,7 @@ import disnake
 from disnake.ext import commands
 from loguru import logger
 from typing import Optional, Dict, List
+import datetime
 
 from core.database.models.logging import MessageLogging
 from core.database.repositories.logging import LoggingRepository
@@ -32,7 +33,7 @@ class MessageEvents(commands.Cog):
             if entry.action in delete_actions:
                 self.cache_audit_log[guild_id].append(entry)
 
-        self.logger.info(f"Cached last 10 audit logs for {guild.name} ({guild.id})")
+        self.logger.info(f"Cached last 10 audit log for {guild.name} ({guild.id})")
 
     async def _process_audit_log(
         self,
@@ -87,6 +88,7 @@ class MessageEvents(commands.Cog):
                 f"Author: {message.author} ({message.author.id}) | "
                 f"Content: {message.content}"
             )
+            # await
         else:
             self._log_deletion(
                 f"Message self-deleted by {message.author} ({message.author.id}) | "

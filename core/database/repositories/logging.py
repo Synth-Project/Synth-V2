@@ -1,6 +1,8 @@
+import disnake
+from disnake.ext import commands
 from core.database.models.logging import *
 from core.database.repositories.base import BaseRepository
-from typing import Any
+from typing import Any, Self
 
 
 class LoggingRepository(BaseRepository):
@@ -134,3 +136,19 @@ class LoggingRepository(BaseRepository):
         return await LoggingRepository._change_logger(
             guild_id, "reaction", ReactionLogging, **kwargs
         )
+
+    async def get_channel(
+        self, bot: commands.Bot, guild_id: int, event_type: str
+    ) -> tuple[disnake.TextChannel | None, Self | None]:
+        result = await self.get_member_logger(guild_id=guild_id)
+        if not result or not getattr(result, f"{event_type}_event", None):
+            return None, None
+
+        try:
+            channel_id = getattr(result, f"{event_type}_event_channel_id")
+            channel = bot.get_channel(channel_id) or await self.bot.fetch_channel(
+                channel_id
+            )
+            return channel, result
+        except (disnake.NotFound, disnake.Forbidden):
+            return None, None
