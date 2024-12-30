@@ -15,6 +15,7 @@ class Debug(commands.Cog):
             "message": LoggingRepository.change_message_logger,
             "role": LoggingRepository.change_role_logger,
             "reaction": LoggingRepository.change_reaction_logger,
+            "channel": LoggingRepository.change_channel_logger,
         }.get(type_of_log.lower())
 
     @commands.slash_command(name="debug")
@@ -26,11 +27,11 @@ class Debug(commands.Cog):
         ),
         type_of_log: str = commands.Param(
             description="Type of log",
-            choices=["member", "guild", "message", "role", "reaction"],
+            choices=["member", "guild", "message", "role", "reaction", "channel"],
         ),
         type_of_event: str = commands.Param(
             description="Type of events to log",
-            choices=["join", "leave", "update", "ban", "unban", "create", "delete"],
+            choices=["join", "leave", "update", "ban", "unban", "create", "delete", "remove", "add", "clear"],
         ),
     ) -> None:
         logger_method = self._get_logger_method(type_of_log)
