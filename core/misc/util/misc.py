@@ -1,5 +1,5 @@
 from types import NoneType
-from typing import Optional
+from typing import Optional, Union
 import disnake
 from disnake.ext import commands
 
@@ -47,7 +47,12 @@ def shorten_text(text: str, max_length: int = 75) -> str:
 
 async def get_channel(
     bot: commands.Bot, channel_id: int | str
-) -> Optional[disnake.abc.GuildChannel]:
+) -> Optional[
+    disnake.abc.GuildChannel
+    | disnake.TextChannel
+    | disnake.abc.PrivateChannel
+    | disnake.Thread
+]:
     """Fetch a channel and return whether it was successful."""
 
     if (isinstance(channel_id, str) and channel_id.isdigit()) or isinstance(
