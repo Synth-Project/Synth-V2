@@ -50,14 +50,14 @@ class MemberEvents(commands.Cog):
             return
 
         field_changes = {
-            "Display Name": (before.display_name, after.display_name),
-            "Nick": (before.nick, after.nick),
-            "Roles": (
+            "- Display Name": (before.display_name, after.display_name),
+            "- Nick": (before.nick, after.nick),
+            "- Roles": (
                 [r.name for r in before.roles],
                 [r.name for r in after.roles],
                 lambda b, a: f"**Before:** {', '.join(b)}\n**After:** {', '.join(a)}",
             ),
-            "Timeout": (
+            "- Timeout": (
                 before.current_timeout,
                 after.current_timeout,
                 lambda b, a: f"**Before:** {disnake.utils.format_dt(b.timestamp()) if b else 'Not muted'}\n**After:** {disnake.utils.format_dt(a.timestamp()) if a else 'Unmuted'}",
@@ -74,7 +74,7 @@ class MemberEvents(commands.Cog):
                 format_func = (
                     formatter[0]
                     if formatter
-                    else lambda b, a: f"**Before:** {b}\n**After:** {a}"
+                    else lambda b, a: f"**Before:** __{b}__\n**After:** __{a}__"
                 )
                 embed.add_field(
                     name=name, value=format_func(before_val, after_val), inline=False

@@ -15,11 +15,12 @@ class AuditUtil:
         guild: disnake.Guild,
         action: disnake.AuditLogAction,
         duration: int = 3,
+        limit: int = 1
     ) -> Optional[disnake.AuditLogEntry]:
         created_at = datetime.datetime.now(
             tz=datetime.timezone.utc
         ) - datetime.timedelta(seconds=duration)
-        async for entry in guild.audit_logs(limit=1, action=action):
+        async for entry in guild.audit_logs(limit=limit, action=action):
             if entry.created_at.timestamp() >= created_at.timestamp():
                 return entry
 

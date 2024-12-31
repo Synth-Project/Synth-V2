@@ -95,23 +95,23 @@ Finally, if you have any issues with the bot. You can also join the [Synth Commu
         embed.set_thumbnail(url=before.icon)
 
         field_changes = {
-            "Name": (before.name, after.name),
-            "Description": (before.description, after.description),
-            "Icon": (before.icon, after.icon),
-            "Banner": (before.banner, after.banner),
-            "Splash": (before.splash, after.splash),
-            "Owner": (before.owner_id, after.owner_id),
-            "Verification Level": (before.verification_level, after.verification_level),
-            "NSFW Level": (before.nsfw_level, after.nsfw_level),
-            "Region": (before.region, after.region),
-            "AFK Channel": (before.afk_channel, after.afk_channel),
+            "- Name": (before.name, after.name),
+            "- Description": (before.description, after.description),
+            "- Icon": (before.icon, after.icon),
+            "- Banner": (before.banner, after.banner),
+            "- Splash": (before.splash, after.splash),
+            "- Owner": (before.owner_id, after.owner_id),
+            "- Verification Level": (before.verification_level, after.verification_level),
+            "- NSFW Level": (before.nsfw_level, after.nsfw_level),
+            "- Region": (before.region, after.region),
+            "- AFK Channel": (before.afk_channel, after.afk_channel),
         }
 
         for name, (before_val, after_val) in field_changes.items():
             if before_val != after_val:
                 embed.add_field(
                     name=name,
-                    value=f"**Before:** {before_val}\n**After:** {after_val}",
+                    value=f"**Before:** __{before_val}__\n**After:** __{after_val}__",
                     inline=False,
                 )
 
