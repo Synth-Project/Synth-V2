@@ -101,7 +101,10 @@ Finally, if you have any issues with the bot. You can also join the [Synth Commu
             "- Banner": (before.banner, after.banner),
             "- Splash": (before.splash, after.splash),
             "- Owner": (before.owner_id, after.owner_id),
-            "- Verification Level": (before.verification_level, after.verification_level),
+            "- Verification Level": (
+                before.verification_level,
+                after.verification_level,
+            ),
             "- NSFW Level": (before.nsfw_level, after.nsfw_level),
             "- Region": (before.region, after.region),
             "- AFK Channel": (before.afk_channel, after.afk_channel),

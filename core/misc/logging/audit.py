@@ -15,7 +15,7 @@ class AuditUtil:
         guild: disnake.Guild,
         action: disnake.AuditLogAction,
         duration: int = 3,
-        limit: int = 1
+        limit: int = 1,
     ) -> Optional[disnake.AuditLogEntry]:
         created_at = datetime.datetime.now(
             tz=datetime.timezone.utc
