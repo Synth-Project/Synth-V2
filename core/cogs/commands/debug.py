@@ -42,7 +42,7 @@ class Debug(commands.Cog):
                 "remove",
                 "add",
                 "clear",
-                "edit"
+                "edit",
             ],
         ),
     ) -> None:

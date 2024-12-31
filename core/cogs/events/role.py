@@ -90,7 +90,7 @@ class RoleLoggingCog(commands.Cog):
     ) -> None:
         if before == after:
             return
-        
+
         result: RoleLogging = await self.logging.get_role_logger(
             guild_id=after.guild.id
         )

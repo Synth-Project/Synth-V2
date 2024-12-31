@@ -74,7 +74,7 @@ Finally, if you have any issues with the bot. You can also join the [Synth Commu
     ) -> None:
         if before == after:
             return
-        
+
         result: GuildLogging = await LoggingRepository.get_guild_logger(
             guild_id=before.id
         )

@@ -58,7 +58,7 @@ class ChannelLoggingCog(commands.Cog):
     ) -> None:
         if before is after:
             return
-        
+
         result: ChannelLogging = await self.logging.get_channel_logger(
             guild_id=after.guild.id
         )
