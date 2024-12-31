@@ -31,7 +31,19 @@ class Debug(commands.Cog):
         ),
         type_of_event: str = commands.Param(
             description="Type of events to log",
-            choices=["join", "leave", "update", "ban", "unban", "create", "delete", "remove", "add", "clear"],
+            choices=[
+                "join",
+                "leave",
+                "update",
+                "ban",
+                "unban",
+                "create",
+                "delete",
+                "remove",
+                "add",
+                "clear",
+                "edit"
+            ],
         ),
     ) -> None:
         logger_method = self._get_logger_method(type_of_log)
@@ -42,14 +54,6 @@ class Debug(commands.Cog):
             f"{type_of_event}_event": True,
             f"{type_of_event}_event_channel_id": channel_to_log.id,
         }
-
-        if type_of_log == "member" and type_of_event == "ban":
-            event_kwargs.update(
-                {
-                    "ban_event_reason": None,
-                    "ban_event_moderator": None,
-                }
-            )
 
         await logger_method(guild_id=channel_to_log.guild.id, **event_kwargs)
         await interaction.response.send_message(

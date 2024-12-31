@@ -18,9 +18,7 @@ class RoleLoggingCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_role_create(self, role: disnake.Role) -> None:
-        result: RoleLogging = await self.logging.get_role_logger(
-            guild_id=role.guild.id
-        )
+        result: RoleLogging = await self.logging.get_role_logger(guild_id=role.guild.id)
         if not result or not result.create_event:
             return
 
@@ -40,14 +38,14 @@ class RoleLoggingCog(commands.Cog):
             title="✅ | Role Created!",
         )
         embed.add_field(
-            name = "Role Settings",
-            value = (
-                f"Name: {role.name}\n"
-                f"Color: `{role.color}`\n"
-                f"Mentionable: `{"✅" if role.mentionable else "❌"}`\n"
-                f"Position: `{role.position}`\n"
-                f"Creator: {audit.user.name if audit else "Unknown"}"
-            )
+            name="Role Settings",
+            value=(
+                f"- Name: {role.name}\n"
+                f"- Color: `{role.color}`\n"
+                f"- Mentionable: `{"✅" if role.mentionable else "❌"}`\n"
+                f"- Position: `{role.position}`\n"
+                f"- Creator: {audit.user.name if audit else "Unknown"}"
+            ),
         )
 
         await channel.send(embed=embed)
@@ -74,20 +72,25 @@ class RoleLoggingCog(commands.Cog):
             title="❌ | Role Deleted!",
         )
         embed.add_field(
-            name = "Role Settings", 
-            value = (
-                f"Name: `{role.name}`\n"
-                f"Color: `{role.color}`\n"
-                f"Mentionable: `{"✅" if role.mentionable else "❌"}`\n"
-                f"Position: `{role.position}`\n"
-                f"Created at: {disnake.utils.format_dt(role.created_at, "R")}\n"
-                f"Deleter: `{audit.user.name if audit else 'Unknown'}`\n"
-            )
+            name="Role Settings",
+            value=(
+                f"- Name: `{role.name}`\n"
+                f"- Color: `{role.color}`\n"
+                f"- Mentionable: `{"✅" if role.mentionable else "❌"}`\n"
+                f"- Position: `{role.position}`\n"
+                f"- Created at: {disnake.utils.format_dt(role.created_at, "R")}\n"
+                f"- Deleter: `{audit.user.name if audit else 'Unknown'}`\n"
+            ),
         )
         await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_guild_role_update(self, before: disnake.Role, after: disnake.Role) -> None:
+    async def on_guild_role_update(
+        self, before: disnake.Role, after: disnake.Role
+    ) -> None:
+        if before == after:
+            return
+        
         result: RoleLogging = await self.logging.get_role_logger(
             guild_id=after.guild.id
         )
@@ -108,30 +111,31 @@ class RoleLoggingCog(commands.Cog):
 
         embed = custom_embed(
             title="ℹ️ | Role Updated!",
-            description=f"Updater: `{audit.user.name if audit else 'Unknown'}`"
+            description=f"- Updater: `{audit.user.name if audit else 'Unknown'}`",
         )
         embed.add_field(
-            name = "Before Role Settings", 
-            value = (
-                f"Name: `{before.name}`\n"
-                f"Color: `{before.color}`\n"
-                f"Mentionable: `{"✅" if before.mentionable else "❌"}`\n"
-                f"Position: `{before.position}`\n"
-                f"Created at: {disnake.utils.format_dt(before.created_at, "R")}\n"
-            )
+            name="Before Role Settings",
+            value=(
+                f"- Name: `{before.name}`\n"
+                f"- Color: `{before.color}`\n"
+                f"- Mentionable: `{"✅" if before.mentionable else "❌"}`\n"
+                f"- Position: `{before.position}`\n"
+                f"- Created at: {disnake.utils.format_dt(before.created_at, "R")}\n"
+            ),
         )
 
         embed.add_field(
-            name = "After Role Settings", 
-            value = (
-                f"Name: `{after.name}`\n"
-                f"Color: `{after.color}`\n"
-                f"Mentionable: `{"✅" if after.mentionable else "❌"}`\n"
-                f"Position: `{after.position}`\n"
-                f"Created at: {disnake.utils.format_dt(after.created_at, "R")}\n"
-            )
+            name="After Role Settings",
+            value=(
+                f"- Name: `{after.name}`\n"
+                f"- Color: `{after.color}`\n"
+                f"- Mentionable: `{"✅" if after.mentionable else "❌"}`\n"
+                f"- Position: `{after.position}`\n"
+                f"- Created at: {disnake.utils.format_dt(after.created_at, "R")}\n"
+            ),
         )
         await channel.send(embed=embed)
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(RoleLoggingCog(bot))

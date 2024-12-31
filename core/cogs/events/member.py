@@ -43,6 +43,8 @@ class MemberEvents(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: disnake.Member, after: disnake.Member):
+        if before is after:
+            return
         channel, _ = await self.logging.get_channel(self.bot, before.guild.id, "update")
         if not channel:
             return

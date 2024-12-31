@@ -5,6 +5,7 @@ from disnake.ext import commands
 
 from core.misc.embed import custom_embed
 
+
 class AuditUtil:
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -21,7 +22,7 @@ class AuditUtil:
         async for entry in guild.audit_logs(limit=1, action=action):
             if entry.created_at.timestamp() >= created_at.timestamp():
                 return entry
-    
+
     async def _handle_ban_event(
         self, entry: disnake.AuditLogEntry, event_type: str, title: str
     ):

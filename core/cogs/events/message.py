@@ -1,70 +1,18 @@
+import datetime
 import disnake
 from disnake.ext import commands
-from loguru import logger
-from typing import Optional, Dict, List
-import datetime
 
 from core.database.models.logging import MessageLogging
 from core.database.repositories.logging import LoggingRepository
+from core.misc.embed import custom_embed
+from core.misc.logging.audit import AuditUtil
 
 
 class MessageEvents(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
-        self.cache_audit_log: Dict[str, List[disnake.AuditLogEntry]] = {}
-        self.logger = logger.bind(source=self.__class__.__name__)
-
-    async def cog_load(self) -> None:
-        await self.bot.wait_until_ready()
-        for guild in self.bot.guilds:
-            await self._init_audit_log_cache(guild)
-
-    async def _init_audit_log_cache(self, guild: disnake.Guild) -> None:
-        guild_id = str(guild.id)
-        self.cache_audit_log[guild_id] = []
-
-        delete_actions = {
-            disnake.AuditLogAction.message_delete,
-            disnake.AuditLogAction.message_bulk_delete,
-        }
-
-        async for entry in guild.audit_logs(limit=10):
-            if entry.action in delete_actions:
-                self.cache_audit_log[guild_id].append(entry)
-
-        self.logger.info(f"Cached last 10 audit log for {guild.name} ({guild.id})")
-
-    async def _process_audit_log(
-        self,
-        guild: disnake.Guild,
-        action: disnake.AuditLogAction,
-        message_author_id: Optional[int] = None,
-    ) -> Optional[disnake.AuditLogEntry]:
-        """Process audit log entries and update cache."""
-        guild_id = str(guild.id)
-        async for entry in guild.audit_logs(limit=1, action=action):
-            cache = self.cache_audit_log.get(guild_id, [])
-
-            cached_entry = next((log for log in cache if log.id == entry.id), None)
-
-            is_new = cached_entry is None
-            is_updated = cached_entry and cached_entry.extra.count < entry.extra.count
-
-            if is_new or is_updated:
-                self.cache_audit_log[guild_id] = [
-                    log for log in cache if log.id != entry.id
-                ]
-                self.cache_audit_log[guild_id].append(entry)
-
-                if not message_author_id or entry.target.id == message_author_id:
-                    return entry
-
-        return None
-
-    def _log_deletion(self, content: str, **kwargs) -> None:
-        """Centralized logging for message deletions."""
-        self.logger.info(content, **kwargs)
+        self.audit = AuditUtil(bot)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: disnake.Message) -> None:
@@ -77,23 +25,44 @@ class MessageEvents(commands.Cog):
         if not result or not result.delete_event:
             return
 
-        entry = await self._process_audit_log(
-            message.guild, disnake.AuditLogAction.message_delete, message.author.id
+        try:
+            channel = self.bot.get_channel(result.delete_event_channel_id) or await self.bot.fetch_channel(
+                result.delete_event_channel_id
+            )
+        except (disnake.NotFound, disnake.Forbidden):
+            return
+
+        entry = await self.audit._process_audit_log(
+            message.guild, disnake.AuditLogAction.message_delete, 3
         )
 
+        embed = custom_embed(
+            title="❌ | Message Deleted!",
+        )
         if entry and entry.user.id != message.author.id:
-            self._log_deletion(
-                "Message deleted by moderator | "
-                f"Mod: {entry.user} ({entry.user.id}) | "
-                f"Author: {message.author} ({message.author.id}) | "
-                f"Content: {message.content}"
+            embed.add_field(
+                name="Message Settings",
+                value=(
+                    f"- Message ID: `{message.id}`\n"
+                    f"- Author ID: `{message.author.id}`\n"
+                    f"- Author: `{message.author}`\n"
+                    f"- Content: `{message.content}`\n"
+                    f"- Deleted at: {disnake.utils.format_dt(datetime.datetime.now(), 'R')}\n"
+                    f"- Deleter: `{entry.user}`"
+                ),
             )
-            # await
         else:
-            self._log_deletion(
-                f"Message self-deleted by {message.author} ({message.author.id}) | "
-                f"Content: {message.content}"
+            embed.add_field(
+                name="Message Settings",
+                value=(
+                    f"- Message ID: `{message.id}`\n"
+                    f"- Author ID: `{message.author.id}`\n"
+                    f"- Author: `{message.author}`\n"
+                    f"- Content: `{message.content}`\n"
+                    f"- Deleted at: {disnake.utils.format_dt(datetime.datetime.now(), 'R')}"
+                ),
             )
+        await channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(
@@ -103,51 +72,80 @@ class MessageEvents(commands.Cog):
         if not guild:
             return
 
-        entry = await self._process_audit_log(
-            guild, disnake.AuditLogAction.message_bulk_delete
+        entry = await self.audit._process_audit_log(
+            guild, disnake.AuditLogAction.message_bulk_delete, 3
+        )
+
+        try:
+            channel = self.bot.get_channel(payload.channel_id) or await self.bot.fetch_channel(
+                payload.channel_id
+            )
+        except (disnake.NotFound, disnake.Forbidden):
+            return
+        
+        embed = custom_embed(
+            title="❌ | Bulk Message Deleted!",
         )
 
         if entry:
-            self._log_deletion(
-                f"Bulk deletion of {len(payload.message_ids)} messages | "
-                f"Mod: {entry.user} ({entry.user.id}) | "
-                f"Channel: {payload.channel_id}"
+            embed.add_field(
+                name="Delete Info",
+                value=(
+                    f"- Deleted: `{len(payload.message_ids)}` messages\n"
+                    f"- Mod: `{entry.user}` (`{entry.user.id}`)\n"
+                    f"- Channel: {payload.channel_id}\n"
+                ),
             )
         else:
-            self._log_deletion(
-                f"Bulk deletion of {len(payload.message_ids)} messages | "
-                f"Channel: {payload.channel_id}"
+            embed.add_field(
+                name="Delete Info",
+                value=(
+                    f"- Deleted: `{len(payload.message_ids)}` messages\n"
+                    f"- Channel: `{payload.channel_id}`\n"
+                ),
             )
+        await channel.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_raw_message_delete(
-        self, payload: disnake.RawMessageDeleteEvent
-    ) -> None:
-        if getattr(payload, "cached_message", None):
+    async def on_message_edit(self, before: disnake.Message, after: disnake.Message) -> None:
+        if before == after:
             return
-
-        guild = self.bot.get_guild(payload.guild_id)
-        if not guild:
-            return
-
-        entry = await self._process_audit_log(
-            guild, disnake.AuditLogAction.message_delete
+        
+        result: MessageLogging = await LoggingRepository.get_message_logger(
+            guild_id=before.guild.id
         )
+        if not result or not result.edit_event:
+            return
 
-        if entry:
-            self._log_deletion(
-                f"Uncached message deletion | "
-                f"Message ID: {payload.message_id} | "
-                f"Mod: {entry.user} ({entry.user.id}) | "
-                f"Channel: {payload.channel_id}"
+        try:
+            channel = self.bot.get_channel(result.edit_event_channel_id) or await self.bot.fetch_channel(
+                result.edit_event_channel_id
             )
-        else:
-            self._log_deletion(
-                f"Uncached message deletion | "
-                f"Message ID: {payload.message_id} | "
-                f"Channel: {payload.channel_id}"
-            )
+        except (disnake.NotFound, disnake.Forbidden):
+            return
 
+        embed = custom_embed(
+            title="📝 | Message Edited!",
+            description=(
+                f"- Message ID: `{after.id}`\n"
+                f"- Author ID: `{after.author.id}`\n"
+                f"- Author: `{after.author}`\n"
+                f"- Sent at: {disnake.utils.format_dt(before.created_at, 'R')}\n"
+            )
+        )
+        embed.add_field( # TODO add more information about message lol
+            name="Before Edit",
+            value=(
+                f"- Content: `{before.content}`\n"
+            )
+        )
+        embed.add_field(
+            name="After Edit",
+            value=(
+                f"- Content: `{after.content}`\n"
+            )
+        )
+        await channel.send(embed=embed)
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(MessageEvents(bot))
