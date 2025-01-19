@@ -2,7 +2,7 @@ lavalink:
   plugins:
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
       repository: "https://maven.topi.wtf/releases"
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.1"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.3"
     # - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
       # snapshot: false # Set to true if you want to use a snapshot version.
     - dependency: "dev.schlaubi.lyrics:lavalink:2.5.0"
@@ -67,10 +67,18 @@ plugins:
     clients:
       # - MUSIC
       # - ANDROID_TESTSUITE
+      # - TV
+      # - WEBEMBEDDED
       - WEB
+      - WEBEMBEDDED
       # - ANDROID
       # - ANDROID_MUSIC
-      - TVHTML5EMBEDDED
+      # - TVHTML5EMBEDDED
+    # oauth:
+      # enabled: true
+    pot:
+      token: "MnTeVizj90zZnd5u9pWUrjo39F9MHsmAnrHySgZ2_TwMVFmSIkx5meFQQey_Yki3OMEZok2U5CEBdreIj6vSP_L2m23XhVieLIB0O6ovCsiBsacOFvlOsjkoHHqwhC2loUHSZhouOTvnderFSS9yyFZugHHCLA"
+      visitorData: "Cgt5SkltNUJqU3lOVSiBgqu8BjIKCgJVQRIEGgAgEQ%3D%3D"
 
 server: # REST and WS server
   port: 2333

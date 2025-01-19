@@ -23,12 +23,35 @@ class MusicEvent(commands.Cog):
 
     async def connect_nodes(self) -> None:
         nodes = [
-            wavelink.Node(uri="https://lavalink.alfari.id", password="catfein"),
-            wavelink.Node(
-                uri="https://lava-v4.ajieblogs.eu.org",
-                password="https://dsc.gg/ajidevserver",
-            ),
-            # wavelink.Node(uri="http://localhost:2333", password="weever_gay"),
+            # wavelink.Node(uri="https://lavalink.alfari.id", password="catfein"),
+            # wavelink.Node(
+            #     uri="https://lava-v4.ajieblogs.eu.org",
+            #     password="https://dsc.gg/ajidevserver",
+            # ),
+            #             {
+            #   "identifier": "INZEWORLD.COM (DE)",
+            #   "password": "saher.inzeworld.com",
+            #   "host": "lava.inzeworld.com",
+            #   "port": 3128,
+            #   "secure": false
+            # }
+            # wavelink.Node(
+            #     uri="http://lava.inzeworld.com:3128", password="saher.inzeworld.com"
+            # ),
+            # wavelink.Node(uri="http://lavalin
+            # k.alfari.id:4000", password="catfein"),
+            # wavelink.Node(
+            #     uri="http://lavahatry4.techbyte.host:3000",
+            #     password="NAIGLAVA-dash.techbyte.host",
+            # ),
+            #             {
+            #   "identifier": "ChalresNaig Node",
+            #   "password": "NAIGLAVA-dash.techbyte.host",
+            #   "host": "lavahatry4.techbyte.host",
+            #   "port": 3000,
+            #   "secure": false
+            # }
+            wavelink.Node(uri="http://localhost:2333", password="weever_gay"),
         ]
         await wavelink.Pool.connect(nodes=nodes, client=self.bot, cache_capacity=None)
 
