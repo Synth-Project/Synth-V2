@@ -130,6 +130,13 @@ class MusicEvent(commands.Cog):
         await player.main_message.reply(embed=embed)  # type: ignore
         await player.main_message.delete()  # type: ignore
 
+    @commands.Cog.listener()
+    async def on_wavelink_track_exception(
+        self, _: wavelink.TrackExceptionEventPayload
+    ) -> None:
+        self.logger.info("[-] Track exception")
+        # TODO: implement
+
 
 def setup(bot: commands.Bot) -> None:
     bot.add_cog(MusicEvent(bot))
