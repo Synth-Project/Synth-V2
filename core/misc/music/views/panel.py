@@ -5,6 +5,7 @@ import disnake
 import wavelink
 from disnake.ext import commands
 
+from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
 from core.misc.music.views.navigation import NavigationDropdown
 from core.misc.music.views.queue import QueueDropdown
@@ -85,19 +86,73 @@ class NavigationPanel(disnake.ui.View):
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
+        
+        if not player or not player._connected:
+            embed = CustomEmbed(
+                title="A misunderstanding happened",
+                description=f"<:crossmark:1282338837456224394> I am not connected to a voice channel.",
+            ).get_embed()
+            embed.set_author(
+                name=interaction.user.display_name,
+                icon_url=interaction.user.display_avatar.url,
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        skipped_track = player.current if player.playing else self.queue_.history.get()  # type: ignore
-        previous_track = self.queue_.history.get()  # type: ignore
+        if (
+            not interaction.author.voice
+            or interaction.author.voice.channel != player.channel
+        ):
+            embed = CustomEmbed(
+                title="A misunderstanding happened",
+                description=f"<:crossmark:1282338837456224394> You must be in the same voice channel as me!",
+            ).get_embed()
+            embed.set_author(
+                name=interaction.user.display_name,
+                icon_url=interaction.user.display_avatar.url,
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        if not hasattr(player, 'previous_votes'):
+            player.previous_votes: set[int] = set() # type: ignore
+        
+        user_id = interaction.author.id
+        voice_channel = player.channel
 
-        self.queue_.put_at(0, previous_track)
-        self.queue_.put_at(1, skipped_track)  # type: ignore
+        members_in_vc = [member for member in voice_channel.members if not member.bot]
+        required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
+        
+        if user_id in player.previous_votes:
+            embed = CustomEmbed(
+                title=f"<a:success:1168599845192339577> | Vote removed",
+                description=f"({len(player.previous_votes)}/{required_votes}) to switch to the previous track",
+                author=interaction.author,
+            ).get_embed()
+            player.previous_votes.remove(user_id)
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+            
 
-        if not player.playing:
-            await player.play(self.queue_.get(), add_history=False)
+        player.previous_votes.add(user_id)
+        current_votes = len(player.previous_votes)
+        
+        if current_votes >= required_votes:
+            skipped_track = player.current if player.playing else self.queue_.history.get()  # type: ignore
+            previous_track = self.queue_.history.get()  # type: ignore
+            self.queue_.put_at(0, previous_track)
+            self.queue_.put_at(1, skipped_track)  # type: ignore
+            if not player.playing:
+                await player.play(self.queue_.get(), add_history=False)
+            else:
+                await player.skip()
+            player.previous_votes.clear()
+            return await interaction.response.defer(ephemeral=True)
         else:
-            await player.skip()
-
-        await interaction.response.defer(ephemeral=True)
+            embed = CustomEmbed(
+                title=f"<a:success:1168599845192339577> | Vote added",
+                description=f"({current_votes}/{required_votes}) to switch to the previous track",
+                author=interaction.author,
+                # color=BasicColors.SUCCESS,
+            ).get_embed()
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @disnake.ui.button(label=">", style=disnake.ButtonStyle.green, row=0, disabled=True)
     async def skip(
@@ -105,17 +160,74 @@ class NavigationPanel(disnake.ui.View):
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
+        
+        if not player or not player._connected:
+            embed = CustomEmbed(
+                title="A misunderstanding happened",
+                description=f"<:crossmark:1282338837456224394> I am not connected to a voice channel.",
+            ).get_embed()
+            embed.set_author(
+                name=interaction.user.display_name,
+                icon_url=interaction.user.display_avatar.url,
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
-        if player.current:
-            if (
-                self.queue_.history.count == 0  # type: ignore
-                or player.current != self.queue_.history[0]  # type: ignore
-            ):
-                self.queue_.history.put_at(0, player.current)  # type: ignore
+        if (
+            not interaction.author.voice
+            or interaction.author.voice.channel != player.channel
+        ):
+            embed = CustomEmbed(
+                title="A misunderstanding happened",
+                description=f"<:crossmark:1282338837456224394> You must be in the same voice channel as me!",
+            ).get_embed()
+            embed.set_author(
+                name=interaction.user.display_name,
+                icon_url=interaction.user.display_avatar.url,
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        
+        if not hasattr(player, 'skip_votes'):
+            player.skip_votes: set[int] = set() # type: ignore
+        
+        user_id = interaction.author.id
+        voice_channel = player.channel
 
-        await player.skip()
+        members_in_vc = [member for member in voice_channel.members if not member.bot]
+        required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
 
-        await interaction.response.defer(ephemeral=True)
+        if user_id in player.skip_votes:
+            embed = CustomEmbed(
+                title=f"<a:success:1168599845192339577> | Vote removed",
+                description=f"({len(player.skip_votes)}/{required_votes}) to skip the current track",
+                author=interaction.author,
+                # color=BasicColors.SUCCESS,
+            ).get_embed()
+            player.skip_votes.remove(user_id)
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        player.skip_votes.add(user_id)
+
+        current_votes = len(player.skip_votes)
+
+        if current_votes >= required_votes:
+            if player.current:
+                if (
+                    self.queue_.history.count == 0  # type: ignore
+                    or player.current != self.queue_.history[0]  # type: ignore
+                ):
+                    self.queue_.history.put_at(0, player.current)  # type: ignore
+            await player.skip()
+            player.skip_votes.clear()
+            return await interaction.response.defer(ephemeral=True)
+        else:
+            embed = CustomEmbed(
+                title=f"<a:success:1168599845192339577> | Vote added",
+                description=f"({current_votes}/{required_votes}) to skip the current track",
+                author=interaction.author,
+                # color=BasicColors.SUCCESS,
+            ).get_embed()
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(

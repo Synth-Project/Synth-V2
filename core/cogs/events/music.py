@@ -66,8 +66,6 @@ class MusicEvent(commands.Cog):
         message = payload.player.main_message  # type: ignore
         # message = payload.player.message  # type: ignore
 
-        print("event")
-
         if (
             payload.player.queue.mode == wavelink.QueueMode.loop  # type: ignore
             and original != payload.player.current  # type: ignore
