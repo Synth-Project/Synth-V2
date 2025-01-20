@@ -86,7 +86,7 @@ class NavigationPanel(disnake.ui.View):
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
-        
+
         if not player or not player._connected:
             embed = CustomEmbed(
                 title="A misunderstanding happened",
@@ -111,16 +111,16 @@ class NavigationPanel(disnake.ui.View):
                 icon_url=interaction.user.display_avatar.url,
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        
-        if not hasattr(player, 'previous_votes'):
-            player.previous_votes: set[int] = set() # type: ignore
-        
+
+        if not hasattr(player, "previous_votes"):
+            player.previous_votes: set[int] = set()  # type: ignore
+
         user_id = interaction.author.id
         voice_channel = player.channel
 
         members_in_vc = [member for member in voice_channel.members if not member.bot]
         required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
-        
+
         if user_id in player.previous_votes:
             embed = CustomEmbed(
                 title=f"<a:success:1168599845192339577> | Vote removed",
@@ -129,11 +129,10 @@ class NavigationPanel(disnake.ui.View):
             ).get_embed()
             player.previous_votes.remove(user_id)
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-            
 
         player.previous_votes.add(user_id)
         current_votes = len(player.previous_votes)
-        
+
         if current_votes >= required_votes:
             skipped_track = player.current if player.playing else self.queue_.history.get()  # type: ignore
             previous_track = self.queue_.history.get()  # type: ignore
@@ -160,7 +159,7 @@ class NavigationPanel(disnake.ui.View):
     ) -> None:
 
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
-        
+
         if not player or not player._connected:
             embed = CustomEmbed(
                 title="A misunderstanding happened",
@@ -185,10 +184,10 @@ class NavigationPanel(disnake.ui.View):
                 icon_url=interaction.user.display_avatar.url,
             )
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-        
-        if not hasattr(player, 'skip_votes'):
-            player.skip_votes: set[int] = set() # type: ignore
-        
+
+        if not hasattr(player, "skip_votes"):
+            player.skip_votes: set[int] = set()  # type: ignore
+
         user_id = interaction.author.id
         voice_channel = player.channel
 
@@ -227,7 +226,6 @@ class NavigationPanel(disnake.ui.View):
                 # color=BasicColors.SUCCESS,
             ).get_embed()
             return await interaction.response.send_message(embed=embed, ephemeral=True)
-
 
     @disnake.ui.button(label="Pause/Resume", style=disnake.ButtonStyle.gray, row=0)
     async def resume_and_pause(
