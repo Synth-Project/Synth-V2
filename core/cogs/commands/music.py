@@ -4,6 +4,7 @@ import disnake
 import wavelink
 from disnake.ext import commands
 
+from core.misc.misc import shorten_text
 from core.misc.music.functions import MusicFunctions
 from core.misc.music.errors import MusicError
 
@@ -98,7 +99,7 @@ class Music(commands.Cog):
             await player.queue.put_wait(track)
 
             track_info = {
-                "track": f"{track.title} — {track.author}",
+                "track": f"{shorten_text(f"{track.title} — {track.author}")}",
                 "url": track.uri,
                 "source": track.source,
             }

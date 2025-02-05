@@ -1,4 +1,5 @@
 import importlib
+import re
 
 import wavelink
 from disnake.ext import commands
@@ -86,9 +87,9 @@ class MusicEvent(commands.Cog):
         )
         history_exists = queue.history.count > 0  # type: ignore
 
-        await message.edit(  # type: ignore
+        payload.player.main_message = await message.edit(  # type: ignore
             content=None,
-            embed=embed,
+            embeds=[embed],
             view=NavigationPanel(
                 self.bot,  # type: ignore
                 message.id,  # type: ignore
@@ -127,6 +128,37 @@ class MusicEvent(commands.Cog):
 
         await player.main_message.reply(embed=embed)  # type: ignore
         await player.main_message.delete()  # type: ignore
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_exception(
+        self, payload: wavelink.TrackExceptionEventPayload
+    ) -> None:
+        player = payload.player
+
+        assert player
+
+        message = payload.exception.get("message")
+        if message and re.search(
+            r"Sorry,\s*this\s+content\s+is\s+age-restricted", message, re.IGNORECASE
+        ):
+            await player.main_message.reply(
+                embed=CustomEmbed.error_embed(
+                    title=f"<:crossmark:1282338837456224394> Track exception",
+                    description=f"Track `{player._previous.title}` is age-restricted. Skipping.",
+                ).get_embed()
+            )
+
+            # removing current age-restricted track
+            player.queue.history.remove(player._previous)
+
+        if not player.queue.is_empty:
+            new_track = player.queue.get()
+            await player.play(new_track, add_history=False)
+        elif not player.current and not player.playing:
+            # otherwise return the last played track
+            old_track = player.queue.history.get()
+            await player.play(old_track, add_history=False)
+            player.queue.history.put_at(0, old_track)  # type: ignore
 
 
 def setup(bot: commands.Bot) -> None:
