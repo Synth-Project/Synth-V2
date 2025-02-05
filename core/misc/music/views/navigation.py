@@ -11,6 +11,7 @@ from core.misc.misc import check_user_role
 from core.misc.music.views.download import DownloadDropdown
 from core.misc.music.views.effects import EffectsDropdown
 from core.misc.music.views.shuffle import ShuffleView
+from core.misc.music.errors import MusicError
 
 from core.database.repositories.guild import GuildMusicRepository
 
@@ -33,6 +34,7 @@ class NavigationDropdown(disnake.ui.Select):
         self.functions = getattr(
             importlib.import_module("core.misc.music.functions"), "MusicFunctions"
         )
+        self.music_error = MusicError()
         self.guild_music_repo = GuildMusicRepository()
 
         self.queue_ = (
@@ -211,7 +213,7 @@ class NavigationDropdown(disnake.ui.Select):
         new_volume = int(response_modal.text_values.get("input_value", "0"))
         volume = min(100, max(1, new_volume))
 
-        embed = await self.functions.check_error_volume(interaction, volume)
+        embed = await self.music_error.check_error_volume(interaction, volume)
 
         await response_modal.send(
             embed=embed,

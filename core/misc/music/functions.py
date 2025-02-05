@@ -26,6 +26,7 @@ class MusicFunctions:
     ) -> disnake.Embed:
         player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
         track = track or player.current
+        # print(player.main_message.)
 
         requested = (
             await interaction.guild.get_or_fetch_member(int(track.extras.requested_by))
@@ -185,6 +186,7 @@ class MusicFunctions:
 
     @staticmethod
     async def set_volume(player: wavelink.Player, volume: int) -> None:
+        print(player.main_message.embeds)
         embed: disnake.Embed = player.main_message.embeds[0]
         embed.set_footer(
             text=f"Volume: {volume}% // Synth Music 2024", icon_url=bot.get_avatar()
