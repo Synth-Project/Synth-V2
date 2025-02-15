@@ -10,3 +10,9 @@ logs/**/*.log
 # Ignore virtual environments
 venv/
 .venv/
+
+.idea/
+
+# Ignore database files
+*.sqlite3
+*.db

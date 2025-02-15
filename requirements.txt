@@ -1,6 +1,10 @@
-disnake
+disnake>=2.10.1
 aiohttp
 pydantic
 pydantic_settings
 tortoise-orm[asyncpg]
-loguru
+loguru~=0.7.2
+git+https://github.com/Synth-discord-bot/Wavelink-Disnake@234df4c25e2c087483741a358ea406e4c2585268
+yt-dlp~=2024.8.6
+pydantic-settings~=2.4.0
+watchdog~=5.0.2

@@ -1,5 +1,3 @@
-from typing import List
-
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -8,16 +6,17 @@ class Settings(BaseSettings):
 
     DEBUG: bool
     BOT_TOKEN: str
-    OWNERS: List[int]
-    TEST_GUILDS: List[int]
+    OWNERS: list[int]
+    TEST_GUILDS: list[int]
 
     @property
     def DATABASE_URL(self) -> str:
-        return "postgres://synth:SyNTh@@1337@!@146.148.127.63:5432/synth"
+        return "sqlite://synthdb.sqlite3"  # Local DB
+        # return "postgres://synth:SyNTh@@1337@!@nixxoq.xyz:5432/synth"
 
-    model_config = SettingsConfigDict(
+    model_config = SettingsConfigDict(  # type: ignore
         env_file=os.path.join(os.path.dirname(__file__), ".env"),
     )
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[reportCallIssue]

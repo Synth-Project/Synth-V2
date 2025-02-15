@@ -1,11 +1,13 @@
 lavalink:
   plugins:
-    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.2.0"
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
       repository: "https://maven.topi.wtf/releases"
-    # - dependency: "dev.lavalink.youtube:youtube-plugin:1.7.2"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.11.4"
+    # - dependency: "com.github.topi314.lavalyrics:lavalyrics-plugin:1.0.0"
       # snapshot: false # Set to true if you want to use a snapshot version.
+    - dependency: "dev.schlaubi.lyrics:lavalink:2.5.0"
   server:
-    password: "youshallnotpass"
+    password: "weever_gay"
     sources:
       youtube: false
       spotify: true
@@ -24,19 +26,26 @@ lavalink:
     useSeekGhosting: true # Seek ghosting is the effect where whilst a seek is in progress, the audio buffer is read from until empty, or until seek is ready.
     youtubePlaylistLoadLimit: 6 # Number of pages at 100 each
     playerUpdateInterval: 5 # How frequently to send player updates to clients, in seconds
-    youtubeSearchEnabled: true
+    youtubeSearchEnabled: false
     spotifySearchEnabled: true
     soundcloudSearchEnabled: true
     gc-warnings: true
 
 
 plugins:
+  #  lavalyrics:
+  #    sources:
+  #      - spotify
+  #      - youtube
+  #      - deezer
+  #      - yandexMusic
+
   lavasrc:
-    providers: # Custom providers for track loading. This is the default
-      - "ytsearch:%QUERY%" # YouTube search provider
-      - "ytsearch:\"%ISRC%\"" # YouTube search provider
-      - "spsearch:%QUERY%" # Spotify search provider
-      - "sprec:%QUERY%" # Spotify recommendation search provider 
+    #    providers: # Custom providers for track loading. This is the default
+    #      - "ytsearch:%QUERY%" # YouTube search provider
+    #      - "ytsearch:\"%ISRC%\"" # YouTube search provider
+    #      - "spsearch:%QUERY%" # Spotify search provider
+    #      - "sprec:%QUERY%" # Spotify recommendation search provider
     sources:
       spotify: true # Enable Spotify source
       applemusic: false # Enable Apple Music source
@@ -46,10 +55,30 @@ plugins:
       youtube: false # Enable YouTube search source (https://github.com/topi314/LavaSearch)
     spotify:
       clientId: "e64edaa83b1441219e0bfc9e63c0acda" #Enter client id here
-      clientSecret: "e6c2402bf0b04695a0027febc120477a" #Enter client secret here
+      clientSecret: "8ad9bb4d28e645fe8f66485cb2175771" #Enter client secret here
       countryCode: "US" # the country code you want to use for filtering the artists top tracks. See https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
       playlistLoadLimit: 6 # The number of pages at 100 tracks each
       albumLoadLimit: 6 # The number of pages at 50 tracks each
+  youtube:
+    enabled: true
+    # allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    clients:
+      # - MUSIC
+      # - ANDROID_TESTSUITE
+      # - TV
+      # - WEBEMBEDDED
+      - WEB
+      - WEBEMBEDDED
+      # - ANDROID
+      # - ANDROID_MUSIC
+      # - TVHTML5EMBEDDED
+    # oauth:
+      # enabled: true
+    pot:
+      token: "MnTeVizj90zZnd5u9pWUrjo39F9MHsmAnrHySgZ2_TwMVFmSIkx5meFQQey_Yki3OMEZok2U5CEBdreIj6vSP_L2m23XhVieLIB0O6ovCsiBsacOFvlOsjkoHHqwhC2loUHSZhouOTvnderFSS9yyFZugHHCLA"
+      visitorData: "Cgt5SkltNUJqU3lOVSiBgqu8BjIKCgJVQRIEGgAgEQ%3D%3D"
 
 server: # REST and WS server
   port: 2333
