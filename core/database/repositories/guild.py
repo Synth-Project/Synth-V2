@@ -1,6 +1,6 @@
 import disnake
 
-from typing import Union
+from typing import Optional, Union
 from core.database.models.guild import GuildModel
 from core.database.models.music import UserMusic as Music
 from core.database.repositories.base import BaseRepository
@@ -27,7 +27,7 @@ class GuildMusicRepository(BaseRepository):
     async def remove_one(self, **kwargs) -> None:
         await GuildModel.filter(**kwargs).delete()
 
-    async def find_dj_role(self, guild_id: int) -> GuildModel | None:
+    async def find_dj_role(self, guild_id: int) -> Optional[str]:
         guild = await self.get_one(id=guild_id)
 
         if not guild or not guild.music_settings:

@@ -9,6 +9,8 @@ from core.misc.music.functions import MusicFunctions
 from core.misc.music.errors import MusicError
 
 from core.database.repositories.music import MusicRepository
+from core.database.repositories.guild import GuildMusicRepository
+
 from core.misc.color import BasicColors
 from core.misc.embed import CustomEmbed
 
@@ -18,6 +20,7 @@ class Music(commands.Cog):
         super(Music, self).__init__()
         self.bot: commands.Bot = bot
 
+        self.guild_repo = GuildMusicRepository()
         self.repository = MusicRepository()
         self.functions = MusicFunctions()
         self.errors = MusicError()
@@ -61,7 +64,7 @@ class Music(commands.Cog):
                             author_id=interaction.author.id, query=query
                         )
                     )
-                    else ""
+                    else query
                 )
 
         tracks: wavelink.Search = await wavelink.Playable.search(
@@ -87,10 +90,6 @@ class Music(commands.Cog):
                 author=interaction.author,
                 footer_text=f"Volume: {player.volume}% // Synth Music 2024",
             ).get_embed()
-
-            # track: wavelink.Playable = (
-            #     tracks[0] if not player.current else player.current
-            # )
 
         else:
             track: wavelink.Playable = tracks[0]
@@ -121,80 +120,99 @@ class Music(commands.Cog):
         track: Optional[str] = None,
     ):
         await interaction.response.defer(ephemeral=True)
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
-        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        if not player or not player._connected:
-            error_embed.title = "<:crossmark:1282338837456224394> | I am not connected to a voice channel."
+        if error_embed := await self.errors.check_player(interaction, player):
             return await interaction.send(embed=error_embed, ephemeral=True)
-
-        if (
-            not interaction.author.voice
-            or interaction.author.voice.channel != player.channel
-        ):
-            error_embed.title = "<:crossmark:1282338837456224394> | You must be in the same voice channel as me!"
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-        queue = (
-            player.queue
-            if not player.queue.is_empty
-            else (
-                player.auto_queue
-                if player.autoplay == wavelink.AutoPlayMode.enabled
-                else player.queue
-            )
-        )
 
         await self.errors.check_basic(interaction)
         await self.errors.check_queue(interaction)
 
-        if not hasattr(player, "skip_votes"):
-            player.skip_votes: Set[int] = set()  # type: ignore
-
-        user_id = interaction.author.id
-        voice_channel = player.channel
-
-        members_in_vc = [member for member in voice_channel.members if not member.bot]
-        required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
-
-        if user_id in player.skip_votes:
-            player.skip_votes.remove(user_id)
-            embed = CustomEmbed(
-                title=f"<a:success:1282339093494943764> | Vote removed ({len(player.skip_votes)}/{required_votes}) to skip the current track!",
-                author=interaction.author,
-                # color=BasicColors.SUCCESS,
-            ).get_embed()
-            return await interaction.send(embed=embed, ephemeral=True)
-
-        player.skip_votes.add(user_id)
-
-        current_votes = len(player.skip_votes)
-
-        if current_votes >= required_votes:
-            if track:
-                for index, song in enumerate(queue):
-                    if track.lower() in f"{song.author} - {song.title}".lower():
-                        track = player.queue[index]  # type: ignore
-                        player.queue.put_at(0, track)  # type: ignore
-                        break
-                else:
-                    error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
-                    return await interaction.send(embed=error_embed, ephemeral=True)
-            await self.functions.skip_track(player, interaction)
-            player.skip_votes.clear()
-
-        else:
-            embed = CustomEmbed(
-                title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to skip the current track!",
-                author=interaction.author,
-                color=BasicColors.SUCCESS,
-            ).get_embed()
-
-            await interaction.send(
-                embed=embed,
-                ephemeral=True,
-            )
+        await self.functions.handle_skip_vote(interaction, player, track)
         await self.update_main_message(player)
+
+    # @player.sub_command(name="skip", description="Skip the current track")
+    # async def skip(
+    #     self,
+    #     interaction: disnake.ApplicationCommandInteraction,
+    #     track: Optional[str] = None,
+    # ):
+    #     await interaction.response.defer(ephemeral=True)
+    #     player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
+    #     error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+    #     if not player or not player._connected:
+    #         error_embed.title = "<:crossmark:1282338837456224394> | I am not connected to a voice channel."
+    #         return await interaction.send(embed=error_embed, ephemeral=True)
+
+    #     if (
+    #         not interaction.author.voice
+    #         or interaction.author.voice.channel != player.channel
+    #     ):
+    #         error_embed.title = "<:crossmark:1282338837456224394> | You must be in the same voice channel as me!"
+    #         return await interaction.send(embed=error_embed, ephemeral=True)
+
+    #     queue = (
+    #         player.queue
+    #         if not player.queue.is_empty
+    #         else (
+    #             player.auto_queue
+    #             if player.autoplay == wavelink.AutoPlayMode.enabled
+    #             and not player.auto_queue.is_empty
+    #             else player.queue
+    #         )
+    #     )
+
+    #     await self.errors.check_basic(interaction)
+    #     await self.errors.check_queue(interaction)
+
+    #     if not hasattr(player, "skip_votes"):
+    #         player.skip_votes: Set[int] = set()  # type: ignore
+
+    #     user_id = interaction.author.id
+    #     voice_channel = player.channel
+
+    #     members_in_vc = [member for member in voice_channel.members if not member.bot]
+    #     required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
+
+    #     if user_id in player.skip_votes:
+    #         player.skip_votes.remove(user_id)
+    #         embed = CustomEmbed(
+    #             title=f"<a:success:1282339093494943764> | Vote removed ({len(player.skip_votes)}/{required_votes}) to skip the current track!",
+    #             author=interaction.author,
+    #             # color=BasicColors.SUCCESS,
+    #         ).get_embed()
+    #         return await interaction.send(embed=embed, ephemeral=True)
+
+    #     player.skip_votes.add(user_id)
+
+    #     current_votes = len(player.skip_votes)
+
+    #     if current_votes >= required_votes:
+    #         if track:
+    #             for index, song in enumerate(queue):
+    #                 if track.lower() in f"{song.author} - {song.title}".lower():
+    #                     track = player.queue[index]  # type: ignore
+    #                     player.queue.put_at(0, track)  # type: ignore
+    #                     break
+    #             else:
+    #                 error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
+    #                 return await interaction.send(embed=error_embed, ephemeral=True)
+    #         await self.functions.skip_track(player, interaction)
+    #         player.skip_votes.clear()
+
+    #     else:
+    #         embed = CustomEmbed(
+    #             title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to skip the current track!",
+    #             author=interaction.author,
+    #             color=BasicColors.SUCCESS,
+    #         ).get_embed()
+
+    #         await interaction.send(
+    #             embed=embed,
+    #             ephemeral=True,
+    #         )
+    #     await self.update_main_message(player)
 
     @player.sub_command(name="previous", description="Switch to the previous track(s)")
     async def previous(
@@ -203,81 +221,116 @@ class Music(commands.Cog):
         track: Optional[str] = None,
     ):
         await interaction.response.defer(ephemeral=True)
+        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)
 
-        player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
-        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
-
-        if not player or not player._connected:
-            error_embed.title = "<:crossmark:1282338837456224394> | I am not connected to a voice channel."
+        if error_embed := await self.errors.check_player(interaction, player):
             return await interaction.send(embed=error_embed, ephemeral=True)
-
-        if (
-            not interaction.author.voice
-            or interaction.author.voice.channel != player.channel
-        ):
-            error_embed.title = "<:crossmark:1282338837456224394> | You must be in the same voice channel as me!"
-            return await interaction.send(embed=error_embed, ephemeral=True)
-
-        queue = (
-            player.queue
-            if not player.queue.is_empty
-            else (
-                player.auto_queue
-                if player.autoplay == wavelink.AutoPlayMode.enabled
-                else player.queue
-            )
-        )
 
         await self.errors.check_basic(interaction)
 
-        if not hasattr(player, "previous_votes"):
-            player.previous_votes: Set[int] = set()  # type: ignore
-
-        user_id = interaction.author.id
-        voice_channel = player.channel
-
-        members_in_vc = [member for member in voice_channel.members if not member.bot]
-        required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
-
-        if user_id in player.previous_votes:
-            player.previous_votes.remove(user_id)
-            embed = CustomEmbed(
-                title=f"<a:success:1282339093494943764> | Vote removed ({len(player.previous_votes)}/{required_votes}) to switch to the previous track!",
-                author=interaction.author,
-                # color=BasicColors.SUCCESS,
-            ).get_embed()
-            return await interaction.send(embed=embed, ephemeral=True)
-
-        player.previous_votes.add(user_id)
-
-        current_votes = len(player.previous_votes)
-
-        if current_votes >= required_votes:
-            if not track:
-                previous_track = queue.history.get()  # type: ignore
-                queue.put_at(0, previous_track)
-                queue.put_at(1, player.current)  # type: ignore
-            else:
-                for index, song in enumerate(queue.history):  # type: ignore
-                    if track.lower() in f"{song.author} - {song.title}".lower():
-                        track = queue.history[index]  # type: ignore
-                        queue.put_at(0, track)  # type: ignore
-                        queue.put_at(1, player.current)  # type: ignore
-                        break
-                else:
-                    error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
-                    return await interaction.send(embed=error_embed, ephemeral=True)
-
-            await self.functions.skip_track(player, interaction, True)
-            player.previous_votes.clear()
-        else:
-            embed = CustomEmbed(
-                title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to switch to the previous track!",
-                author=interaction.author,
-                color=BasicColors.SUCCESS,
-            ).get_embed()
-            return await interaction.send(embed=embed, ephemeral=True)
+        await self.functions.handle_previous_vote(interaction, player, track)
         await self.update_main_message(player)
+
+    # @player.sub_command(name="previous", description="Switch to the previous track(s)")
+    # async def previous(
+    #     self,
+    #     interaction: disnake.ApplicationCommandInteraction,
+    #     track: Optional[str] = None,
+    # ):
+    #     await interaction.response.defer(ephemeral=True)
+    #     player: wavelink.Player = cast(wavelink.Player, interaction.guild.voice_client)  # type: ignore
+    #     error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+    #     if not player or not player._connected:
+    #         error_embed.title = "<:crossmark:1282338837456224394> | I am not connected to a voice channel."
+    #         return await interaction.send(embed=error_embed, ephemeral=True)
+
+    #     if (
+    #         not interaction.author.voice
+    #         or interaction.author.voice.channel != player.channel
+    #     ):
+    #         error_embed.title = "<:crossmark:1282338837456224394> | You must be in the same voice channel as me!"
+    #         return await interaction.send(embed=error_embed, ephemeral=True)
+
+    #     queue = (
+    #         player.queue
+    #         if not player.queue.is_empty
+    #         else (
+    #             player.auto_queue
+    #             if player.autoplay == wavelink.AutoPlayMode.enabled
+    #             and not player.auto_queue.is_empty
+    #             else player.queue
+    #         )
+    #     )
+
+    #     await self.errors.check_basic(interaction)
+
+    #     if not hasattr(player, "previous_votes"):
+    #         # TODO: add this attr directly to the player object
+    #         player.previous_votes: Set[int] = set()  # type: ignore
+
+    #     members_in_vc = [member for member in player.channel.members if not member.bot]
+    #     required_votes = len(members_in_vc) // 2 + len(members_in_vc) % 2
+    #     dj_role = await self.guild_repo.find_dj_role(interaction.guild.id)
+
+    #     if dj_role and interaction.author.get_role(dj_role):
+    #         if track:
+    #             for song in queue.history:  # type: ignore
+    #                 if track.lower() in f"{song.author} - {song.title}".lower():
+    #                     queue.put_at(0, song)  # type: ignore
+    #                     break
+    #             else:
+    #                 error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
+    #                 return await interaction.send(embed=error_embed, ephemeral=True)
+    #         else:
+    #             previous_track = queue.history.get()  # type: ignore
+    #             queue.put_at(0, previous_track)  # type: ignore
+    #             queue.put_at(1, player.current)  # type: ignore
+
+    #         await self.functions.skip_track(player, interaction, True)
+    #         player.previous_votes.clear()
+
+    #     if (
+    #         interaction.author.id
+    #         in player.previous_votes
+    #         # and not interaction.author.get_role(dj_role)
+    #     ):
+    #         player.previous_votes.remove(interaction.author.id)
+    #         embed = CustomEmbed(
+    #             title=f"<a:success:1282339093494943764> | Vote removed ({len(player.previous_votes)}/{required_votes}) to switch to the previous track!",
+    #             author=interaction.author,
+    #             # color=BasicColors.SUCCESS,
+    #         ).get_embed()
+    #         return await interaction.send(embed=embed, ephemeral=True)
+
+    #     player.previous_votes.add(interaction.author.id)
+
+    #     current_votes = len(player.previous_votes)
+
+    #     if current_votes >= required_votes:
+    #         if track:
+    #             for song in queue.history:  # type: ignore
+    #                 if track.lower() in f"{song.author} - {song.title}".lower():
+    #                     queue.put_at(0, song)  # type: ignore
+    #                     break
+    #             else:
+    #                 error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
+    #                 return await interaction.send(embed=error_embed, ephemeral=True)
+    #         else:
+    #             previous_track = queue.history.get()  # type: ignore
+    #             queue.put_at(0, previous_track)  # type: ignore
+    #             queue.put_at(1, player.current)  # type: ignore
+
+    #         await self.functions.skip_track(player, interaction, True)
+    #         player.previous_votes.clear()
+    #     else:
+    #         embed = CustomEmbed(
+    #             title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to switch to the previous track!",
+    #             author=interaction.author,
+    #             color=BasicColors.SUCCESS,
+    #         ).get_embed()
+    #         return await interaction.send(embed=embed, ephemeral=True)
+    #     await self.update_main_message(player)
 
     async def update_main_message(self, player: wavelink.Player):
         if not player or not player.is_connected:
@@ -344,7 +397,7 @@ class Music(commands.Cog):
 
         if not interaction.guild.voice_client:  # type: ignore
             embed = CustomEmbed.error_embed(
-                author=interaction.author,
+                author=interaction.author, 
                 title="<:crossmark:1282338837456224394> | I am not in a voice channel!",
             ).get_embed()
 

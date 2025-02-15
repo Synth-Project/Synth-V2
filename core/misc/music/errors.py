@@ -1,5 +1,5 @@
 import importlib
-from typing import cast
+from typing import Optional, cast
 
 import disnake
 import wavelink
@@ -70,3 +70,15 @@ class MusicError:
             await music_functions.set_volume(player, volume)
 
         return embed
+
+    @staticmethod
+    async def check_player(
+        interaction: disnake.ApplicationCommandInteraction, player: wavelink.Player
+    ) -> Optional[disnake.Embed]:
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+        if not player or not player._connected:
+            error_embed.title = "<:crossmark:1282338837456224394> | I am not connected to a voice channel."
+            return error_embed
+
+        return

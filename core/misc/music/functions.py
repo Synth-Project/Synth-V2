@@ -1,4 +1,4 @@
-from typing import cast, Union
+from typing import cast, Union, Optional
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -16,9 +16,214 @@ from core.misc.music.errors import MusicError
 from core.misc.music.views.panel import NavigationPanel
 from core.misc.music.views.shuffle import ShuffleView
 
+from core.database.repositories.guild import GuildMusicRepository
+
 
 @dataclass
 class MusicFunctions:
+    guild_repo = GuildMusicRepository()
+
+    @staticmethod
+    async def calculate_required_votes(player: wavelink.Player) -> int:
+        voice_channel = player.channel
+        members_in_vc = [member for member in voice_channel.members if not member.bot]
+        return len(members_in_vc) // 2 + len(members_in_vc) % 2
+
+    @staticmethod
+    async def handle_skip_vote(
+        interaction: disnake.ApplicationCommandInteraction,
+        player: wavelink.Player,
+        track: Optional[str] = None,
+    ) -> None:
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+        if not hasattr(player, "skip_votes"):
+            player.skip_votes: set[int] = set()  # type: ignore
+
+        user_id = interaction.author.id
+        required_votes = await MusicFunctions.calculate_required_votes(player)
+        queue = MusicFunctions.get_player_queue(player)
+
+        if user_id in player.skip_votes:
+            player.skip_votes.remove(user_id)
+            embed = CustomEmbed(
+                title=f"<a:success:1282339093494943764> | Vote removed ({len(player.skip_votes)}/{required_votes}) to skip the current track!",
+                author=interaction.author,
+            ).get_embed()
+            await interaction.send(embed=embed, ephemeral=True)
+            return
+
+        player.skip_votes.add(user_id)
+        current_votes = len(player.skip_votes)
+
+        if current_votes >= required_votes:
+            if track:
+                track_skipped = await MusicFunctions.skip_specific_track_in_queue(
+                    player, track, queue, error_embed, interaction
+                )
+                if not track_skipped:
+                    return
+            await MusicFunctions.skip_track_action(player, interaction)
+            player.skip_votes.clear()
+        else:
+            embed = CustomEmbed(
+                title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to skip the current track!",
+                author=interaction.author,
+                color=BasicColors.SUCCESS,
+            ).get_embed()
+            await interaction.send(embed=embed, ephemeral=True)
+
+    @staticmethod
+    async def handle_previous_vote(
+        interaction: disnake.ApplicationCommandInteraction,
+        player: wavelink.Player,
+        track: Optional[str] = None,
+    ) -> None:
+        error_embed = CustomEmbed.error_embed(author=interaction.author).get_embed()
+
+        if not hasattr(player, "previous_votes"):
+            player.previous_votes: set[int] = set()  # type: ignore
+
+        required_votes = await MusicFunctions.calculate_required_votes(player)
+        dj_role = await MusicFunctions.guild_repo.find_dj_role(interaction.guild.id)
+        queue = MusicFunctions.get_player_queue(player)
+
+        if dj_role and interaction.author.get_role(dj_role):
+            if track:
+                track_switched = await MusicFunctions.switch_to_specific_previous_track(
+                    player, track, queue, error_embed, interaction
+                )
+                if not track_switched:
+                    return
+            else:
+                await MusicFunctions.switch_to_previous_track_action(
+                    player, interaction, queue
+                )
+            player.previous_votes.clear()
+            return
+
+        if interaction.author.id in player.previous_votes:
+            player.previous_votes.remove(interaction.author.id)
+            embed = CustomEmbed(
+                title=f"<a:success:1282339093494943764> | Vote removed ({len(player.previous_votes)}/{required_votes}) to switch to the previous track!",
+                author=interaction.author,
+            ).get_embed()
+            await interaction.send(embed=embed, ephemeral=True)
+            return
+
+        player.previous_votes.add(interaction.author.id)
+        current_votes = len(player.previous_votes)
+
+        if current_votes >= required_votes:
+            if track:
+                track_switched = await MusicFunctions.switch_to_specific_previous_track(
+                    player, track, queue, error_embed, interaction
+                )
+                if not track_switched:
+                    return
+            else:
+                await MusicFunctions.switch_to_previous_track_action(
+                    player, interaction, queue
+                )
+            player.previous_votes.clear()
+        else:
+            embed = CustomEmbed(
+                title=f"<a:success:1282339093494943764> | Vote added ({current_votes}/{required_votes}) to switch to the previous track!",
+                author=interaction.author,
+                color=BasicColors.SUCCESS,
+            ).get_embed()
+            await interaction.send(embed=embed, ephemeral=True)
+
+    @staticmethod
+    async def get_player_queue(player: wavelink.Player) -> wavelink.Queue:
+        return (
+            player.queue
+            if not player.queue.is_empty
+            else (
+                player.auto_queue
+                if player.autoplay == wavelink.AutoPlayMode.enabled
+                and not player.auto_queue.is_empty
+                else player.queue
+            )
+        )
+
+    @staticmethod
+    async def skip_specific_track_in_queue(
+        player: wavelink.Player,
+        track_query: str,
+        queue: wavelink.Queue,
+        error_embed: disnake.Embed,
+        interaction: disnake.ApplicationCommandInteraction,
+    ) -> bool:
+        for index, song in enumerate(queue):
+            if track_query.lower() in f"{song.author} - {song.title}".lower():
+                track = player.queue[index]
+                player.queue.put_at(0, track)
+                return True
+        else:
+            error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in the queue!"
+            await interaction.send(embed=error_embed, ephemeral=True)
+            return False
+
+    @staticmethod
+    async def switch_to_specific_previous_track(
+        player: wavelink.Player,
+        track_query: str,
+        queue: wavelink.Queue,
+        error_embed: disnake.Embed,
+        interaction: disnake.ApplicationCommandInteraction,
+    ) -> bool:
+        for song in queue.history:
+            if track_query.lower() in f"{song.author} - {song.title}".lower():
+                queue.put_at(0, song)
+                return True
+        else:
+            error_embed.title = "<:crossmark:1282338837456224394> | The specified track was not found in history!"
+            await interaction.send(embed=error_embed, ephemeral=True)
+            return False
+
+    @staticmethod
+    async def skip_track_action(
+        player: wavelink.Player, interaction: disnake.ApplicationCommandInteraction
+    ) -> None:
+        embed = CustomEmbed(
+            author=interaction.user,
+            title="Track Skipped",
+            description=(
+                f"Skipped **[{player.current.title}]({str(player.current.uri)})**.\n"
+                f"{MusicFunctions.get_track_source(player.current)} Now playing: **[{player.queue[0].title}]({str(player.queue[0].uri)})**."
+            ),
+            color=BasicColors.SUCCESS,
+        ).get_embed()
+
+        await interaction.delete_original_response()
+        await player.main_message.reply(embed=embed)
+        await player.skip()
+
+    @staticmethod
+    async def switch_to_previous_track_action(
+        player: wavelink.Player,
+        interaction: disnake.ApplicationCommandInteraction,
+        queue: wavelink.Queue,
+    ) -> None:
+        previous_track = queue.history.get()
+        queue.put_at(0, previous_track)
+        queue.put_at(1, player.current)
+
+        embed = CustomEmbed(
+            author=interaction.user,
+            title="Switching to Previous Track",
+            description=(
+                f"Switching to previous track **[{previous_track.title}]({str(previous_track.uri)})**.\n"
+                f"{MusicFunctions.get_track_source(player.current)} Now playing: **[{previous_track.title}]({str(previous_track.uri)})**."
+            ),
+            color=BasicColors.SUCCESS,
+        ).get_embed()
+
+        await interaction.delete_original_response()
+        await player.main_message.reply(embed=embed)
+        await player.skip()
+
     @staticmethod
     async def music_embed(
         interaction: Union[disnake.ApplicationCommandInteraction, disnake.Message],
