@@ -126,7 +126,6 @@ class Music(commands.Cog):
             return await interaction.send(embed=error_embed, ephemeral=True)
 
         await self.errors.check_basic(interaction)
-        
         await self.errors.check_queue(interaction)
 
         await self.functions.handle_skip_vote(interaction, player, track)
